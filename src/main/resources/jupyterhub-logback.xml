@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration scan="true" scanPeriod="30 seconds">
+    <appender name="jupyterhub" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <append>true</append>
+        <file>${xnat.home}/logs/xnat-jupyterhub-plugin.log</file>
+        <encoder>
+            <pattern>%d [%t] %-5p %c - %m%n</pattern>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${xnat.home}/logs/xnat-jupyterhub-plugin.log.%d{yyyy-MM-dd}</fileNamePattern>
+        </rollingPolicy>
+    </appender>
+    <!--    TODO: Dont release with Logger on DEBUG-->
+    <logger name="org.nrg.xnatx.plugins.jupyterhub" additivity="false" level="DEBUG">
+        <appender-ref ref="jupyterhub"/>
+    </logger>
+</configuration>

@@ -1,0 +1,77 @@
+workspacePath:
+  kind: panel.input.text
+  id: workspacePath
+  name: workspacePath
+  label: Workspace Path
+  description: >
+    The directory containing user namespaced directories / workspaces. JupyterHub is responsible for mounting a user's
+    directory to the container running their notebook server.
+
+jupyterhubApiUrl:
+  kind: panel.input.text
+  id: jupyterHubApiUrl
+  name: jupyterHubApiUrl
+  label: JupyterHub API URL
+  description: >
+    The URL for JupyterHub's API
+
+jupyterHubToken:
+  kind: panel.input.password
+  id: jupyterHubToken
+  name: jupyterHubToken
+  label: JupyterHub Token
+  description: >
+    The service token used by XNAT to launch a user's Jupyter Servers
+
+pathTranslationXnatPrefix:
+  kind: panel.input.text
+  id: pathTranslationXnatPrefix
+  name: pathTranslationXnatPrefix
+  label: Path Translation XNAT Prefix
+  description: >
+    (Optional) Enter the XNAT_HOME server path, i.e. "/data/xnat"
+
+pathTranslationDockerPrefix:
+  kind: panel.input.text
+  id: pathTranslationDockerPrefix
+  name: pathTranslationDockerPrefix
+  label: Path Translation Docker Prefix
+  description: >
+    (Optional) Enter the Docker Server path to the XNAT_HOME mount, i.e. "/docker/my-data/XNAT"
+
+jupyterhubPreferences:
+  kind: panel.form
+  name: jupyterhubPreferences
+  label: Preferences
+  method: POST
+  contentType: json
+  url: /xapi/jupyterhub/preferences
+  contents:
+    ${jupyterhubApiUrl}
+    ${jupyterHubToken}
+    ${pathTranslationXnatPrefix}
+    ${pathTranslationDockerPrefix}
+    ${workspacePath}
+
+
+#################################################
+####  Root Site Admin Spawner Config Object  ####
+#################################################
+
+siteSettings:
+  kind: tabs
+  name: jupyerhubAdminPage
+  label: JupyterHub Administration
+  meta:
+    tabGroups:
+      jupyterhubTabGroup: JupyterHub
+  contains: tabs
+  tabs:
+    jupyterhubPreferencesTab:
+      kind: tab
+      name: jupyterhubPreferencesTab
+      label: Preferences
+      group: jupyterhubTabGroup
+      active: true
+      contents:
+        ${jupyterhubPreferences}

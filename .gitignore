@@ -1,27 +1,22 @@
-# These are some examples of commonly ignored file patterns.
-# You should customize this list as applicable to your project.
-# Learn more about .gitignore:
-#     https://www.atlassian.com/git/tutorials/saving-changes/gitignore
-
-# Node artifact files
-node_modules/
-dist/
-
-# Compiled Java class files
+# Java compiled class file
 *.class
 
-# Compiled Python bytecode
-*.py[cod]
-
-# Log files
+# Log file
 *.log
 
-# Package files
+# Package Files
 *.jar
+*.war
 
-# Maven
-target/
-dist/
+# Gradle
+.gradle
+build/
+
+# Avoid ignoring Gradle wrapper jar file (.jar files are usually ignored)
+!gradle-wrapper.jar
+
+# Cache of project
+.gradletasknamecache
 
 # JetBrains IDE
 .idea/
@@ -38,7 +33,6 @@ Thumbs.db
 # Applications
 *.app
 *.exe
-*.war
 
 # Large media files
 *.mp4

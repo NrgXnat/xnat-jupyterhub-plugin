@@ -1,0 +1,6 @@
+<!-- Sequence: 58 -->
+<li><a href="#!" id="jupyter-topnav">Jupyter</a>
+    <ul>
+        #addGlobalCustomScreens("topBar/Jupyter")
+    </ul>
+</li>

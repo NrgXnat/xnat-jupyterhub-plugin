@@ -1,0 +1,65 @@
+<!-- START screens/plugins/pre/StartJupyterServer.vm -->
+<script src="$content.getURI("/scripts/xnat/plugin/jupyterhub/jupyterhub-servers.js")"></script>
+
+<script type="text/javascript">
+
+    const href = window.location.href;
+
+    jupyterHandlerForStoredSearch = function(name, eventObj, menuItem){
+        console.debug('jupyterHandlerForStoredSearch');
+        const storedSearchId = this.obj.SS_ID;
+
+        XNAT.plugin.jupyterhub.servers.startServerForStoredSearch(window.username,
+                                                          storedSearchId,
+                                                          "xdat:stored_search",
+                                                          storedSearchId);
+    };
+
+    jupyterHandlerForDataSearch = function(name, eventObj, menuItem){
+        console.debug('jupyterHandlerForDataSearch');
+        const storedSearchId = this.obj.ID.replace("d.", "@");
+
+        XNAT.plugin.jupyterhub.servers.startServerForStoredSearch(window.username,
+                storedSearchId,
+                "xdat:stored_search",
+                storedSearchId);
+    };
+
+    jupyterHandlerForProjectBundleSearch = function(name, eventObj, menuItem){
+        console.debug('jupyterHandlerForProjectBundleSearch');
+
+        let storedSearchId;
+        if (this.obj.ID.startsWith("@")) {
+            // Default project bundle
+            storedSearchId = XNAT.data.context.ID + this.obj.ID;
+        } else {
+            // Project level stored search
+            storedSearchId = this.obj.ID;
+        }
+
+        XNAT.plugin.jupyterhub.servers.startServerForStoredSearch(window.username,
+                storedSearchId,
+                "xdat:stored_search",
+                storedSearchId);
+    };
+
+    let jupyterHandler;
+
+    if (href.includes('Search.vm/node/ss')) { // Are we on the Stored Search view?
+        jupyterHandler = jupyterHandlerForStoredSearch;
+    } else if (href.includes('Search.vm/node/d')) { // Are we on the Data view?
+        jupyterHandler = jupyterHandlerForDataSearch;
+    } else if (XNAT.data.context.xsiType === "xnat:projectData") {
+        jupyterHandler = jupyterHandlerForProjectBundleSearch;
+    }
+
+    if (jupyterHandler) {
+        let jupyterMenuOption = {
+            'label' : 'Start Jupyter Server',
+            'handler': jupyterHandler
+        }
+
+        addSearchMenuOption(jupyterMenuOption)
+    }
+</script>
+<!-- END screens/plugins/pre/StartJupyterServer.vm -->
