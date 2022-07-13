@@ -14,6 +14,7 @@ import org.nrg.xft.db.MaterializedView;
 import org.nrg.xft.db.MaterializedViewI;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
+import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.exceptions.InvalidArchiveStructure;
 import org.nrg.xnatx.plugins.jupyterhub.client.JupyterHubClient;
@@ -311,11 +312,10 @@ public class DefaultJupyterHubService implements JupyterHubService {
             if (rootElement.equals(XnatSubjectdata.SCHEMA_ELEMENT_NAME)) {
                 final ArrayList<String> subjectIds = mv.getColumnValues("key").convertColumnToArrayList("values");
                 storedSearchPaths.putAll(this.getSubjectPaths(user, subjectIds));
-            } else if (rootElement.toLowerCase().contains("session")) {
-                // TODO How to account for other experiment types
+            } else if (instanceOf(rootElement, XnatExperimentdata.SCHEMA_ELEMENT_NAME)) {
                 final ArrayList<String> experimentIds = mv.getColumnValues("key").convertColumnToArrayList("values");
                 storedSearchPaths.putAll(this.getExperimentPaths(user, experimentIds));
-            } else if (rootElement.toLowerCase().contains("scan")) {
+            } else if (instanceOf(rootElement, XnatImagescandata.SCHEMA_ELEMENT_NAME)) {
                 final ArrayList<Integer> imageScanIds = mv.getColumnValues("key").convertColumnToArrayList("values");
                 storedSearchPaths.putAll(this.getImageScanPaths(user, imageScanIds));
             } // ELSE -> nothing. Only support searches on subjects, image sessions and image scans // TODO Throw Error??
@@ -341,6 +341,16 @@ public class DefaultJupyterHubService implements JupyterHubService {
         }
 
         return storedSearchPaths;
+    }
+
+    private boolean instanceOf(final String xsiType, final String instanceOfXsiType) {
+        try {
+            return GenericWrapperElement.GetElement(xsiType).instanceOf(instanceOfXsiType);
+        } catch (ElementNotFoundException  e) {
+            return false;
+        } catch (XFTInitException e) {
+            throw new RuntimeException(e);
+        }
     }
 
 }
