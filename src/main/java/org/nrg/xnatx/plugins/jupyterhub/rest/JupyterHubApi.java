@@ -14,12 +14,10 @@ import org.nrg.xapi.rest.XapiRequestMapping;
 import org.nrg.xdat.om.*;
 import org.nrg.xdat.security.helpers.AccessLevel;
 import org.nrg.xdat.security.services.RoleHolder;
-import org.nrg.xdat.security.services.SearchHelperServiceI;
 import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.nrg.xdat.security.user.exceptions.UserInitException;
 import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
 import org.nrg.xft.security.UserI;
-import org.nrg.xnatx.plugins.jupyterhub.client.JupyterHubClient;
 import org.nrg.xnatx.plugins.jupyterhub.client.models.Server;
 import org.nrg.xnatx.plugins.jupyterhub.client.models.User;
 import org.nrg.xnatx.plugins.jupyterhub.dtos.XnatUserOptions;
@@ -31,7 +29,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -54,9 +51,7 @@ public class JupyterHubApi extends AbstractXapiRestController {
     protected JupyterHubApi(final UserManagementServiceI userManagementService,
                             final RoleHolder roleHolder,
                             final JupyterHubPreferences jupyterHubPreferences,
-                            final JupyterHubClient jupyterHubClient,
-                            final JupyterHubService jupyterHubService,
-                            final SearchHelperServiceI searchHelperService) {
+                            final JupyterHubService jupyterHubService) {
         super(userManagementService, roleHolder);
         this.jupyterHubPreferences = jupyterHubPreferences;
         this.jupyterHubService = jupyterHubService;

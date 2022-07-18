@@ -8,8 +8,11 @@ import org.nrg.xnatx.plugins.jupyterhub.client.DefaultJupyterHupClient;
 import org.nrg.xnatx.plugins.jupyterhub.client.JupyterHubClient;
 import org.nrg.xnatx.plugins.jupyterhub.preferences.JupyterHubPreferences;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.Scope;
+import org.springframework.context.annotation.ScopedProxyMode;
 
 @XnatPlugin(value = "JupyterHubPlugin",
             name  = "Jupyter Hub Plugin",
@@ -35,6 +38,7 @@ public class JupyterHubPlugin {
     }
 
     @Bean
+    @Scope(value = ConfigurableBeanFactory.SCOPE_PROTOTYPE, proxyMode = ScopedProxyMode.TARGET_CLASS)
     public JupyterHubClient getJupyterHubClient() {
         return new DefaultJupyterHupClient(jupyterHubPreferences.getJupyterHubToken(),
                                            jupyterHubPreferences.getJupyterHubApiUrl());
