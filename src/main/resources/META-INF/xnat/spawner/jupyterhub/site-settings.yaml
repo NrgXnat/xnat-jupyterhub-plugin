@@ -4,8 +4,8 @@ workspacePath:
   name: workspacePath
   label: Workspace Path
   description: >
-    The directory containing user namespaced directories / workspaces. JupyterHub is responsible for mounting a user's
-    directory to the container running their notebook server.
+    The directory (as it appears to XNAT) containing user namespaced subdirectories (workspaces). JupyterHub is 
+    responsible for mounting a user's workspace directory to the container running their Jupyter notebook server.
 
 jupyterhubApiUrl:
   kind: panel.input.text
@@ -21,7 +21,7 @@ jupyterHubToken:
   name: jupyterHubToken
   label: JupyterHub Token
   description: >
-    The service token used by XNAT to launch a user's Jupyter Servers
+    The service token used by XNAT to launch a user's Jupyter Notebook Servers
 
 pathTranslationXnatPrefix:
   kind: panel.input.text

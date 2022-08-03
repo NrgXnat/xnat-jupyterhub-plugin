@@ -5,7 +5,7 @@ import org.nrg.xapi.exceptions.ResourceAlreadyExistsException;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnatx.plugins.jupyterhub.client.models.Server;
 import org.nrg.xnatx.plugins.jupyterhub.client.models.User;
-import org.nrg.xnatx.plugins.jupyterhub.dtos.XnatUserOptions;
+import org.nrg.xnatx.plugins.jupyterhub.models.XnatUserOptions;
 
 import java.nio.file.Path;
 import java.util.List;

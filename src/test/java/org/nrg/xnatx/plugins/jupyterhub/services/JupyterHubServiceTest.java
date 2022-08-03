@@ -17,7 +17,7 @@ import org.nrg.xnatx.plugins.jupyterhub.client.exceptions.JupyterServerAlreadyEx
 import org.nrg.xnatx.plugins.jupyterhub.client.models.Server;
 import org.nrg.xnatx.plugins.jupyterhub.client.models.User;
 import org.nrg.xnatx.plugins.jupyterhub.config.JupyterHubServiceConfig;
-import org.nrg.xnatx.plugins.jupyterhub.dtos.XnatUserOptions;
+import org.nrg.xnatx.plugins.jupyterhub.models.XnatUserOptions;
 import org.nrg.xnatx.plugins.jupyterhub.preferences.JupyterHubPreferences;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;

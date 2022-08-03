@@ -12,6 +12,7 @@ import org.nrg.xapi.rest.AuthorizedRoles;
 import org.nrg.xapi.rest.Username;
 import org.nrg.xapi.rest.XapiRequestMapping;
 import org.nrg.xdat.om.*;
+import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.helpers.AccessLevel;
 import org.nrg.xdat.security.services.RoleHolder;
 import org.nrg.xdat.security.services.UserManagementServiceI;
@@ -20,19 +21,20 @@ import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnatx.plugins.jupyterhub.client.models.Server;
 import org.nrg.xnatx.plugins.jupyterhub.client.models.User;
-import org.nrg.xnatx.plugins.jupyterhub.dtos.XnatUserOptions;
+import org.nrg.xnatx.plugins.jupyterhub.models.ContainerMount;
+import org.nrg.xnatx.plugins.jupyterhub.models.Container;
+import org.nrg.xnatx.plugins.jupyterhub.models.XnatUserOptions;
 import org.nrg.xnatx.plugins.jupyterhub.preferences.JupyterHubPreferences;
 import org.nrg.xnatx.plugins.jupyterhub.services.JupyterHubService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import java.nio.file.Path;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.nio.file.Paths;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.springframework.http.MediaType.*;
@@ -44,17 +46,20 @@ import static org.springframework.web.bind.annotation.RequestMethod.*;
 @Slf4j
 public class JupyterHubApi extends AbstractXapiRestController {
 
+    private final SiteConfigPreferences siteConfigPreferences;
     private final JupyterHubPreferences jupyterHubPreferences;
     private final JupyterHubService jupyterHubService;
 
     @Autowired
     protected JupyterHubApi(final UserManagementServiceI userManagementService,
                             final RoleHolder roleHolder,
+                            final SiteConfigPreferences siteConfigPreferences,
                             final JupyterHubPreferences jupyterHubPreferences,
                             final JupyterHubService jupyterHubService) {
         super(userManagementService, roleHolder);
         this.jupyterHubPreferences = jupyterHubPreferences;
         this.jupyterHubService = jupyterHubService;
+        this.siteConfigPreferences = siteConfigPreferences;
     }
 
     @ApiOperation(value = "Returns the full map of JupyterHub plugin preferences.", notes = "Complex objects may be returned as encapsulated JSON strings.", response = String.class, responseContainer = "Map")
@@ -165,8 +170,8 @@ public class JupyterHubApi extends AbstractXapiRestController {
                    @ApiResponse(code = 403, message = "Not authorized."),
                    @ApiResponse(code = 500, message = "Unexpected error")})
     @XapiRequestMapping(value = "/users/{username}", method = POST, restrictTo = AccessLevel.User)
-    public void createUser(@ApiParam(value = "username", required = true) @PathVariable("username") @Username final String username) {
-        jupyterHubService.createUser(getSessionUser());
+    public void createUser(@ApiParam(value = "username", required = true) @PathVariable("username") @Username final String username) throws UserNotFoundException, UserInitException {
+        jupyterHubService.createUser(getUserI(username));
     }
 
     @ApiOperation(value = "Get Jupyter Server details for a user.")
@@ -175,8 +180,8 @@ public class JupyterHubApi extends AbstractXapiRestController {
                    @ApiResponse(code = 403, message = "Not authorized."),
                    @ApiResponse(code = 500, message = "Unexpected error")})
     @XapiRequestMapping(value = "/users/{username}/server", method = POST, restrictTo = AccessLevel.User)
-    public Server getServer(@ApiParam(value = "username", required = true) @PathVariable("username") @Username final String username) {
-        return jupyterHubService.getServer(getSessionUser()).orElse(null);
+    public Server getServer(@ApiParam(value = "username", required = true) @PathVariable("username") @Username final String username) throws UserNotFoundException, UserInitException {
+        return jupyterHubService.getServer(getUserI(username)).orElse(null);
     }
 
     @ApiOperation(value = "Starts a Jupyter server for the user", response = String.class)
@@ -187,27 +192,28 @@ public class JupyterHubApi extends AbstractXapiRestController {
     @XapiRequestMapping(value = "/users/{username}/server/{xsiType}/{id}", method = POST, restrictTo = AccessLevel.User)
     public String startServer(@ApiParam(value = "username", required = true) @PathVariable("username") @Username final String username,
                               @ApiParam(value = "xsiType", required = true) @PathVariable("xsiType") final String xsiType,
-                              @ApiParam(value = "id", required = true) @PathVariable("id") final String id) throws NotFoundException, ResourceAlreadyExistsException {
+                              @ApiParam(value = "id", required = true) @PathVariable("id") final String id) throws NotFoundException, ResourceAlreadyExistsException, UserNotFoundException, UserInitException {
         XnatUserOptions userOptions = XnatUserOptions.builder()
                                                      .xsiType(xsiType)
                                                      .id(id)
                                                      .build();
 
-        Server server = jupyterHubService.startServer(getSessionUser(), userOptions);
+        Server server = jupyterHubService.startServer(getUserI(username), userOptions);
         // TODO return type? return Server?
         return server.getUrl();
     }
 
     @ApiOperation(value = "Returns map of paths for the requested item", notes = "Returns a map from item label => item path", response = String.class, responseContainer = "Map")
     @ApiResponses({@ApiResponse(code = 200, message = "Successfully."),
-                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
-                   @ApiResponse(code = 403, message = "Not authorized to access site configuration properties."),
-                   @ApiResponse(code = 500, message = "Unexpected error")})
+            @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
+            @ApiResponse(code = 403, message = "Not authorized to access site configuration properties."),
+            @ApiResponse(code = 500, message = "Unexpected error")})
     @AuthorizedRoles({"JupyterHub", "Administrator"}) // TODO is this the behavior/role we want?
-    @XapiRequestMapping(value = "/users/{username}/server/{xsiType}/{id}", produces = APPLICATION_JSON_VALUE, method = GET, restrictTo = AccessLevel.Role) // TODO change to query parameters
-    public Map<String, String> getServer(@ApiParam(value = "username", required = true) @PathVariable("username") @Username final String username,
-                                         @ApiParam(value = "xsiType", required = true) @PathVariable("xsiType") final String xsiType,
-                                         @ApiParam(value = "id", required = true) @PathVariable("id") final String id) throws UserNotFoundException, UserInitException {
+    @XapiRequestMapping(value = "/users/{username}/server/config", produces = APPLICATION_JSON_VALUE, method = GET, restrictTo = AccessLevel.Role)
+    public Container getServer(@ApiParam(value = "username", required = true) @PathVariable("username") @Username final String username,
+                               @ApiParam(value = "xsiType", required = true) @RequestParam("xsiType") final String xsiType,
+                               @ApiParam(value = "id", required = true) @RequestParam("id") final String id) throws UserNotFoundException, UserInitException {
+        // TODO Support named server
         // TODO New Return Type? Wrap in another DTO
         Map<String, String> paths = new HashMap<>();
 
@@ -238,8 +244,37 @@ public class JupyterHubApi extends AbstractXapiRestController {
             }
         }
 
-        paths.replaceAll((key, path) -> translatePath(path));
-        return paths;
+        // Gather mounts
+        final Path workspacePath = jupyterHubService.getUserWorkspace(user);
+        final ContainerMount workspaceMount = ContainerMount.builder()
+                                                            .name("user-workspace")
+                                                            .writable(true)
+                                                            .xnatHostPath(workspacePath.toString())
+                                                            .containerHostPath(translatePath(workspacePath.toString()))
+                                                            .jupyterHostPath(Paths.get("/workspace", username).toString())
+                                                            .build();
+
+        final List<ContainerMount> xnatDataMounts = paths.entrySet().stream()
+                                                                    .map((entry) -> ContainerMount.builder()
+                                                                                                  .name(entry.getKey())
+                                                                                                  .writable(false)
+                                                                                                  .xnatHostPath(entry.getValue())
+                                                                                                  .containerHostPath(translatePath(entry.getValue()))
+                                                                                                  .jupyterHostPath(Paths.get("/data", entry.getKey()).toString())
+                                                                                                  .build())
+                                                                    .collect(Collectors.toList());
+
+        final List<ContainerMount> mounts = new ArrayList<>(Collections.emptyList());
+        mounts.add(workspaceMount);
+        mounts.addAll(xnatDataMounts);
+
+        // Get env variables
+        Map<String, String> environment = getDefaultEnvironmentVariables();
+
+        // Build config
+        return Container.builder().image("xnat/jupyterhub-single-user:latest")
+                                                .environment(environment)
+                                                .mounts(mounts).build();
     }
 
     @ApiOperation(value = "Stops a users Jupyter server")
@@ -265,6 +300,10 @@ public class JupyterHubApi extends AbstractXapiRestController {
         jupyterHubService.stopServer(user, serverName);
     }
 
+    private UserI getUserI(final String username) throws UserNotFoundException, UserInitException {
+        return getUserManagementService().getUser(username);
+    }
+
     private String translatePath(String path) {
         String pathTranslationXnatPrefix = jupyterHubPreferences.getPathTranslationXnatPrefix();
         String pathTranslationDockerPrefix = jupyterHubPreferences.getPathTranslationDockerPrefix();
@@ -274,6 +313,16 @@ public class JupyterHubApi extends AbstractXapiRestController {
         } else {
             return path;
         }
+    }
+
+    private Map<String, String> getDefaultEnvironmentVariables() {
+        final String processingUrl = (String) siteConfigPreferences.getProperty("processingUrl");
+        final String xnatHostUrl = StringUtils.isBlank(processingUrl) ? siteConfigPreferences.getSiteUrl() : processingUrl;
+
+        final Map<String, String> defaultEnvironmentVariables = new HashMap<>();
+        defaultEnvironmentVariables.put("XNAT_HOST", xnatHostUrl);
+
+        return defaultEnvironmentVariables;
     }
 
 }
