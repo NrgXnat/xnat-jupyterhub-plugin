@@ -11,6 +11,7 @@ import org.nrg.xapi.rest.AbstractXapiRestController;
 import org.nrg.xapi.rest.AuthorizedRoles;
 import org.nrg.xapi.rest.Username;
 import org.nrg.xapi.rest.XapiRequestMapping;
+import org.nrg.xdat.entities.AliasToken;
 import org.nrg.xdat.om.*;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.helpers.AccessLevel;
@@ -18,6 +19,7 @@ import org.nrg.xdat.security.services.RoleHolder;
 import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.nrg.xdat.security.user.exceptions.UserInitException;
 import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
+import org.nrg.xdat.services.AliasTokenService;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnatx.plugins.jupyterhub.client.models.Server;
 import org.nrg.xnatx.plugins.jupyterhub.client.models.User;
@@ -47,6 +49,7 @@ import static org.springframework.web.bind.annotation.RequestMethod.*;
 public class JupyterHubApi extends AbstractXapiRestController {
 
     private final SiteConfigPreferences siteConfigPreferences;
+    private final AliasTokenService aliasTokenService;
     private final JupyterHubPreferences jupyterHubPreferences;
     private final JupyterHubService jupyterHubService;
 
@@ -54,12 +57,14 @@ public class JupyterHubApi extends AbstractXapiRestController {
     protected JupyterHubApi(final UserManagementServiceI userManagementService,
                             final RoleHolder roleHolder,
                             final SiteConfigPreferences siteConfigPreferences,
+                            final AliasTokenService aliasTokenService,
                             final JupyterHubPreferences jupyterHubPreferences,
                             final JupyterHubService jupyterHubService) {
         super(userManagementService, roleHolder);
         this.jupyterHubPreferences = jupyterHubPreferences;
         this.jupyterHubService = jupyterHubService;
         this.siteConfigPreferences = siteConfigPreferences;
+        this.aliasTokenService = aliasTokenService;
     }
 
     @ApiOperation(value = "Returns the full map of JupyterHub plugin preferences.", notes = "Complex objects may be returned as encapsulated JSON strings.", response = String.class, responseContainer = "Map")
@@ -269,7 +274,7 @@ public class JupyterHubApi extends AbstractXapiRestController {
         mounts.addAll(xnatDataMounts);
 
         // Get env variables
-        Map<String, String> environment = getDefaultEnvironmentVariables();
+        Map<String, String> environment = getDefaultEnvironmentVariables(user, xsiType, id);
 
         // Build config
         return Container.builder().image("xnat/jupyterhub-single-user:latest")
@@ -315,12 +320,17 @@ public class JupyterHubApi extends AbstractXapiRestController {
         }
     }
 
-    private Map<String, String> getDefaultEnvironmentVariables() {
+    private Map<String, String> getDefaultEnvironmentVariables(UserI user, String xsiType, String id) {
+        final AliasToken token = aliasTokenService.issueTokenForUser(user);
         final String processingUrl = (String) siteConfigPreferences.getProperty("processingUrl");
         final String xnatHostUrl = StringUtils.isBlank(processingUrl) ? siteConfigPreferences.getSiteUrl() : processingUrl;
 
         final Map<String, String> defaultEnvironmentVariables = new HashMap<>();
         defaultEnvironmentVariables.put("XNAT_HOST", xnatHostUrl);
+        defaultEnvironmentVariables.put("XNAT_USER", token.getAlias());
+        defaultEnvironmentVariables.put("XNAT_PASS", token.getSecret());
+        defaultEnvironmentVariables.put("XNAT_XSI_TYPE", xsiType);
+        defaultEnvironmentVariables.put("XNAT_ID", id);
 
         return defaultEnvironmentVariables;
     }
