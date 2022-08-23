@@ -36,9 +36,12 @@ dependencies {
 
 dependencies {
     implementation 'org.projectlombok:lombok:1.18.24'
+    implementation "com.fasterxml.jackson.datatype:jackson-datatype-guava"
     testImplementation "junit:junit"
     testImplementation 'org.mockito:mockito-core:4.6.1'
     testImplementation "org.springframework:spring-test"
+    testImplementation "org.springframework.security:spring-security-test"
+    testImplementation "org.springframework.security:spring-security-config"
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
 }
 

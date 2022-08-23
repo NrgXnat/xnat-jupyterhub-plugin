@@ -24,8 +24,6 @@ XNAT.plugin.jupyterhub.topnav = getObject(XNAT.plugin.jupyterhub.topnav || {});
     let restUrl = XNAT.url.restUrl;
 
     let getSubjectLabel = async function(subjectId) {
-
-
         const response = await fetch(XNAT.url.restUrl(`/data/subjects/${subjectId}`), {
             method: 'GET',
             headers: {'Content-Type': 'application/json'}
@@ -57,7 +55,7 @@ XNAT.plugin.jupyterhub.topnav = getObject(XNAT.plugin.jupyterhub.topnav || {});
         function xnatItem(server) {
             const userOptions = server['user_options'];
             const xsiType = userOptions['xsiType'];
-            const itemId = userOptions['id'];
+            const itemId = userOptions['itemId'];
 
             switch(xsiType) {
                 case 'xnat:projectData':
@@ -115,11 +113,11 @@ XNAT.plugin.jupyterhub.topnav = getObject(XNAT.plugin.jupyterhub.topnav || {});
             return spawn('button.btn.sm', {
                 onclick: function(e) {
                     e.preventDefault();
-                    XNAT.ui.dialog.static.wait("Stopping Jupyter Server", {id: 'stop_jupyter_server'});
-                    XNAT.plugin.jupyterhub.servers.stopServer(window.username, server['name']).then(() => {
-                        XNAT.ui.dialog.close('stop_jupyter_server');
-                        XNAT.ui.banner.top(1000, '<b>Jupyter Server Stopped</b>', 'success');
+                    const eventTrackingId = XNAT.plugin.jupyterhub.servers.generateEventTrackingId()
+                    XNAT.plugin.jupyterhub.servers.stopServer(window.username, server['name'], eventTrackingId).then(() => {
+                        XNAT.plugin.jupyterhub.topnav.refresh();
                     });
+
                 }
             }, [ spawn('i.fa.fa-trash') ])
         }

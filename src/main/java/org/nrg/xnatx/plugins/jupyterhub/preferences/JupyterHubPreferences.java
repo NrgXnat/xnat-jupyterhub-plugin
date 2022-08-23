@@ -23,14 +23,14 @@ public class JupyterHubPreferences extends AbstractPreferenceBean {
         super(preferenceService, configFolderPaths, initPrefs);
     }
 
-    @NrgPreference(defaultValue = "http://host.docker.internal/jupyterhub/hub/api")
-    public String getJupyterHubApiUrl() {
-        return getValue("jupyterHubApiUrl");
+    @NrgPreference(defaultValue = "http://host.docker.internal/jupyterhub")
+    public String getJupyterHubUrl() {
+        return getValue("jupyterHubUrl");
     }
 
-    public void setJupyterHubUrl(final String jupyterHubApiUrl) {
+    public void setJupyterHubUrl(final String jupyterHubUrl) {
         try {
-            set(jupyterHubApiUrl, "jupyterHubApiUrl");
+            set(jupyterHubUrl, "jupyterHubUrl");
         } catch (InvalidPreferenceName e) {
             log.error("Invalid preference name 'jupyterHubApiUrl': something is very wrong here.", e);
         }

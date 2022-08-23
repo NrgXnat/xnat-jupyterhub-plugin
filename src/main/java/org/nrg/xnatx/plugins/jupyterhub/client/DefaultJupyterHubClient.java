@@ -2,8 +2,8 @@ package org.nrg.xnatx.plugins.jupyterhub.client;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.nrg.xnatx.plugins.jupyterhub.client.exceptions.JupyterServerAlreadyExistsException;
-import org.nrg.xnatx.plugins.jupyterhub.client.exceptions.JupyterHubUserNotFoundException;
+import org.nrg.xnatx.plugins.jupyterhub.client.exceptions.ResourceAlreadyExistsException;
+import org.nrg.xnatx.plugins.jupyterhub.client.exceptions.UserNotFoundException;
 import org.nrg.xnatx.plugins.jupyterhub.client.models.Server;
 import org.nrg.xnatx.plugins.jupyterhub.client.models.User;
 import org.nrg.xnatx.plugins.jupyterhub.client.models.UserOptions;
@@ -17,14 +17,14 @@ import java.util.Map;
 import java.util.Optional;
 
 @Slf4j
-public class DefaultJupyterHupClient implements JupyterHubClient {
+public class DefaultJupyterHubClient implements JupyterHubClient {
 
     private final String jupyterHubApiToken;
     private final String jupyterHubApiUrl;
 
-    public DefaultJupyterHupClient(final String jupyterHubApiToken, final String jupyterHubApiUrl) {
+    public DefaultJupyterHubClient(final String jupyterHubApiToken, final String jupyterHubUrl) {
         this.jupyterHubApiToken = jupyterHubApiToken;
-        this.jupyterHubApiUrl = jupyterHubApiUrl;
+        this.jupyterHubApiUrl = jupyterHubUrl + "/hub/api";
     }
 
     @Override
@@ -45,6 +45,7 @@ public class DefaultJupyterHupClient implements JupyterHubClient {
 
             return response.getBody();
         } catch (RestClientException e) {
+            log.error("Unable to create user on JupyterHub", e);
             throw new RuntimeException(e);
         }
     }
@@ -97,29 +98,29 @@ public class DefaultJupyterHupClient implements JupyterHubClient {
     }
 
     @Override
-    public Server startServer(String username, UserOptions userOptions) throws JupyterHubUserNotFoundException, JupyterServerAlreadyExistsException {
-        return startServer(username, "", userOptions);
+    public void startServer(String username, UserOptions userOptions) throws UserNotFoundException, ResourceAlreadyExistsException {
+        startServer(username, "", userOptions);
     }
 
     @Override
-    public Server startServer(String username, String servername, UserOptions userOptions) throws JupyterHubUserNotFoundException, JupyterServerAlreadyExistsException {
+    public void startServer(String username, String servername, UserOptions userOptions) throws UserNotFoundException, ResourceAlreadyExistsException {
         log.debug("User {} is trying to start server {} with user options {}", username, servername, userOptions);
 
         // Check if user exists in JupyterHub
-        User user = getUser(username).orElseThrow(() -> new JupyterHubUserNotFoundException(username));
+        User user = getUser(username).orElseThrow(() -> new UserNotFoundException(username));
 
         // Check if server is already running
         Optional<Server> server = Optional.ofNullable(user.getServers().get(servername));
         if (server.isPresent()) {
             log.error("Cannot start Jupyter Server {} for user {}. Server is already running", servername, username);
             if (StringUtils.isBlank(servername))
-                throw new JupyterServerAlreadyExistsException(username);
+                throw new ResourceAlreadyExistsException(username);
             else {
-                throw new JupyterServerAlreadyExistsException(username, servername);
+                throw new ResourceAlreadyExistsException(username, servername);
             }
         }
 
-        // User exist and server does not. Lets start a new server.
+        // User exist and server does not. Let's start a new server.
         RestTemplate restTemplate = new RestTemplate();
 
         // Create request and add XNAT service authorization token to request header
@@ -135,9 +136,13 @@ public class DefaultJupyterHupClient implements JupyterHubClient {
                                                                     request, String.class);
 
             if (response.getStatusCodeValue() >= 200 && response.getStatusCodeValue() <= 299) {
-                return getServer(username, servername).orElseThrow(() -> new RuntimeException("This shouldn't happen. Just created a server but can't fetch server details from JupyterHub."));
+                return;
             } else {
-                throw new RuntimeException(response.toString());
+                final String msg = "Failed to start Jupyter Server " + servername +
+                        " for user " + username +
+                        " response: " + response;
+                log.error(msg);
+                throw new RuntimeException(msg);
             }
         } catch (RestClientException e) {
             log.error("Failed to start Jupyter Server " + servername + " for user " + username, e);
@@ -170,6 +175,9 @@ public class DefaultJupyterHupClient implements JupyterHubClient {
         } catch (HttpClientErrorException e) {
             if (e.getStatusCode() == HttpStatus.NOT_FOUND) {
                 log.debug("User {} / Server {} not found.", username, servername);
+            } else {
+                log.error("Failed to stop Jupyter server", e);
+                throw e;
             }
         }
     }

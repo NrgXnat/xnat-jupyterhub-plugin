@@ -7,4 +7,5 @@
 </li>
 
 <script src="$content.getURI("/scripts/xnat/plugin/jupyterhub/jupyterhub-users.js")"></script>
+<script src="$content.getURI("/scripts/xnat/plugin/jupyterhub/jupyterhub-servers.js")"></script>
 <script src="$content.getURI("/scripts/xnat/plugin/jupyterhub/jupyterhub-topnav.js")"></script>

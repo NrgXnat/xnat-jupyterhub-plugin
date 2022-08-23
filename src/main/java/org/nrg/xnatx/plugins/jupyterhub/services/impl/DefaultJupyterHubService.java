@@ -1,356 +1,286 @@
 package org.nrg.xnatx.plugins.jupyterhub.services.impl;
 
 import lombok.extern.slf4j.Slf4j;
-import org.nrg.xapi.exceptions.NotFoundException;
-import org.nrg.xapi.exceptions.ResourceAlreadyExistsException;
-import org.nrg.xdat.model.XnatSubjectassessordataI;
-import org.nrg.xdat.om.*;
-import org.nrg.xdat.om.base.BaseXnatExperimentdata;
-import org.nrg.xdat.presentation.CSVPresenter;
-import org.nrg.xdat.search.DisplaySearch;
-import org.nrg.xdat.security.services.SearchHelperServiceI;
-import org.nrg.xft.XFTTable;
-import org.nrg.xft.db.MaterializedView;
-import org.nrg.xft.db.MaterializedViewI;
-import org.nrg.xft.exception.ElementNotFoundException;
-import org.nrg.xft.exception.XFTInitException;
-import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
+import org.nrg.framework.services.NrgEventServiceI;
 import org.nrg.xft.security.UserI;
-import org.nrg.xnat.exceptions.InvalidArchiveStructure;
 import org.nrg.xnatx.plugins.jupyterhub.client.JupyterHubClient;
-import org.nrg.xnatx.plugins.jupyterhub.client.exceptions.JupyterHubUserNotFoundException;
-import org.nrg.xnatx.plugins.jupyterhub.client.exceptions.JupyterServerAlreadyExistsException;
+import org.nrg.xnatx.plugins.jupyterhub.client.exceptions.ResourceAlreadyExistsException;
+import org.nrg.xnatx.plugins.jupyterhub.client.exceptions.UserNotFoundException;
 import org.nrg.xnatx.plugins.jupyterhub.client.models.Server;
 import org.nrg.xnatx.plugins.jupyterhub.client.models.User;
+import org.nrg.xnatx.plugins.jupyterhub.events.JupyterServerEvent;
+import org.nrg.xnatx.plugins.jupyterhub.events.JupyterServerEventI;
 import org.nrg.xnatx.plugins.jupyterhub.models.XnatUserOptions;
-import org.nrg.xnatx.plugins.jupyterhub.preferences.JupyterHubPreferences;
 import org.nrg.xnatx.plugins.jupyterhub.services.JupyterHubService;
+import org.nrg.xnatx.plugins.jupyterhub.services.UserOptionsService;
+import org.nrg.xnatx.plugins.jupyterhub.utils.PermissionsHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.io.BufferedWriter;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.*;
+import javax.annotation.Nullable;
+import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
-@Slf4j
 @Service
+@Slf4j
 public class DefaultJupyterHubService implements JupyterHubService {
 
-    private final JupyterHubPreferences jupyterHubPreferences;
     private final JupyterHubClient jupyterHubClient;
-    private final SearchHelperServiceI searchHelperService;
+    private final NrgEventServiceI eventService;
+    private final PermissionsHelper permissionsHelper;
+    private final UserOptionsService userOptionsService;
 
     @Autowired
-    public DefaultJupyterHubService(final JupyterHubPreferences jupyterHubPreferences,
-                                    final JupyterHubClient jupyterHubClient,
-                                    final SearchHelperServiceI searchHelperService) {
-        this.jupyterHubPreferences = jupyterHubPreferences;
+    public DefaultJupyterHubService(final JupyterHubClient jupyterHubClient,
+                                    final NrgEventServiceI eventService,
+                                    final PermissionsHelper permissionsHelper,
+                                    final UserOptionsService userOptionsService) {
         this.jupyterHubClient = jupyterHubClient;
-        this.searchHelperService = searchHelperService;
+        this.eventService = eventService;
+        this.permissionsHelper = permissionsHelper;
+        this.userOptionsService = userOptionsService;
     }
 
-    @Override
-    public Path getUserWorkspace(final UserI user) {
-        final Path userWorkspacePath = Paths.get(jupyterHubPreferences.getWorkspacePath(), "users", user.getUsername());
-
-        if (!Files.exists(userWorkspacePath)) {
-            try {
-                Files.createDirectories(userWorkspacePath);
-            } catch (IOException e) {
-                log.error("Unable to create Jupyter notebook workspace for user " + user.getUsername(), e);
-                throw new RuntimeException(e);
-            }
-        }
-
-        return userWorkspacePath;
-    }
-
+    /**
+     * Creates the JupyterHub user account for the provided XNAT user.
+     *
+     * @param user The XNAT user
+     *
+     * @return The created JupyterHub user
+     */
     @Override
     public User createUser(final UserI user) {
         return jupyterHubClient.createUser(user.getUsername());
     }
 
+    /**
+     * Gets the JupyterHub user for the provided XNAT user. Optional is empty if user does not exist.
+     *
+     * @param user The XNAT user
+     *
+     * @return The JupyterHub user if it exists.
+     */
     @Override
     public Optional<User> getUser(final UserI user) {
         return jupyterHubClient.getUser(user.getUsername());
     }
 
+    /**
+     * Gets the default unnamed Jupyter notebook server for the provided XNAT user. Optional is empty if the user or
+     * server does not exist.
+     * @param user User to get the server for.
+     * @return The JupyterHub server if running, or an empty optional if not running.
+     */
     @Override
     public Optional<Server> getServer(final UserI user) {
         return jupyterHubClient.getServer(user.getUsername());
     }
 
+    /**
+     * Gets a named Jupyter notebook server for the provided XNAT user. Optional is empty if the user or server does not
+     * exist.
+     *
+     * @param user User to get the server for.
+     *
+     * @return The JupyterHub server if running, or an empty optional if not running.
+     */
     @Override
     public Optional<Server> getServer(final UserI user, final String servername) {
         return jupyterHubClient.getServer(user.getUsername(), servername);
     }
 
+    /**
+     * Asynchronously start the default Jupyter notebook server for the user. The provided entity's resources will be
+     * mounted to the Jupyter notebook server container. The progress of the server launch is tracked with the event
+     * tracking api.
+     *
+     * @param user            User to start the server for.
+     * @param xsiType         Accepts xnat:projectData, xnat:subjectData, xnat:experimentData and its children, and
+     *                        xdat:stored_search
+     * @param itemId          The provided id's resources will be mounted to the Jupyter notebook server container
+     * @param projectId       Can be null for xdat:stored_search
+     * @param eventTrackingId Use with the event tracking api to track progress.
+     */
     @Override
-    public Server startServer(final UserI user, final XnatUserOptions xnatUserOptions) throws NotFoundException, ResourceAlreadyExistsException {
-        return startServer(user, "", xnatUserOptions);
+    public void startServer(final UserI user, final String xsiType, final String itemId, final String projectId, final String eventTrackingId) {
+        startServer(user, "", xsiType, itemId, projectId, eventTrackingId);
     }
 
+    /**
+     * Asynchronously starts a named Jupyter notebook server for the user. The provided entity's resources will be
+     * mounted to the Jupyter notebook server container. The progress of the server launch is tracked with the event
+     * tracking api.
+     *
+     * @param user              User to start the server for.
+     * @param servername        The name of the server that will be started
+     * @param xsiType           Accepts xnat:projectData, xnat:subjectData, xnat:experimentData and its children, and
+     *                          xdat:stored_search
+     * @param itemId            The provided id's resources will be mounted to the Jupyter notebook server container
+     * @param projectId         Can be null for xdat:stored_search
+     * @param eventTrackingId   Use with the event tracking api to track progress.
+     */
     @Override
-    public Server startServer(final UserI user, String servername, final XnatUserOptions xnatUserOptions) throws NotFoundException, ResourceAlreadyExistsException {
-        try {
-            return jupyterHubClient.startServer(user.getUsername(), servername, xnatUserOptions);
-        } catch (JupyterHubUserNotFoundException e) {
-            throw new NotFoundException("Jupyter user " + user.getUsername() + " not found.");
-        } catch (JupyterServerAlreadyExistsException e) {
-            throw new ResourceAlreadyExistsException("jupyter server", servername);
+    public void startServer(final UserI user, String servername, final String xsiType, final String itemId, @Nullable final String projectId, final String eventTrackingId) {
+        eventService.triggerEvent(JupyterServerEvent.progress(eventTrackingId, user.getID(), xsiType, itemId,
+                                                              JupyterServerEventI.Operation.Start, 0,
+                                                              "Starting Jupyter notebook server."));
+
+        if (!permissionsHelper.canRead(user, projectId, itemId, xsiType)) {
+            eventService.triggerEvent(JupyterServerEvent.failed(eventTrackingId, user.getID(), xsiType, itemId,
+                                                                JupyterServerEventI.Operation.Start,
+                                                                "Failed to launch Jupyter notebook server. Permission denied."));
+            return;
         }
-    }
 
-    @Override
-    public void stopServer(final UserI user) {
-        jupyterHubClient.stopServer(user.getUsername());
-    }
+        CompletableFuture.runAsync(() -> {
+            // We don't want to update the user options entity if there is a running server
+            eventService.triggerEvent(JupyterServerEvent.progress(eventTrackingId, user.getID(), xsiType, itemId,
+                                                                  JupyterServerEventI.Operation.Start, 0,
+                                                                  "Checking for existing Jupyter notebook server."));
 
-    @Override
-    public void stopServer(final UserI user, final String servername) {
-        jupyterHubClient.stopServer(user.getUsername(), servername);
-    }
-
-    @Override
-    public Map<String, String> getProjectPaths(final UserI user, final List<String> projectIds) {
-        Map<String, String> projectPaths = new HashMap<>();
-
-        projectIds.forEach(projectId -> {
-            XnatProjectdata xnatProjectdata = XnatProjectdata.getXnatProjectdatasById(projectId, user, false);
-
-            if (xnatProjectdata != null) {
-                projectPaths.put(projectId, xnatProjectdata.getRootArchivePath() + xnatProjectdata.getCurrentArc());
+            if (jupyterHubClient.getServer(user.getUsername(), servername).isPresent()) {
+                eventService.triggerEvent(JupyterServerEvent.failed(eventTrackingId,
+                                                                    user.getID(), xsiType, itemId,
+                                                                    JupyterServerEventI.Operation.Start,
+                                                                    "Failed to launch Jupyter notebook server. " +
+                                                                            "This server already exists."));
+                return;
             }
-        });
 
-        return projectPaths;
-    }
+            eventService.triggerEvent(JupyterServerEvent.progress(eventTrackingId, user.getID(), xsiType, itemId,
+                                                                  JupyterServerEventI.Operation.Start, 20,
+                                                                  "Building Jupyter server container configuration."));
 
-    @Override
-    public Map<String, String> getSubjectPaths(final UserI user, final String subjectId) {
-        return getSubjectPaths(user, Collections.singletonList(subjectId));
-    }
+            userOptionsService.storeUserOptions(user, servername, xsiType, itemId, projectId);
 
-    @Override
-    public Map<String, String> getSubjectPaths(final UserI user, final List<String> subjectIds) {
-        Map<String, String> subjectPaths = new HashMap<>();
+            eventService.triggerEvent(JupyterServerEvent.progress(eventTrackingId, user.getID(), xsiType, itemId,
+                                                                  JupyterServerEventI.Operation.Start, 30,
+                                                                  "Saved server container configuration."));
 
-        subjectIds.forEach(subjectId -> {
-            XnatSubjectdata xnatSubjectdata = XnatSubjectdata.getXnatSubjectdatasById(subjectId, user, false);
+            try {
+                // Send empty user options. User's should not be able to directly send bind mounts.
+                // JupyterHub will request the user options.
+                jupyterHubClient.startServer(user.getUsername(), servername,
+                                             XnatUserOptions.builder()
+                                                     .userId(user.getID())
+                                                     .xsiType(xsiType)
+                                                     .itemId(itemId)
+                                                     .projectId(projectId)
+                                                     .eventTrackingId(eventTrackingId)
+                                                     .build());
 
-            if (xnatSubjectdata != null) {
-                List<XnatSubjectassessordataI> subjectAssessors = xnatSubjectdata.getExperiments_experiment();
+                eventService.triggerEvent(JupyterServerEvent.progress(eventTrackingId, user.getID(), xsiType, itemId,
+                                                                      JupyterServerEventI.Operation.Start, 40,
+                                                                      "Spawn request sent to JupyterHub."));
 
-                subjectAssessors.forEach(subjectAssessor -> {
-                    if (XnatExperimentdata.class.isAssignableFrom(subjectAssessor.getClass())) {
-                        try {
-                            final String assessorLabel = subjectAssessor.getLabel();
-                            final String assessorId = subjectAssessor.getId();
-                            final String path = ((XnatExperimentdata) subjectAssessor).getCurrentSessionFolder(true);
+                // TODO consume progress api
+                int requestCount = 0;
+                while (requestCount < 5) {
+                    Thread.sleep(1000); // Give JupyterHub a chance to spawn the server before asking about it;
+                    Optional<Server> server = jupyterHubClient.getServer(user.getUsername(), servername);
 
-                            if (subjectIds.size() == 1) {
-                                // For single subjects, use the assessor label as the key
-                                subjectPaths.put(assessorLabel, path);
-                            } else {
-                                // For multiple subjects, use the assessor id as the key. If this method is called from
-                                // a search there could be subjects in different projects with the same experiment
-                                // labels.
-                                subjectPaths.put(assessorId, path);
-                            }
-                        } catch (BaseXnatExperimentdata.UnknownPrimaryProjectException | InvalidArchiveStructure e) {
-                            // Container service ignores this error.
-                            log.error("", e);
-                            throw new RuntimeException(e);
+                    if (server.isPresent()) {
+                        if (server.get().getReady()) {
+                            eventService.triggerEvent(JupyterServerEvent.completed(eventTrackingId, user.getID(), xsiType, itemId,
+                                                                                   JupyterServerEventI.Operation.Start,
+                                                                                   "Jupyter server is available at: " + server.get().getUrl()));
+                            return;
                         }
-                    }
-                });
-            }
-        });
-
-        return subjectPaths;
-    }
-
-    @Override
-    public Map<String, String> getExperimentPath(final UserI user, final String experimentId) {
-        return getExperimentPaths(user, Collections.singletonList(experimentId));
-    }
-
-    @Override
-    public Map<String, String> getExperimentPaths(final UserI user, final List<String> experimentIds) {
-        Map<String, String> experimentPaths = new HashMap<>();
-
-        experimentIds.forEach(experimentId -> {
-            XnatExperimentdata xnatExperimentdata = XnatExperimentdata.getXnatExperimentdatasById(experimentId, user, false);
-
-            if (xnatExperimentdata != null) {
-                try {
-                    final String experimentLabel = xnatExperimentdata.getLabel();
-                    final String experimentPath = xnatExperimentdata.getCurrentSessionFolder(true);
-
-                    if (experimentIds.size() == 1) {
-                        // For single experiments, use the label as the key
-                        experimentPaths.put(experimentLabel, experimentPath);
                     } else {
-                        // For multiple experiments, use the id as the key. If this method is called from
-                        // a search there could be experiments in different projects with the same experiment
-                        // labels.
-                        experimentPaths.put(experimentId, experimentPath);
+                        eventService.triggerEvent(JupyterServerEvent.progress(eventTrackingId, user.getID(), xsiType, itemId,
+                                                                              JupyterServerEventI.Operation.Start, 45,
+                                                                              "Waiting for JupyterHub to spawn server."));
                     }
-                } catch (BaseXnatExperimentdata.UnknownPrimaryProjectException | InvalidArchiveStructure e) {
-                    // Container service ignores this error.
-                    log.error("", e);
-                    throw new RuntimeException(e);
+
+                    requestCount++;
                 }
+
+                eventService.triggerEvent(JupyterServerEvent.failed(eventTrackingId, user.getID(), xsiType, itemId,
+                                                                    JupyterServerEventI.Operation.Start,
+                                                                    "Failed to launch Jupyter notebook server. Timeout error."));
+            } catch (UserNotFoundException e) {
+                eventService.triggerEvent(JupyterServerEvent.failed(eventTrackingId, user.getID(), xsiType, itemId,
+                                                                    JupyterServerEventI.Operation.Start,
+                                                                    "Failed to launch Jupyter notebook server. User not found."));
+            } catch (ResourceAlreadyExistsException e) {
+                eventService.triggerEvent(JupyterServerEvent.failed(eventTrackingId, user.getID(), xsiType, itemId,
+                                                                    JupyterServerEventI.Operation.Start,
+                                                                    "Failed to launch Jupyter notebook server. Resource already exists."));
+            } catch (InterruptedException e) {
+                String msg = "Failed to launch Jupyter notebook server. Thread interrupted..";
+                eventService.triggerEvent(JupyterServerEvent.failed(eventTrackingId, user.getID(), xsiType, itemId,
+                                                                    JupyterServerEventI.Operation.Start, msg));
+                log.error(msg, e);
+            } catch (Exception e) {
+                String msg = "Failed to launch Jupyter notebook server. See system logs for detailed error.";
+                eventService.triggerEvent(JupyterServerEvent.failed(eventTrackingId, user.getID(), xsiType, itemId,
+                                                                    JupyterServerEventI.Operation.Start, msg));
+                log.error(msg, e);
+            }
+
+        });
+    }
+
+    /**
+     * Asynchronously stops the default unnamed Jupyter notebook server for the provided user. Use the event tracking
+     * api to keep track of progress.
+     *
+     * @param user              The user of the default server to stop.
+     * @param eventTrackingId   Use this with the Event Tracking Data Api to keep track of progress.
+     */
+    @Override
+    public void stopServer(final UserI user, String eventTrackingId) {
+        stopServer(user, "", eventTrackingId);
+    }
+
+    /**
+     * Asynchronously stops a named Jupyter notebook server for the provided user. Use the event tracking api to keep
+     * track of progress.
+     *
+     * @param user              The user of the named server to stop.
+     * @param servername        Name of the server to stop
+     * @param eventTrackingId   Use this with the Event Tracking Data Api to keep track of progress.
+     */
+    @Override
+    public void stopServer(final UserI user, final String servername, String eventTrackingId) {
+        eventService.triggerEvent(JupyterServerEvent.progress(eventTrackingId, user.getID(),
+                                                              JupyterServerEventI.Operation.Stop, 0,
+                                                              "Stopping Jupyter Notebook Server."));
+
+        CompletableFuture.runAsync(() -> {
+            try {
+                eventService.triggerEvent(JupyterServerEvent.progress(eventTrackingId, user.getID(),
+                                                                      JupyterServerEventI.Operation.Stop, 50,
+                                                                      "Sending stop request to JupyterHub."));
+
+                jupyterHubClient.stopServer(user.getUsername(), servername);
+
+                int requestCount = 0;
+                while (requestCount < 2) {
+                    Thread.sleep(1000); // Give JupyterHub a chance to shut down the server before asking about it
+
+                    Optional<Server> server = jupyterHubClient.getServer(user.getUsername(), servername);
+
+                    if (!server.isPresent()) {
+                        eventService.triggerEvent(JupyterServerEvent.completed(eventTrackingId, user.getID(),
+                                                                               JupyterServerEventI.Operation.Stop,
+                                                                               "Jupyter Server Stopped."));
+                        return;
+                    }
+
+                    requestCount++;
+                }
+
+                eventService.triggerEvent(JupyterServerEvent.failed(eventTrackingId, user.getID(),
+                                                                    JupyterServerEventI.Operation.Stop,
+                                                                    "Failed to stop Jupyter Server."));
+            } catch (RuntimeException | InterruptedException e) {
+                eventService.triggerEvent(JupyterServerEvent.failed(eventTrackingId, user.getID(),
+                                                                    JupyterServerEventI.Operation.Stop,
+                                                                    "Failed to stop Jupyter Server."));
+                log.error("Failed to stop jupyter server", e);
             }
         });
-
-        return experimentPaths;
-    }
-
-    @Override
-    public Map<String, String> getImageScanPath(final UserI user, final Integer imageScanId) {
-        return getImageScanPaths(user, Collections.singletonList(imageScanId));
-    }
-
-    @Override
-    public Map<String, String> getImageScanPaths(final UserI user, final List<Integer> imageScanIds) {
-        Map<String, String> imageScanPaths = new HashMap<>();
-
-        imageScanIds.forEach(imageScanId -> {
-            XnatImagescandata imageScan = XnatImagescandata.getXnatImagescandatasByXnatImagescandataId(imageScanId, user, false);
-
-            if (imageScan != null) {
-                final String imageScanLabel = imageScan.getId();
-                final String imageScanPath = imageScan.deriveScanDir();
-
-                if (imageScanPaths.size() == 1) {
-                    // For single image scans, use the label as the key
-                    imageScanPaths.put(imageScanLabel, imageScanPath);
-                } else {
-                    // For multiple scans, use the id as the key. If this method is called from a search there could be
-                    // scans in different projects with the same labels
-                    imageScanPaths.put(imageScanId.toString(), imageScanPath);
-                }
-            }
-        });
-
-        return imageScanPaths;
-    }
-
-    @Override
-    public Map<String, String> getStoredSearchPaths(UserI user, String storedSearchId) {
-        return getStoredSearchPaths(user, storedSearchId, null);
-    }
-
-    @Override
-    public Map<String, String> getStoredSearchPaths(UserI user, String storedSearchId, Path csv) {
-        Map<String, String> storedSearchPaths = new HashMap<>();
-
-        XdatStoredSearch storedSearch = null;
-
-        // TODO Set Search Description
-
-        if (storedSearchId.contains("@")) { // Site wide or project data bundle
-            if (storedSearchId.startsWith("@")) { // Site wide data bundle -> @xnat:subjectData
-                String elementName = storedSearchId.substring(1);
-                DisplaySearch displaySearch = new DisplaySearch();
-                displaySearch.setUser(user);
-                displaySearch.setDisplay("listing");
-
-                try {
-                    displaySearch.setRootElement(elementName);
-                } catch (XFTInitException | ElementNotFoundException e) {
-                    throw new RuntimeException(e);
-                }
-
-                storedSearch = displaySearch.convertToStoredSearch(storedSearchId);
-                storedSearch.setId(storedSearchId);
-
-                String description = storedSearchId.replace("@", "_")
-                                       .replace(":", "_");
-
-                storedSearch.setDescription(description);
-                storedSearch.setBriefDescription(description);
-            } else { // Project data bundle -> ProjectA@xnat:subjectData
-                String[] splitId = storedSearchId.split("@");
-                String projectId = splitId[0];
-                String elementName = splitId[1];
-
-                XnatProjectdata project = XnatProjectdata.getProjectByIDorAlias(projectId, user, false);
-
-                if (project != null) {
-                    storedSearch = project.getDefaultSearch(elementName);
-
-                    String description = storedSearchId.replace("@", "_")
-                                           .replace(":", "_");
-
-                    storedSearch.setDescription(description);
-                    storedSearch.setBriefDescription(description);
-                } else {
-                    throw new RuntimeException("Project " + projectId + " not found.");
-                }
-            }
-        } else { // Stored search
-            storedSearch = searchHelperService.getSearchForUser(user, storedSearchId);
-        }
-
-        if (storedSearch == null) {
-            return storedSearchPaths;
-        }
-
-        try {
-            // First get the keys/ids associated with each row of the search.
-            // These will be the ids of the root element
-            MaterializedViewI mv = MaterializedView.getViewBySearchID(storedSearch.getId(), user, MaterializedView.DEFAULT_MATERIALIZED_VIEW_SERVICE_CODE);
-
-            // Add paths for each key
-            final String rootElement = storedSearch.getRootElementName();
-            if (rootElement.equals(XnatSubjectdata.SCHEMA_ELEMENT_NAME)) {
-                final ArrayList<String> subjectIds = mv.getColumnValues("key").convertColumnToArrayList("values");
-                storedSearchPaths.putAll(this.getSubjectPaths(user, subjectIds));
-            } else if (instanceOf(rootElement, XnatExperimentdata.SCHEMA_ELEMENT_NAME)) {
-                final ArrayList<String> experimentIds = mv.getColumnValues("key").convertColumnToArrayList("values");
-                storedSearchPaths.putAll(this.getExperimentPaths(user, experimentIds));
-            } else if (instanceOf(rootElement, XnatImagescandata.SCHEMA_ELEMENT_NAME)) {
-                final ArrayList<Integer> imageScanIds = mv.getColumnValues("key").convertColumnToArrayList("values");
-                storedSearchPaths.putAll(this.getImageScanPaths(user, imageScanIds));
-            } // ELSE -> nothing. Only support searches on subjects, image sessions and image scans // TODO Throw Error??
-
-            if (csv != null) {
-                // Execute the search
-                DisplaySearch ds = storedSearch.getDisplaySearch(user);
-                final XFTTable data = (XFTTable) ds.execute(new CSVPresenter(), user.getLogin());
-
-                // Write search output to csv
-                if (!Files.exists(csv)) {
-                    Files.createDirectories(csv.getParent());
-                    Files.createFile(csv);
-                }
-
-                BufferedWriter writer = new BufferedWriter(new FileWriter(csv.toFile(), false));
-                data.toCSV(writer);
-            }
-        } catch (Exception e) {
-            // TODO
-            log.error("", e);
-            throw new RuntimeException(e);
-        }
-
-        return storedSearchPaths;
-    }
-
-    private boolean instanceOf(final String xsiType, final String instanceOfXsiType) {
-        try {
-            return GenericWrapperElement.GetElement(xsiType).instanceOf(instanceOfXsiType);
-        } catch (ElementNotFoundException  e) {
-            return false;
-        } catch (XFTInitException e) {
-            throw new RuntimeException(e);
-        }
     }
 
 }

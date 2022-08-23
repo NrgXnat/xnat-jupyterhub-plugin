@@ -52,7 +52,6 @@ XNAT.plugin.jupyterhub.users = getObject(XNAT.plugin.jupyterhub.users || {});
         return XNAT.xhr.ajax({
             url: userUrl(username),
             method: 'POST',
-            contentType: 'application/json',
             success: function (user) {
                 console.debug(`JupyterHub user ${username} created.`);
                 return user;
@@ -67,7 +66,7 @@ XNAT.plugin.jupyterhub.users = getObject(XNAT.plugin.jupyterhub.users || {});
     XNAT.plugin.jupyterhub.users.init = function(username = window.username) {
         console.debug(`jupyterhub-users.js: XNAT.plugin.jupyterhub.users.init`);
 
-        XNAT.plugin.jupyterhub.users.getUser(username).then(user => {
+        XNAT.plugin.jupyterhub.users.getUser(username).then(() => {
             console.debug(`User ${username} exists on JupyterHub`)
             XNAT.plugin.jupyterhub.users.isEnabled = true;
         }).catch(() => {
