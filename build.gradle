@@ -6,6 +6,7 @@ plugins {
     id "org.nrg.xnat.build.xnat-data-builder" version "1.8.5"
     id "io.freefair.lombok" version "6.0.0-m2"
     id "com.palantir.git-version" version "0.13.0"
+    id "jacoco"
 }
 
 group "org.nrg.xnatx.plugins"
@@ -99,6 +100,15 @@ ext.gitManifest = manifest {
             "Implementation-Branch": branchName,
             "Implementation-CleanTag": isCleanTag,
             "Implementation-Dirty": isDirty
+}
+
+jacocoTestReport {
+    dependsOn test
+    reports {
+        xml.required = false
+        csv.required = false
+        html.required = true
+    }
 }
 
 // Configure the compileJava task to call the xnatDataBuilder task before trying to compile any
