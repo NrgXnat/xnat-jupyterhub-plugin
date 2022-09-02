@@ -26,7 +26,8 @@ import org.springframework.context.annotation.ScopedProxyMode;
                 "org.nrg.xnatx.plugins.jupyterhub.events",
                 "org.nrg.xnatx.plugins.jupyterhub.listeners",
                 "org.nrg.xnatx.plugins.jupyterhub.repositories",
-                "org.nrg.xnatx.plugins.jupyterhub.utils"})
+                "org.nrg.xnatx.plugins.jupyterhub.utils",
+                "org.nrg.xnatx.plugins.jupyterhub.initialize"})
 @Slf4j
 public class JupyterHubPlugin {
 
