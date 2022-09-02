@@ -14,11 +14,11 @@ version "0.1.0"
 description "XNAT JupyterHub Plugin for XNAT 1.8.5"
 
 repositories {
-    mavenLocal()
-    maven { url "https://www.dcm4che.org/maven2" }
-    mavenCentral()
     maven { url "https://nrgxnat.jfrog.io/nrgxnat/libs-release" }
     maven { url "https://nrgxnat.jfrog.io/nrgxnat/libs-snapshot" }
+    mavenLocal()
+    mavenCentral()
+    maven { url "https://www.dcm4che.org/maven2" }
 }
 
 configurations {
