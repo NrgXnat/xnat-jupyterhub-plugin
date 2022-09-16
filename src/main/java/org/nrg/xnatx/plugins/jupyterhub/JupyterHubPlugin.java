@@ -47,7 +47,7 @@ public class JupyterHubPlugin {
     @Scope(value = ConfigurableBeanFactory.SCOPE_PROTOTYPE, proxyMode = ScopedProxyMode.TARGET_CLASS)
     public JupyterHubClient getJupyterHubClient() {
         return new DefaultJupyterHubClient(jupyterHubPreferences.getJupyterHubToken(),
-                                           jupyterHubPreferences.getJupyterHubUrl());
+                                           jupyterHubPreferences.getJupyterHubApiUrl());
     }
 
 }

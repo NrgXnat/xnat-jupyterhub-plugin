@@ -104,7 +104,7 @@ XNAT.plugin.jupyterhub.topnav = getObject(XNAT.plugin.jupyterhub.topnav || {});
             return spawn('button.btn.sm', {
                 onclick: function(e) {
                     e.preventDefault();
-                    window.open('/jupyterhub', '_blank')
+                    window.open(server['url'], '_blank')
                 }
             }, [ spawn('i.fa.fa-sign-in') ])
         }

@@ -22,9 +22,9 @@ public class DefaultJupyterHubClient implements JupyterHubClient {
     private final String jupyterHubApiToken;
     private final String jupyterHubApiUrl;
 
-    public DefaultJupyterHubClient(final String jupyterHubApiToken, final String jupyterHubUrl) {
+    public DefaultJupyterHubClient(final String jupyterHubApiToken, final String jupyterHubApiUrl) {
         this.jupyterHubApiToken = jupyterHubApiToken;
-        this.jupyterHubApiUrl = jupyterHubUrl + "/hub/api";
+        this.jupyterHubApiUrl = jupyterHubApiUrl;
     }
 
     @Override

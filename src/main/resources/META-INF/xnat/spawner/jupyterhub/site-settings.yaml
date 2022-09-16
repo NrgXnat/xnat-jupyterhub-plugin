@@ -9,11 +9,11 @@ workspacePath:
 
 jupyterhubApiUrl:
   kind: panel.input.text
-  id: jupyterHubUrl
-  name: jupyterHubUrl
-  label: JupyterHub URL
+  id: jupyterHubApiUrl
+  name: jupyterHubApiUrl
+  label: JupyterHub API URL
   description: >
-    The URL for JupyterHub
+    The URL for the JupyterHub API
 
 jupyterHubToken:
   kind: panel.input.password
