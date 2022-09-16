@@ -23,18 +23,6 @@ XNAT.plugin.jupyterhub.topnav = getObject(XNAT.plugin.jupyterhub.topnav || {});
 
     let restUrl = XNAT.url.restUrl;
 
-    let getSubjectLabel = async function(subjectId) {
-        const response = await fetch(XNAT.url.restUrl(`/data/subjects/${subjectId}`), {
-            method: 'GET',
-            headers: {'Content-Type': 'application/json'}
-        })
-
-        if (response.ok) {
-            let result = await response.json()
-            return result['items'][0]['data_fields']['label']
-        }
-    }
-
     XNAT.plugin.jupyterhub.topnav.refresh = function(containerId = 'my-jupyter-servers') {
         console.debug(`jupyterhub-topnav.js: XNAT.plugin.jupyterhub.topnav.refresh`);
 
@@ -56,45 +44,46 @@ XNAT.plugin.jupyterhub.topnav = getObject(XNAT.plugin.jupyterhub.topnav || {});
             const userOptions = server['user_options'];
             const xsiType = userOptions['xsiType'];
             const itemId = userOptions['itemId'];
+            const itemLabel = userOptions['itemLabel'];
 
             switch(xsiType) {
                 case 'xnat:projectData':
                     return spawn('a', {
                         href: restUrl(`/data/projects/${itemId}`),
-                        title: itemId,
-                        html: itemId,
+                        title: itemLabel,
+                        html: itemLabel,
                     });
                 case 'xnat:subjectData':
                     return spawn('a', {
                         href: restUrl(`/data/subjects/${itemId}`),
-                        title: itemId,
-                        html: itemId,
+                        title: itemLabel,
+                        html: itemLabel,
                     });
                 case 'xnat:experimentData':
                     return spawn('a', {
-                        href: restUrl(`/data/experiments/${itemId}`),
-                        title: itemId,
-                        html: itemId,
+                        href: restUrl(`/data/experiments/${itemId}?format=html`),
+                        title: itemLabel,
+                        html: itemLabel,
                     });
                 case 'xdat:stored_search':
                     if (itemId.startsWith('@')) {// Site wide data bundle
                         return spawn('a', {
                             href: restUrl(`/app/template/Search.vm/node/d.${itemId.substring(1)}`),
-                            title: itemId,
-                            html: itemId,
+                            title: itemLabel,
+                            html: itemLabel,
                         });
                     } else if (itemId.includes('@')) { // Project data bundle
                         let project = itemId.substring(0, itemId.indexOf('@'))
                         return spawn('a', {
                             href: restUrl(`/data/projects/${project}`),
-                            title: itemId,
-                            html: itemId,
+                            title: itemLabel,
+                            html: itemLabel,
                         });
                     } else { // Stored search
                         return spawn('a', {
                             href: restUrl(`/app/template/Search.vm/node/ss.${itemId}`),
-                            title: itemId,
-                            html: itemId,
+                            title: itemLabel,
+                            html: itemLabel,
                         });
                     }
             }

@@ -97,9 +97,10 @@ public class JupyterHubApi extends AbstractXapiRestController {
     public void startServer(@ApiParam(value = "username", required = true) @PathVariable("username") @Username final String username,
                             @ApiParam(value = "xsiType", required = true) @RequestParam("xsiType") final String xsiType,
                             @ApiParam(value = "itemId", required = true) @RequestParam("itemId") final String itemId,
+                            @ApiParam(value = "itemLabel", required = true) @RequestParam("itemLabel") final String itemLabel,
                             @ApiParam(value = "projectId", required = true) @RequestParam("projectId") final String projectId,
                             @ApiParam(value = "eventTrackingId", required = true) @RequestParam(value = "eventTrackingId") final String eventTrackingId) throws UserNotFoundException, UserInitException {
-        jupyterHubService.startServer(getUserI(username), xsiType, itemId, projectId, eventTrackingId);
+        jupyterHubService.startServer(getUserI(username), xsiType, itemId, itemLabel, projectId, eventTrackingId);
     }
 
     @ApiOperation(value = "Starts a Jupyter server for the user",
@@ -113,9 +114,10 @@ public class JupyterHubApi extends AbstractXapiRestController {
                                  @ApiParam(value = "servername", required = true) @PathVariable("servername") final String servername,
                                  @ApiParam(value = "xsiType", required = true) @RequestParam("xsiType") final String xsiType,
                                  @ApiParam(value = "itemId", required = true) @RequestParam("itemId") final String itemId,
+                                 @ApiParam(value = "itemLabel", required = true) @RequestParam("itemLabel") final String itemLabel,
                                  @ApiParam(value = "projectId", required = true) @RequestParam("projectId") final String projectId,
                                  @ApiParam(value = "eventTrackingId", required = true) @RequestParam(value = "eventTrackingId") final String eventTrackingId) throws UserNotFoundException, UserInitException {
-        jupyterHubService.startServer(getUserI(username), servername, xsiType, itemId, projectId, eventTrackingId);
+        jupyterHubService.startServer(getUserI(username), servername, xsiType, itemId, itemLabel, projectId, eventTrackingId);
     }
 
     // TODO start named server

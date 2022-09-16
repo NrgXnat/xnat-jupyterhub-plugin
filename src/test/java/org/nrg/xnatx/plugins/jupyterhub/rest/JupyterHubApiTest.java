@@ -120,6 +120,7 @@ public class JupyterHubApiTest {
                 .servername("")
                 .xsiType(XnatProjectdata.SCHEMA_ELEMENT_NAME)
                 .itemId("TestProject")
+                .itemLabel("TestProject")
                 .projectId("TestProject")
                 .eventTrackingId("20220822T201541799Z")
                 .dockerImage("xnat/jupyterhub-user:latest")
@@ -291,6 +292,7 @@ public class JupyterHubApiTest {
                 .param("username", NON_ADMIN_USERNAME)
                 .param("xsiType", userOptions.getXsiType())
                 .param("itemId", userOptions.getItemId())
+                .param("itemLabel", userOptions.getItemLabel())
                 .param("projectId", userOptions.getProjectId())
                 .param("eventTrackingId", userOptions.getEventTrackingId())
                 .with(authentication(NONADMIN_AUTH))
@@ -303,10 +305,12 @@ public class JupyterHubApiTest {
         verify(mockJupyterHubService, times(1)).startServer(eq(nonAdmin),
                                                             eq(userOptions.getXsiType()),
                                                             eq(userOptions.getItemId()),
+                                                            eq(userOptions.getItemLabel()),
                                                             eq(userOptions.getProjectId()),
                                                             eq(userOptions.getEventTrackingId()));
         // Named Server
         verify(mockJupyterHubService, never()).startServer(any(UserI.class),
+                                                           anyString(),
                                                            anyString(),
                                                            anyString(),
                                                            anyString(),
@@ -321,6 +325,7 @@ public class JupyterHubApiTest {
                 .param("username", NON_ADMIN_USERNAME)
                 .param("xsiType", userOptions.getXsiType())
                 .param("itemId", userOptions.getItemId())
+                .param("itemLabel", userOptions.getItemLabel())
                 .param("projectId", userOptions.getProjectId())
                 .param("eventTrackingId", userOptions.getEventTrackingId())
                 .with(authentication(NONADMIN_AUTH))
@@ -334,6 +339,7 @@ public class JupyterHubApiTest {
                                                            anyString(),
                                                            anyString(),
                                                            anyString(),
+                                                           anyString(),
                                                            anyString());
 
         // Named Server
@@ -341,6 +347,7 @@ public class JupyterHubApiTest {
                                                             eq(servername),
                                                             eq(userOptions.getXsiType()),
                                                             eq(userOptions.getItemId()),
+                                                            eq(userOptions.getItemLabel()),
                                                             eq(userOptions.getProjectId()),
                                                             eq(userOptions.getEventTrackingId()));
 

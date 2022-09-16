@@ -22,6 +22,7 @@ public class XnatUserOptions implements UserOptions {
     private String servername;
     private String xsiType;
     private String itemId;
+    private String itemLabel;
     private String projectId;
     private String eventTrackingId;
 

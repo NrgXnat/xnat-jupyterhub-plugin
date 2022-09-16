@@ -98,12 +98,14 @@ public class DefaultJupyterHubService implements JupyterHubService {
      * @param xsiType         Accepts xnat:projectData, xnat:subjectData, xnat:experimentData and its children, and
      *                        xdat:stored_search
      * @param itemId          The provided id's resources will be mounted to the Jupyter notebook server container
+     * @param itemLabel       The label of the provided item (e.g. the subject label or experiment label).
      * @param projectId       Can be null for xdat:stored_search
      * @param eventTrackingId Use with the event tracking api to track progress.
      */
     @Override
-    public void startServer(final UserI user, final String xsiType, final String itemId, final String projectId, final String eventTrackingId) {
-        startServer(user, "", xsiType, itemId, projectId, eventTrackingId);
+    public void startServer(final UserI user, final String xsiType, final String itemId,
+                            final String itemLabel, final String projectId, final String eventTrackingId) {
+        startServer(user, "", xsiType, itemId, itemLabel, projectId, eventTrackingId);
     }
 
     /**
@@ -116,11 +118,13 @@ public class DefaultJupyterHubService implements JupyterHubService {
      * @param xsiType           Accepts xnat:projectData, xnat:subjectData, xnat:experimentData and its children, and
      *                          xdat:stored_search
      * @param itemId            The provided id's resources will be mounted to the Jupyter notebook server container
+     * @param itemLabel       The label of the provided item (e.g. the subject label or experiment label).
      * @param projectId         Can be null for xdat:stored_search
      * @param eventTrackingId   Use with the event tracking api to track progress.
      */
     @Override
-    public void startServer(final UserI user, String servername, final String xsiType, final String itemId, @Nullable final String projectId, final String eventTrackingId) {
+    public void startServer(final UserI user, String servername, final String xsiType, final String itemId,
+                            final String itemLabel, @Nullable final String projectId, final String eventTrackingId) {
         eventService.triggerEvent(JupyterServerEvent.progress(eventTrackingId, user.getID(), xsiType, itemId,
                                                               JupyterServerEventI.Operation.Start, 0,
                                                               "Starting Jupyter notebook server."));
@@ -165,6 +169,7 @@ public class DefaultJupyterHubService implements JupyterHubService {
                                                      .userId(user.getID())
                                                      .xsiType(xsiType)
                                                      .itemId(itemId)
+                                                     .itemLabel(itemLabel)
                                                      .projectId(projectId)
                                                      .eventTrackingId(eventTrackingId)
                                                      .build());

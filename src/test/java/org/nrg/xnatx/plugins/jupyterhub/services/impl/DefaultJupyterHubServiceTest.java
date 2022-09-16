@@ -113,7 +113,7 @@ public class DefaultJupyterHubServiceTest {
         when(mockPermissionsHelper.canRead(any(), anyString(), anyString(), anyString())).thenReturn(false);
 
         // Test
-        jupyterHubService.startServer(user, XnatProjectdata.SCHEMA_ELEMENT_NAME, projectId, projectId, eventTrackingId);
+        jupyterHubService.startServer(user, XnatProjectdata.SCHEMA_ELEMENT_NAME, projectId, projectId , projectId, eventTrackingId);
 
         // Verify failure to start event occurred
         verify(mockEventService, atLeastOnce()).triggerEvent(jupyterServerEventCaptor.capture());
@@ -135,7 +135,8 @@ public class DefaultJupyterHubServiceTest {
 
         // Test
         String subjectId = "XNAT_S00001";
-        jupyterHubService.startServer(user, XnatSubjectdata.SCHEMA_ELEMENT_NAME, subjectId, projectId, eventTrackingId);
+        String subjectLabel = "Subject1";
+        jupyterHubService.startServer(user, XnatSubjectdata.SCHEMA_ELEMENT_NAME, subjectId, subjectLabel, projectId, eventTrackingId);
 
         //Verify failure to start event occurred
         verify(mockEventService, atLeastOnce()).triggerEvent(jupyterServerEventCaptor.capture());
@@ -157,7 +158,8 @@ public class DefaultJupyterHubServiceTest {
 
         // Test
         String experimentId = "XNAT_E00001";
-        jupyterHubService.startServer(user, XnatExperimentdata.SCHEMA_ELEMENT_NAME, experimentId, projectId, eventTrackingId);
+        String experimentLabel = "Experiment01";
+        jupyterHubService.startServer(user, XnatExperimentdata.SCHEMA_ELEMENT_NAME, experimentId, experimentLabel, projectId, eventTrackingId);
 
         //Verify failure to start event occurred
         verify(mockEventService, atLeastOnce()).triggerEvent(jupyterServerEventCaptor.capture());
@@ -178,7 +180,7 @@ public class DefaultJupyterHubServiceTest {
         when(mockPermissionsHelper.canRead(any(), anyString(), anyString(), anyString())).thenReturn(false);
 
         // Test
-        jupyterHubService.startServer(user, XnatImagescandata.SCHEMA_ELEMENT_NAME, "456", projectId, eventTrackingId);
+        jupyterHubService.startServer(user, XnatImagescandata.SCHEMA_ELEMENT_NAME, "456", "Scan 456", projectId, eventTrackingId);
 
         //Verify failure to start event occurred
         verify(mockEventService, atLeastOnce()).triggerEvent(jupyterServerEventCaptor.capture());
@@ -202,7 +204,7 @@ public class DefaultJupyterHubServiceTest {
         when(mockJupyterHubClient.getServer(anyString(), anyString())).thenReturn(Optional.of(Server.builder().build()));
 
         // Test
-        jupyterHubService.startServer(user, XnatProjectdata.SCHEMA_ELEMENT_NAME, projectId, projectId, eventTrackingId);
+        jupyterHubService.startServer(user, XnatProjectdata.SCHEMA_ELEMENT_NAME, projectId, projectId, projectId, eventTrackingId);
         Thread.sleep(2500); // Async call, need to wait. Is there a better way to test this?
 
         // Verify failure to start event occurred
@@ -228,7 +230,7 @@ public class DefaultJupyterHubServiceTest {
         when(mockJupyterHubClient.getServer(anyString(), anyString())).thenReturn(Optional.empty());
 
         // Test
-        jupyterHubService.startServer(user, XnatProjectdata.SCHEMA_ELEMENT_NAME, projectId, projectId, eventTrackingId);
+        jupyterHubService.startServer(user, XnatProjectdata.SCHEMA_ELEMENT_NAME, projectId, projectId, projectId, eventTrackingId);
         Thread.sleep(6000); // Async call, need to wait. Is there a better way to test this?
 
         // Verify user options are stored
@@ -258,7 +260,7 @@ public class DefaultJupyterHubServiceTest {
                 .thenReturn(Optional.empty(), Optional.of(Server.builder().ready(true).build()));
 
         // Test
-        jupyterHubService.startServer(user, XnatProjectdata.SCHEMA_ELEMENT_NAME, "TestProject", "TestProject", eventTrackingId);
+        jupyterHubService.startServer(user, XnatProjectdata.SCHEMA_ELEMENT_NAME, "TestProject", "TestProject", "TestProject", eventTrackingId);
         Thread.sleep(6000); // Async call, need to wait. Is there a better way to test this?
 
         // Verify user options are stored

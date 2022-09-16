@@ -25,14 +25,15 @@ XNAT.plugin.jupyterhub.servers = getObject(XNAT.plugin.jupyterhub.servers || {})
 
     let restUrl = XNAT.url.restUrl;
 
-    let newServerUrl = XNAT.plugin.jupyterhub.servers.newServerUrl = function(username, servername, xsiType, itemId, projectId, eventTrackingId) {
+    let newServerUrl = XNAT.plugin.jupyterhub.servers.newServerUrl = function(username, servername, xsiType, itemId,
+                                                                              itemLabel, projectId, eventTrackingId) {
         let url = `/xapi/jupyterhub/users/${username}/server`;
 
         // if (servername !== '') {
         //     url = `${url}/${servername}`;
         // }
 
-        url = `${url}?xsiType=${xsiType}&itemId=${itemId}&projectId=${projectId}&eventTrackingId=${eventTrackingId}`
+        url = `${url}?xsiType=${xsiType}&itemId=${itemId}&itemLabel=${itemLabel}&projectId=${projectId}&eventTrackingId=${eventTrackingId}`
 
         return restUrl(url);
     }
@@ -42,6 +43,34 @@ XNAT.plugin.jupyterhub.servers = getObject(XNAT.plugin.jupyterhub.servers || {})
         return restUrl(url);
     }
 
+    let getSubjectLabel = async function(subjectId) {
+        console.debug(`jupyterhub-servers.js: getSubjectLabel`);
+
+        const response = await fetch(XNAT.url.restUrl(`/data/subjects/${subjectId}?format=json`), {
+            method: 'GET',
+            headers: {'Content-Type': 'application/json'}
+        })
+
+        if (response.ok) {
+            let result = await response.json()
+            return result['items'][0]['data_fields']['label']
+        }
+    }
+
+    let getExperimentLabel = async function(experimentId) {
+        console.debug(`jupyterhub-servers.js: getExperimentLabel`);
+
+        const response = await fetch(XNAT.url.restUrl(`/data/experiments/${experimentId}?format=json`), {
+            method: 'GET',
+            headers: {'Content-Type': 'application/json'}
+        })
+
+        if (response.ok) {
+            let result = await response.json()
+            return result['items'][0]['data_fields']['label']
+        }
+    }
+
     XNAT.plugin.jupyterhub.servers.startServerForProject = function(username = window.username,
                                                             servername = XNAT.data.context.projectID,
                                                             xsiType = XNAT.data.context.xsiType,
@@ -49,7 +78,7 @@ XNAT.plugin.jupyterhub.servers = getObject(XNAT.plugin.jupyterhub.servers || {})
                                                             projectId = XNAT.data.context.projectID,
                                                             eventTrackingId = generateEventTrackingId()) {
         console.debug(`jupyterhub-servers.js: XNAT.plugin.jupyterhub.servers.startServerForProject`);
-        startServer(username, servername, xsiType, itemId, projectId, eventTrackingId)
+        startServer(username, servername, xsiType, itemId, projectId, projectId, eventTrackingId)
     }
 
     XNAT.plugin.jupyterhub.servers.startServerForSubject = function(username = window.username,
@@ -59,7 +88,7 @@ XNAT.plugin.jupyterhub.servers = getObject(XNAT.plugin.jupyterhub.servers || {})
                                                             projectId = XNAT.data.context.projectID,
                                                             eventTrackingId = generateEventTrackingId()) {
         console.debug(`jupyterhub-servers.js: XNAT.plugin.jupyterhub.servers.startServerForSubject`);
-        startServer(username, servername, xsiType, itemId, projectId, eventTrackingId)
+        getSubjectLabel(itemId).then(subjectLabel => startServer(username, servername, xsiType, itemId, subjectLabel, projectId, eventTrackingId))
     }
 
     XNAT.plugin.jupyterhub.servers.startServerForExperiment = function(username = window.username,
@@ -69,16 +98,13 @@ XNAT.plugin.jupyterhub.servers = getObject(XNAT.plugin.jupyterhub.servers || {})
                                                                projectId = XNAT.data.context.projectID,
                                                                eventTrackingId = generateEventTrackingId()) {
         console.debug(`jupyterhub-servers.js: XNAT.plugin.jupyterhub.servers.startServerForExperiment`);
-        startServer(username, servername, xsiType, itemId, projectId, eventTrackingId)
+        getExperimentLabel(itemId).then(experimentLabel => startServer(username, servername, xsiType, itemId, experimentLabel, projectId, eventTrackingId))
     }
 
-    XNAT.plugin.jupyterhub.servers.startServerForStoredSearch = function(username = window.username,
-                                                                 servername = '', // this is not in XNAT.data.context.ID
-                                                                 xsiType = "xdat:stored_search",
-                                                                 itemId = '', // this is not in XNAT.data.context.ID
-                                                                 eventTrackingId = generateEventTrackingId()) {
+    XNAT.plugin.jupyterhub.servers.startServerForStoredSearch = function(username, servername, xsiType, itemId,
+                                                                         itemLabel, eventTrackingId) {
         console.debug(`jupyterhub-servers.js: XNAT.plugin.jupyterhub.servers.startServerForStoredSearch`);
-        startServer(username, servername, xsiType, itemId, undefined, eventTrackingId)
+         startServer(username, servername, xsiType, itemId, itemLabel, undefined, eventTrackingId)
     }
 
 
@@ -108,12 +134,12 @@ XNAT.plugin.jupyterhub.servers = getObject(XNAT.plugin.jupyterhub.servers || {})
         });
     }
 
-    let startServer = XNAT.plugin.jupyterhub.servers.startServer = function(username, servername, xsiType, itemId, projectId, eventTrackingId) {
+    let startServer = XNAT.plugin.jupyterhub.servers.startServer = function(username, servername, xsiType, itemId, itemLabel, projectId, eventTrackingId) {
         console.debug(`jupyterhub-servers.js: XNAT.plugin.jupyterhub.servers.startServer`);
-        console.debug(`Launching jupyter server. User: ${username}, Server Name: ${servername}, XSI Type: ${xsiType}, ID: ${itemId}, Project ID: ${projectId}, eventTrackingId: ${eventTrackingId}`);
+        console.debug(`Launching jupyter server. User: ${username}, Server Name: ${servername}, XSI Type: ${xsiType}, ID: ${itemId}, Label: ${itemLabel}, Project ID: ${projectId}, eventTrackingId: ${eventTrackingId}`);
 
         return XNAT.xhr.ajax({
-            url: newServerUrl(username, servername, xsiType, itemId, projectId, eventTrackingId),
+            url: newServerUrl(username, servername, xsiType, itemId, itemLabel, projectId, eventTrackingId),
             method: 'POST',
             contentType: 'application/json',
             beforeSend: function () {

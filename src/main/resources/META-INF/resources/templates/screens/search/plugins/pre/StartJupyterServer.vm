@@ -8,39 +8,39 @@
     jupyterHandlerForStoredSearch = function(name, eventObj, menuItem){
         console.debug('jupyterHandlerForStoredSearch');
         const storedSearchId = this.obj.SS_ID;
+        const storedSearchLabel = this.obj.label;
 
-        XNAT.plugin.jupyterhub.servers.startServerForStoredSearch(window.username,
-                                                          storedSearchId,
-                                                          "xdat:stored_search",
-                                                          storedSearchId);
+        XNAT.plugin.jupyterhub.servers.startServerForStoredSearch(window.username, storedSearchId, "xdat:stored_search",
+                storedSearchId, storedSearchLabel, XNAT.plugin.jupyterhub.servers.generateEventTrackingId());
     };
 
     jupyterHandlerForDataSearch = function(name, eventObj, menuItem){
         console.debug('jupyterHandlerForDataSearch');
         const storedSearchId = this.obj.ID.replace("d.", "@");
+        const storedSearchLabel = this.obj.label;
 
-        XNAT.plugin.jupyterhub.servers.startServerForStoredSearch(window.username,
-                storedSearchId,
-                "xdat:stored_search",
-                storedSearchId);
+        XNAT.plugin.jupyterhub.servers.startServerForStoredSearch(window.username, storedSearchId, "xdat:stored_search",
+                storedSearchId, storedSearchLabel, XNAT.plugin.jupyterhub.servers.generateEventTrackingId());
     };
 
     jupyterHandlerForProjectBundleSearch = function(name, eventObj, menuItem){
         console.debug('jupyterHandlerForProjectBundleSearch');
 
+        let storedSearchLabel;
+
         let storedSearchId;
         if (this.obj.ID.startsWith("@")) {
             // Default project bundle
             storedSearchId = XNAT.data.context.ID + this.obj.ID;
+            storedSearchLabel = `${XNAT.data.context.ID}: ${this.obj.label}`;
         } else {
             // Project level stored search
             storedSearchId = this.obj.ID;
+            storedSearchLabel = this.obj.label;
         }
 
-        XNAT.plugin.jupyterhub.servers.startServerForStoredSearch(window.username,
-                storedSearchId,
-                "xdat:stored_search",
-                storedSearchId);
+        XNAT.plugin.jupyterhub.servers.startServerForStoredSearch(window.username, storedSearchId, "xdat:stored_search",
+                storedSearchId, storedSearchLabel, XNAT.plugin.jupyterhub.servers.generateEventTrackingId());
     };
 
     let jupyterHandler;
