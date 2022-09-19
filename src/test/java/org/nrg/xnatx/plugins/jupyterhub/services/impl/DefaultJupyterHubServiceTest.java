@@ -20,6 +20,7 @@ import org.nrg.xnatx.plugins.jupyterhub.client.models.Server;
 import org.nrg.xnatx.plugins.jupyterhub.client.models.UserOptions;
 import org.nrg.xnatx.plugins.jupyterhub.config.DefaultJupyterHubServiceConfig;
 import org.nrg.xnatx.plugins.jupyterhub.events.JupyterServerEventI;
+import org.nrg.xnatx.plugins.jupyterhub.preferences.JupyterHubPreferences;
 import org.nrg.xnatx.plugins.jupyterhub.services.UserOptionsEntityService;
 import org.nrg.xnatx.plugins.jupyterhub.services.UserOptionsService;
 import org.nrg.xnatx.plugins.jupyterhub.utils.PermissionsHelper;
@@ -43,6 +44,7 @@ public class DefaultJupyterHubServiceTest {
     @Autowired private NrgEventServiceI mockEventService;
     @Autowired private UserOptionsEntityService mockUserOptionsEntityService;
     @Autowired private UserOptionsService mockUserOptionsService;
+    @Autowired private JupyterHubPreferences mockJupyterHubPreferences;
 
     @Captor ArgumentCaptor<JupyterServerEventI> jupyterServerEventCaptor;
 
@@ -61,6 +63,12 @@ public class DefaultJupyterHubServiceTest {
 
         // Capture Jupyter events
         jupyterServerEventCaptor = ArgumentCaptor.forClass(JupyterServerEventI.class);
+
+        // Polling rate and timeout
+        when(mockJupyterHubPreferences.getStartTimeout()).thenReturn(2);
+        when(mockJupyterHubPreferences.getStartPollingInterval()).thenReturn(1);
+        when(mockJupyterHubPreferences.getStopTimeout()).thenReturn(2);
+        when(mockJupyterHubPreferences.getStopPollingInterval()).thenReturn(1);
     }
 
     @After
@@ -195,7 +203,7 @@ public class DefaultJupyterHubServiceTest {
         verify(mockJupyterHubClient, never()).startServer(any(), any(), any());
     }
 
-    @Test(timeout = 3500)
+    @Test(timeout = 2000)
     public void testStartServer_serverAlreadyRunning() throws Exception {
         // Grant permissions
         when(mockPermissionsHelper.canRead(any(), anyString(), anyString(), anyString())).thenReturn(true);
@@ -205,7 +213,7 @@ public class DefaultJupyterHubServiceTest {
 
         // Test
         jupyterHubService.startServer(user, XnatProjectdata.SCHEMA_ELEMENT_NAME, projectId, projectId, projectId, eventTrackingId);
-        Thread.sleep(2500); // Async call, need to wait. Is there a better way to test this?
+        Thread.sleep(1000); // Async call, need to wait. Is there a better way to test this?
 
         // Verify failure to start event occurred
         verify(mockEventService, atLeastOnce()).triggerEvent(jupyterServerEventCaptor.capture());
@@ -220,7 +228,7 @@ public class DefaultJupyterHubServiceTest {
         verify(mockJupyterHubClient, never()).startServer(any(), any(), any());
     }
 
-    @Test(timeout = 8000)
+    @Test(timeout = 4000)
     public void testStartServer_Timeout() throws UserNotFoundException, ResourceAlreadyExistsException, InterruptedException {
         // Grant permissions
         when(mockPermissionsHelper.canRead(any(), anyString(), anyString(), anyString())).thenReturn(true);
@@ -231,7 +239,7 @@ public class DefaultJupyterHubServiceTest {
 
         // Test
         jupyterHubService.startServer(user, XnatProjectdata.SCHEMA_ELEMENT_NAME, projectId, projectId, projectId, eventTrackingId);
-        Thread.sleep(6000); // Async call, need to wait. Is there a better way to test this?
+        Thread.sleep(3000); // Async call, need to wait. Is there a better way to test this?
 
         // Verify user options are stored
         verify(mockUserOptionsService, times(1)).storeUserOptions(eq(user), eq(""), eq(XnatProjectdata.SCHEMA_ELEMENT_NAME), eq(projectId), eq(projectId));
@@ -240,7 +248,8 @@ public class DefaultJupyterHubServiceTest {
         verify(mockJupyterHubClient, times(1)).startServer(eq(username), eq(""), any(UserOptions.class));
 
         // Verify attempts to get server from JupyterHub
-        verify(mockJupyterHubClient, atLeast(2)).getServer(eq(username), eq(""));
+        // One time to see if server exists before starting and 2 times with polling rate and timeout
+        verify(mockJupyterHubClient, times(3)).getServer(eq(username), eq(""));
 
         // Verify failure to start event occurred
         verify(mockEventService, atLeastOnce()).triggerEvent(jupyterServerEventCaptor.capture());
@@ -249,7 +258,7 @@ public class DefaultJupyterHubServiceTest {
         assertEquals(JupyterServerEventI.Operation.Start, capturedEvent.getOperation());
     }
 
-    @Test(timeout = 8000)
+    @Test(timeout = 3000)
     public void testStartServer_Success() throws Exception {
         // Grant permissions
         when(mockPermissionsHelper.canRead(any(), anyString(), anyString(), anyString())).thenReturn(true);
@@ -261,7 +270,7 @@ public class DefaultJupyterHubServiceTest {
 
         // Test
         jupyterHubService.startServer(user, XnatProjectdata.SCHEMA_ELEMENT_NAME, "TestProject", "TestProject", "TestProject", eventTrackingId);
-        Thread.sleep(6000); // Async call, need to wait. Is there a better way to test this?
+        Thread.sleep(2500); // Async call, need to wait. Is there a better way to test this?
 
         // Verify user options are stored
         verify(mockUserOptionsService, times(1)).storeUserOptions(user, "", XnatProjectdata.SCHEMA_ELEMENT_NAME, "TestProject", "TestProject");
@@ -309,7 +318,7 @@ public class DefaultJupyterHubServiceTest {
 
         // Test
         jupyterHubService.stopServer(user, eventTrackingId);
-        Thread.sleep(2500); // Async call, need to wait. Is there a better way to test this?
+        Thread.sleep(2000); // Async call, need to wait. Is there a better way to test this?
 
         // Verify one attempt to stop the sever
         verify(mockJupyterHubClient, times(1)).stopServer(username, servername);

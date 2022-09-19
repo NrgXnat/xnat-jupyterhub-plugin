@@ -49,6 +49,58 @@ public class JupyterHubPreferences extends AbstractPreferenceBean {
         }
     }
 
+    @NrgPreference(defaultValue = "120")
+    public Integer getStartTimeout() {
+        return getIntegerValue("startTimeout");
+    }
+
+    public void setStartTimeout(final Integer startTimeout) {
+        try {
+            setIntegerValue(startTimeout, "startTimeout");
+        } catch (InvalidPreferenceName e) {
+            log.error("Invalid preference name 'startTimeout': something is very wrong here.", e);
+        }
+    }
+
+    @NrgPreference(defaultValue = "60")
+    public Integer getStopTimeout() {
+        return getIntegerValue("stopTimeout");
+    }
+
+    public void setStopTimeout(final Integer stopTimeout) {
+        try {
+            setIntegerValue(stopTimeout, "stopTimeout");
+        } catch (InvalidPreferenceName e) {
+            log.error("Invalid preference name 'stopTimeout': something is very wrong here.", e);
+        }
+    }
+
+    @NrgPreference(defaultValue = "30")
+    public Integer getStartPollingInterval() {
+        return getIntegerValue("startPollingInterval");
+    }
+
+    public void getStartPollingInterval(final Integer startPollingInterval) {
+        try {
+            setIntegerValue(startPollingInterval, "startPollingInterval");
+        } catch (InvalidPreferenceName e) {
+            log.error("Invalid preference name 'startPollingInterval': something is very wrong here.", e);
+        }
+    }
+
+    @NrgPreference(defaultValue = "30")
+    public Integer getStopPollingInterval() {
+        return getIntegerValue("stopPollingInterval");
+    }
+
+    public void getStopPollingInterval(final Integer stopPollingInterval) {
+        try {
+            setIntegerValue(stopPollingInterval, "stopPollingInterval");
+        } catch (InvalidPreferenceName e) {
+            log.error("Invalid preference name 'stopPollingInterval': something is very wrong here.", e);
+        }
+    }
+
     @NrgPreference(defaultValue = "")
     public String getPathTranslationXnatPrefix() {
         return getValue("pathTranslationXnatPrefix");

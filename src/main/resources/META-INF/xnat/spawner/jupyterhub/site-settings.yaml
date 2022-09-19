@@ -23,6 +23,38 @@ jupyterHubToken:
   description: >
     The service token used by XNAT to launch a user's Jupyter Notebook Servers
 
+startTimeout:
+  kind: panel.input.text
+  id: startTimeout
+  name: startTimeout
+  label: Start Timeout
+  description: >
+    Timeout (in seconds) before giving up on starting of single-user server. XNAT will assume that startup has failed if it takes longer than this.
+
+startPollingInterval:
+  kind: panel.input.text
+  id: startPollingInterval
+  name: startPollingInterval
+  label: Start Polling Interval
+  description: >
+    The rate (in seconds) at which to poll JupyterHub to check if the single-user server has started.
+
+stopTimeout:
+  kind: panel.input.text
+  id: stopTimeout
+  name: stopTimeout
+  label: Stop Timeout
+  description: >
+    Timeout (in seconds) before giving up on stopping a single-user server. XNAT will assume that stopping has failed if it takes longer than this.
+
+stopPollingInterval:
+  kind: panel.input.text
+  id: stopPollingInterval
+  name: stopPollingInterval
+  label: Stop Polling Interval
+  description: >
+    The rate (in seconds) at which to poll JupyterHub to check if the single-user server has stopped.
+
 pathTranslationXnatPrefix:
   kind: panel.input.text
   id: pathTranslationXnatPrefix
@@ -49,6 +81,10 @@ jupyterhubPreferences:
   contents:
     ${jupyterhubApiUrl}
     ${jupyterHubToken}
+    ${startTimeout}
+    ${startPollingInterval}
+    ${stopTimeout}
+    ${stopPollingInterval}
     ${pathTranslationXnatPrefix}
     ${pathTranslationDockerPrefix}
     ${workspacePath}
