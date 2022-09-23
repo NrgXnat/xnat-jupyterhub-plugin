@@ -105,11 +105,13 @@ public class DefaultJupyterHubService implements JupyterHubService {
      * @param itemLabel       The label of the provided item (e.g. the subject label or experiment label).
      * @param projectId       Can be null for xdat:stored_search
      * @param eventTrackingId Use with the event tracking api to track progress.
+     * @param dockerImage     The docker image to use for the single-user notebook server container
      */
     @Override
     public void startServer(final UserI user, final String xsiType, final String itemId,
-                            final String itemLabel, final String projectId, final String eventTrackingId) {
-        startServer(user, "", xsiType, itemId, itemLabel, projectId, eventTrackingId);
+                            final String itemLabel, final String projectId, final String eventTrackingId,
+                            final String dockerImage) {
+        startServer(user, "", xsiType, itemId, itemLabel, projectId, eventTrackingId, dockerImage);
     }
 
     /**
@@ -122,13 +124,15 @@ public class DefaultJupyterHubService implements JupyterHubService {
      * @param xsiType           Accepts xnat:projectData, xnat:subjectData, xnat:experimentData and its children, and
      *                          xdat:stored_search
      * @param itemId            The provided id's resources will be mounted to the Jupyter notebook server container
-     * @param itemLabel       The label of the provided item (e.g. the subject label or experiment label).
+     * @param itemLabel         The label of the provided item (e.g. the subject label or experiment label).
      * @param projectId         Can be null for xdat:stored_search
      * @param eventTrackingId   Use with the event tracking api to track progress.
+     * @param dockerImage       The docker image to use for the single-user notebook server container
      */
     @Override
     public void startServer(final UserI user, String servername, final String xsiType, final String itemId,
-                            final String itemLabel, @Nullable final String projectId, final String eventTrackingId) {
+                            final String itemLabel, final String projectId, final String eventTrackingId,
+                            final String dockerImage) {
         eventService.triggerEvent(JupyterServerEvent.progress(eventTrackingId, user.getID(), xsiType, itemId,
                                                               JupyterServerEventI.Operation.Start, 0,
                                                               "Starting Jupyter notebook server for user " + user.getUsername()));
@@ -159,7 +163,7 @@ public class DefaultJupyterHubService implements JupyterHubService {
                                                                   JupyterServerEventI.Operation.Start, 20,
                                                                   "Building notebook server container configuration."));
 
-            userOptionsService.storeUserOptions(user, servername, xsiType, itemId, projectId);
+            userOptionsService.storeUserOptions(user, servername, xsiType, itemId, projectId, dockerImage);
 
             eventService.triggerEvent(JupyterServerEvent.progress(eventTrackingId, user.getID(), xsiType, itemId,
                                                                   JupyterServerEventI.Operation.Start, 30,

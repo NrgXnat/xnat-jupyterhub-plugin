@@ -1,4 +1,3 @@
-<script type="text/javascript" src="$content.getURI("scripts/xnat/plugin/jupyterhub/jupyterhub-servers.js")"></script>
 <li class="yuimenuitem">
     <a class="yuimenuitemlabel" id="start-jupyter-server" onclick="XNAT.plugin.jupyterhub.servers.startServerForSubject()">
         Start Jupyter Server

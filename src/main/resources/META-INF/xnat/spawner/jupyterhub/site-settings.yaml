@@ -71,6 +71,24 @@ pathTranslationDockerPrefix:
   description: >
     (Optional) Enter the Docker Server path to the XNAT_HOME mount, i.e. "/docker/my-data/XNAT"
 
+imagePreferences:
+  kind: panel
+  name: imagePreferences
+  label: Images
+  contents:
+    imageDescription:
+      tag: div.message
+      contents:
+        "This panel lists the containers which JupyterHub can use to launch single-user Jupyter notebook servers. JupyterHub supports any of the existing Jupyter docker stacks provided the version of JupyterHub in the image matches. Please see the documentation for building your own images. Pull each image on every swarm node."
+    imagesTable:
+      tag: "div#jupyterhub-image-preferences"
+    imagePreferencesScript:
+      tag: script|src="~/scripts/xnat/plugin/jupyterhub/jupyterhub-docker-images.js"
+    renderImagePreferencesTable:
+      tag: script
+      content: >
+        XNAT.plugin.jupyterhub.dockerImages.init('#jupyterhub-image-preferences');
+
 jupyterhubPreferences:
   kind: panel.form
   name: jupyterhubPreferences
@@ -111,3 +129,4 @@ siteSettings:
       active: true
       contents:
         ${jupyterhubPreferences}
+        ${imagePreferences}

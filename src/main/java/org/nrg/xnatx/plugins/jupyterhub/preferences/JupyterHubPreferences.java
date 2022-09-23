@@ -8,7 +8,10 @@ import org.nrg.prefs.annotations.NrgPreferenceBean;
 import org.nrg.prefs.beans.AbstractPreferenceBean;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
 import org.nrg.prefs.services.NrgPreferenceService;
+import org.nrg.xnatx.plugins.jupyterhub.models.DockerImage;
 import org.springframework.beans.factory.annotation.Autowired;
+
+import java.util.List;
 
 @NrgPreferenceBean(toolId = JupyterHubPreferences.TOOL_ID,
                    toolName = "JupyterHub Preferences",
@@ -17,6 +20,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 public class JupyterHubPreferences extends AbstractPreferenceBean {
 
     public static final String TOOL_ID = "jupyterhub";
+    public static final String DOCKER_IMAGES_PREF_ID = "dockerImages";
 
     @Autowired
     protected JupyterHubPreferences(NrgPreferenceService preferenceService, ConfigPaths configFolderPaths, OrderedProperties initPrefs) {
@@ -46,6 +50,23 @@ public class JupyterHubPreferences extends AbstractPreferenceBean {
             set(jupyterHubToken, "jupyterHubToken");
         } catch (InvalidPreferenceName e) {
             log.error("Invalid preference name 'jupyterHubToken': something is very wrong here.", e);
+        }
+    }
+
+    @NrgPreference(defaultValue = "[\n   " +
+            "{\"image\": \"jupyter/scipy-notebook:hub-3.0.0\", \"enabled\": \"true\"},\n   " +
+            "{\"image\": \"jupyter/tensorflow-notebook:hub-3.0.0\", \"enabled\": \"true\"}\n   " +
+            "]",
+            key = "image")
+    public List<DockerImage> getDockerImages() {
+        return getListValue(DOCKER_IMAGES_PREF_ID);
+    }
+
+    public void setDockerImages(final List<DockerImage> dockerImages) {
+        try {
+            setListValue(DOCKER_IMAGES_PREF_ID, dockerImages);
+        } catch (InvalidPreferenceName e) {
+            log.error("Invalid preference name 'dockerImages': something is very wrong here.", e);
         }
     }
 

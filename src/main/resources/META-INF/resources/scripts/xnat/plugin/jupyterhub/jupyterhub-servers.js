@@ -26,14 +26,15 @@ XNAT.plugin.jupyterhub.servers = getObject(XNAT.plugin.jupyterhub.servers || {})
     let restUrl = XNAT.url.restUrl;
 
     let newServerUrl = XNAT.plugin.jupyterhub.servers.newServerUrl = function(username, servername, xsiType, itemId,
-                                                                              itemLabel, projectId, eventTrackingId) {
+                                                                              itemLabel, projectId, eventTrackingId,
+                                                                              dockerImage) {
         let url = `/xapi/jupyterhub/users/${username}/server`;
 
         // if (servername !== '') {
         //     url = `${url}/${servername}`;
         // }
 
-        url = `${url}?xsiType=${xsiType}&itemId=${itemId}&itemLabel=${itemLabel}&projectId=${projectId}&eventTrackingId=${eventTrackingId}`
+        url = `${url}?xsiType=${xsiType}&itemId=${itemId}&itemLabel=${itemLabel}&projectId=${projectId}&eventTrackingId=${eventTrackingId}&dockerImage=${dockerImage}`;
 
         return restUrl(url);
     }
@@ -138,17 +139,66 @@ XNAT.plugin.jupyterhub.servers = getObject(XNAT.plugin.jupyterhub.servers || {})
         console.debug(`jupyterhub-servers.js: XNAT.plugin.jupyterhub.servers.startServer`);
         console.debug(`Launching jupyter server. User: ${username}, Server Name: ${servername}, XSI Type: ${xsiType}, ID: ${itemId}, Label: ${itemLabel}, Project ID: ${projectId}, eventTrackingId: ${eventTrackingId}`);
 
-        return XNAT.xhr.ajax({
-            url: newServerUrl(username, servername, xsiType, itemId, itemLabel, projectId, eventTrackingId),
-            method: 'POST',
-            contentType: 'application/json',
-            beforeSend: function () {
-                XNAT.app.activityTab.start('Start Jupyter Notebook Server', eventTrackingId, 'XNAT.plugin.jupyterhub.servers.activityTabCallback', 2000);
-            },
-            fail: function (error) {
-                console.error(`Failed to send : ${error}`)
-            }
-        });
+        XNAT.plugin.jupyterhub.dockerImages.getImages().then(images => {
+            XNAT.dialog.open({
+                title: 'Jupyter Configuration',
+                content: spawn('form'),
+                maxBtn: true,
+                width: 600,
+                beforeShow: function(obj) {
+                    let imageOptions = images.filter(i => i['enabled'] )
+                                             .map(i => i['image'])
+                                             .sort()
+                                             .map(i => [{value: i}])
+                                             .flat();
+
+                    // spawn new image form
+                    const formContainer$ = obj.$modal.find('.xnat-dialog-content');
+                    formContainer$.addClass('panel');
+                    obj.$modal.find('form').append(
+                        spawn('!', [
+                            XNAT.ui.panel.select.single({
+                                name: 'dockerImage',
+                                id: 'dockerImage',
+                                options: imageOptions,
+                                label: 'Docker image',
+                                validation: 'required not-empty',
+                                description: 'Select a Docker image to use for your Jupyter notebook server.'
+                            }).element
+                        ])
+                    );
+                },
+                buttons: [
+                    {
+                        label: 'Start Jupyter',
+                        isDefault: true,
+                        close: true,
+                        action: function() {
+                            const dockerImageEl = document.getElementById("dockerImage");
+
+                            XNAT.xhr.ajax({
+                                url: newServerUrl(username, servername, xsiType, itemId, itemLabel,
+                                                  projectId, eventTrackingId, dockerImageEl.value),
+                                method: 'POST',
+                                contentType: 'application/json',
+                                beforeSend: function () {
+                                    XNAT.app.activityTab.start('Start Jupyter Notebook Server', eventTrackingId,
+                                                               'XNAT.plugin.jupyterhub.servers.activityTabCallback', 2000);
+                                },
+                                fail: function (error) {
+                                    console.error(`Failed to send Jupyter server request: ${error}`)
+                                }
+                            });
+
+                        }
+                    },
+                    {
+                        label: 'Cancel',
+                        close: true
+                    }
+                ]
+            });
+        })
     }
 
     let activityTabCallback = XNAT.plugin.jupyterhub.servers.activityTabCallback = function(itemDivId, detailsTag, jsonobj, lastProgressIdx) {

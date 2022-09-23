@@ -295,6 +295,7 @@ public class JupyterHubApiTest {
                 .param("itemLabel", userOptions.getItemLabel())
                 .param("projectId", userOptions.getProjectId())
                 .param("eventTrackingId", userOptions.getEventTrackingId())
+                .param("dockerImage", userOptions.getDockerImage())
                 .with(authentication(NONADMIN_AUTH))
                 .with(csrf())
                 .with(testSecurityContext());
@@ -307,9 +308,11 @@ public class JupyterHubApiTest {
                                                             eq(userOptions.getItemId()),
                                                             eq(userOptions.getItemLabel()),
                                                             eq(userOptions.getProjectId()),
-                                                            eq(userOptions.getEventTrackingId()));
+                                                            eq(userOptions.getEventTrackingId()),
+                                                            eq(userOptions.getDockerImage()));
         // Named Server
         verify(mockJupyterHubService, never()).startServer(any(UserI.class),
+                                                           anyString(),
                                                            anyString(),
                                                            anyString(),
                                                            anyString(),
@@ -328,6 +331,7 @@ public class JupyterHubApiTest {
                 .param("itemLabel", userOptions.getItemLabel())
                 .param("projectId", userOptions.getProjectId())
                 .param("eventTrackingId", userOptions.getEventTrackingId())
+                .param("dockerImage", userOptions.getDockerImage())
                 .with(authentication(NONADMIN_AUTH))
                 .with(csrf())
                 .with(testSecurityContext());
@@ -336,6 +340,7 @@ public class JupyterHubApiTest {
 
         // Unnamed server
         verify(mockJupyterHubService, never()).startServer(any(UserI.class),
+                                                           anyString(),
                                                            anyString(),
                                                            anyString(),
                                                            anyString(),
@@ -349,7 +354,8 @@ public class JupyterHubApiTest {
                                                             eq(userOptions.getItemId()),
                                                             eq(userOptions.getItemLabel()),
                                                             eq(userOptions.getProjectId()),
-                                                            eq(userOptions.getEventTrackingId()));
+                                                            eq(userOptions.getEventTrackingId()),
+                                                            eq(userOptions.getDockerImage()));
 
     }
 

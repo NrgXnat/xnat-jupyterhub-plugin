@@ -99,8 +99,9 @@ public class JupyterHubApi extends AbstractXapiRestController {
                             @ApiParam(value = "itemId", required = true) @RequestParam("itemId") final String itemId,
                             @ApiParam(value = "itemLabel", required = true) @RequestParam("itemLabel") final String itemLabel,
                             @ApiParam(value = "projectId", required = true) @RequestParam("projectId") final String projectId,
-                            @ApiParam(value = "eventTrackingId", required = true) @RequestParam(value = "eventTrackingId") final String eventTrackingId) throws UserNotFoundException, UserInitException {
-        jupyterHubService.startServer(getUserI(username), xsiType, itemId, itemLabel, projectId, eventTrackingId);
+                            @ApiParam(value = "eventTrackingId", required = true) @RequestParam(value = "eventTrackingId") final String eventTrackingId,
+                            @ApiParam(value = "dockerImage", required = true) @RequestParam(value = "dockerImage") final String dockerImage) throws UserNotFoundException, UserInitException {
+        jupyterHubService.startServer(getUserI(username), xsiType, itemId, itemLabel, projectId, eventTrackingId, dockerImage);
     }
 
     @ApiOperation(value = "Starts a Jupyter server for the user",
@@ -116,8 +117,9 @@ public class JupyterHubApi extends AbstractXapiRestController {
                                  @ApiParam(value = "itemId", required = true) @RequestParam("itemId") final String itemId,
                                  @ApiParam(value = "itemLabel", required = true) @RequestParam("itemLabel") final String itemLabel,
                                  @ApiParam(value = "projectId", required = true) @RequestParam("projectId") final String projectId,
-                                 @ApiParam(value = "eventTrackingId", required = true) @RequestParam(value = "eventTrackingId") final String eventTrackingId) throws UserNotFoundException, UserInitException {
-        jupyterHubService.startServer(getUserI(username), servername, xsiType, itemId, itemLabel, projectId, eventTrackingId);
+                                 @ApiParam(value = "eventTrackingId", required = true) @RequestParam(value = "eventTrackingId") final String eventTrackingId,
+                                 @ApiParam(value = "dockerImage", required = true) @RequestParam(value = "dockerImage") final String dockerImage) throws UserNotFoundException, UserInitException {
+        jupyterHubService.startServer(getUserI(username), servername, xsiType, itemId, itemLabel, projectId, eventTrackingId, dockerImage);
     }
 
     // TODO start named server

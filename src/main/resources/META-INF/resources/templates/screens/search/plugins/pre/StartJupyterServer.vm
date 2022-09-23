@@ -1,6 +1,4 @@
 <!-- START screens/plugins/pre/StartJupyterServer.vm -->
-<script src="$content.getURI("/scripts/xnat/plugin/jupyterhub/jupyterhub-servers.js")"></script>
-
 <script type="text/javascript">
 
     const href = window.location.href;

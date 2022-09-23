@@ -321,7 +321,7 @@ public class DefaultUserOptionsService implements UserOptionsService {
     }
 
     @Override
-    public void storeUserOptions(UserI user, String servername, String xsiType, String id, String projectId) {
+    public void storeUserOptions(UserI user, String servername, String xsiType, String id, String projectId, String dockerImage) {
         log.debug("Storing user options for user '{}' server '{}' xsiType '{}' id '{}' projectId '{}'",
                   user.getUsername(), servername, xsiType, id, projectId);
 
@@ -396,7 +396,7 @@ public class DefaultUserOptionsService implements UserOptionsService {
                 .xsiType(xsiType)
                 .itemId(id)
                 .projectId(projectId)
-                .dockerImage("xnat/jupyterhub-single-user:latest") // TODO Migrate to preference
+                .dockerImage(dockerImage)
                 .environmentVariables(environmentVariables)
                 .bindMountsJson(UserOptionsEntity.bindMountPojo(mounts))
                 .build();

@@ -107,7 +107,18 @@ public class JupyterHubPreferencesApi extends AbstractXapiRestController {
         if (!jupyterHubPreferences.containsKey(preference)) {
             throw new NotFoundException("No JupyterHub plugin preference named " + preference);
         }
-        final Object value = jupyterHubPreferences.get(preference);
+        final Object value;
+
+        // I think there is a bug in the preference library with caching hence the switch.
+        switch (preference) {
+            case (JupyterHubPreferences.DOCKER_IMAGES_PREF_ID): {
+                value = jupyterHubPreferences.getDockerImages();
+                break;
+            }
+            default:
+                value = jupyterHubPreferences.get(preference);
+        }
+
         log.debug("User {} requested the value for the JupyterHub plugin preference {}, got value: {}", getSessionUser().getUsername(), preference, value);
         return Collections.singletonMap(preference, value);
     }
