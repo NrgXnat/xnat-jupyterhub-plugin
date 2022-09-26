@@ -89,7 +89,27 @@ XNAT.plugin.jupyterhub.servers = getObject(XNAT.plugin.jupyterhub.servers || {})
                                                             projectId = XNAT.data.context.projectID,
                                                             eventTrackingId = generateEventTrackingId()) {
         console.debug(`jupyterhub-servers.js: XNAT.plugin.jupyterhub.servers.startServerForSubject`);
-        getSubjectLabel(itemId).then(subjectLabel => startServer(username, servername, xsiType, itemId, subjectLabel, projectId, eventTrackingId))
+
+        if (XNAT.plugin.jupyterhub.isSharedItem()) {
+            XNAT.dialog.open({
+                width: 450,
+                title: "Unsupported Operation",
+                content: "Cannot start a Jupyter server on a shared subject.",
+                buttons: [
+                    {
+                        label: 'OK',
+                        isDefault: true,
+                        close: true,
+                        action: function() {
+                                xmodal.closeAll();
+                        }
+                    }
+                ]
+            });
+        } else {
+            getSubjectLabel(itemId).then(subjectLabel => startServer(username, servername, xsiType, itemId,
+                                                                     subjectLabel, projectId, eventTrackingId))
+        }
     }
 
     XNAT.plugin.jupyterhub.servers.startServerForExperiment = function(username = window.username,
@@ -99,7 +119,27 @@ XNAT.plugin.jupyterhub.servers = getObject(XNAT.plugin.jupyterhub.servers || {})
                                                                projectId = XNAT.data.context.projectID,
                                                                eventTrackingId = generateEventTrackingId()) {
         console.debug(`jupyterhub-servers.js: XNAT.plugin.jupyterhub.servers.startServerForExperiment`);
-        getExperimentLabel(itemId).then(experimentLabel => startServer(username, servername, xsiType, itemId, experimentLabel, projectId, eventTrackingId))
+
+        if (XNAT.plugin.jupyterhub.isSharedItem()) {
+            XNAT.dialog.open({
+                width: 450,
+                title: "Unsupported Operation",
+                content: "Cannot start a Jupyter server on a shared experiment.",
+                buttons: [
+                    {
+                        label: 'OK',
+                        isDefault: true,
+                        close: true,
+                        action: function() {
+                            xmodal.closeAll();
+                        }
+                    }
+                ]
+            });
+        } else {
+            getExperimentLabel(itemId).then(experimentLabel => startServer(username, servername, xsiType, itemId,
+                                                                           experimentLabel, projectId, eventTrackingId))
+        }
     }
 
     XNAT.plugin.jupyterhub.servers.startServerForStoredSearch = function(username, servername, xsiType, itemId,

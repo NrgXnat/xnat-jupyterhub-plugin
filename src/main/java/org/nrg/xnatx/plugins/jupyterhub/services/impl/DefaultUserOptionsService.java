@@ -76,7 +76,21 @@ public class DefaultUserOptionsService implements UserOptionsService {
             XnatProjectdata xnatProjectdata = XnatProjectdata.getXnatProjectdatasById(projectId, user, false);
 
             if (xnatProjectdata != null) {
-                projectPaths.put(projectId, xnatProjectdata.getRootArchivePath() + xnatProjectdata.getCurrentArc());
+                // Experiments
+                projectPaths.put("/data/projects/" + projectId + "/experiments", xnatProjectdata.getRootArchivePath() + xnatProjectdata.getCurrentArc());
+
+                // Project resources
+                final Path resourceDirectory = Paths.get(xnatProjectdata.getRootArchivePath() + "/resources");
+                if (Files.exists(resourceDirectory)) {
+                    projectPaths.put("/data/projects/" + projectId + "/project-resources", resourceDirectory.toString());
+                }
+
+                // Subject resources
+                final Path subjectResourceDirectory = Paths.get(xnatProjectdata.getRootArchivePath() + "/subjects");
+                if (Files.exists(subjectResourceDirectory)) {
+                    projectPaths.put("/data/projects/" + projectId + "/subject-resources", subjectResourceDirectory.toString());
+                }
+
             }
         });
 
@@ -96,24 +110,26 @@ public class DefaultUserOptionsService implements UserOptionsService {
             XnatSubjectdata xnatSubjectdata = XnatSubjectdata.getXnatSubjectdatasById(subjectId, user, false);
 
             if (xnatSubjectdata != null) {
+                final XnatProjectdata xnatProjectdata = xnatSubjectdata.getPrimaryProject(false);
                 List<XnatSubjectassessordataI> subjectAssessors = xnatSubjectdata.getExperiments_experiment();
+
+                // Subject resources
+                final Path subjectResourceDirectory = Paths.get(xnatProjectdata.getRootArchivePath())
+                                                           .resolve("subjects")
+                                                           .resolve(xnatSubjectdata.getLabel());
+
+                if (Files.exists(subjectResourceDirectory)) {
+                    subjectPaths.put("/data/projects/" + xnatProjectdata.getId() + "/subject-resources/" + xnatSubjectdata.getLabel(), subjectResourceDirectory.toString());
+                }
 
                 subjectAssessors.forEach(subjectAssessor -> {
                     if (XnatExperimentdata.class.isAssignableFrom(subjectAssessor.getClass())) {
                         try {
                             final String assessorLabel = subjectAssessor.getLabel();
-                            final String assessorId = subjectAssessor.getId();
                             final String path = ((XnatExperimentdata) subjectAssessor).getCurrentSessionFolder(true);
 
-                            if (subjectIds.size() == 1) {
-                                // For single subjects, use the assessor label as the key
-                                subjectPaths.put(assessorLabel, path);
-                            } else {
-                                // For multiple subjects, use the assessor id as the key. If this method is called from
-                                // a search there could be subjects in different projects with the same experiment
-                                // labels.
-                                subjectPaths.put(assessorId, path);
-                            }
+                            // Experiments
+                            subjectPaths.put("/data/projects/" + xnatProjectdata.getId() + "/experiments/" + assessorLabel, path);
                         } catch (BaseXnatExperimentdata.UnknownPrimaryProjectException | InvalidArchiveStructure e) {
                             // Container service ignores this error.
                             log.error("", e);
@@ -143,16 +159,8 @@ public class DefaultUserOptionsService implements UserOptionsService {
                 try {
                     final String experimentLabel = xnatExperimentdata.getLabel();
                     final String experimentPath = xnatExperimentdata.getCurrentSessionFolder(true);
-
-                    if (experimentIds.size() == 1) {
-                        // For single experiments, use the label as the key
-                        experimentPaths.put(experimentLabel, experimentPath);
-                    } else {
-                        // For multiple experiments, use the id as the key. If this method is called from
-                        // a search there could be experiments in different projects with the same experiment
-                        // labels.
-                        experimentPaths.put(experimentId, experimentPath);
-                    }
+                    final String projectId = xnatExperimentdata.getPrimaryProject(false).getId();
+                    experimentPaths.put("/data/projects/" + projectId + "/experiments/" + experimentLabel, experimentPath);
                 } catch (BaseXnatExperimentdata.UnknownPrimaryProjectException | InvalidArchiveStructure e) {
                     // Container service ignores this error.
                     log.error("", e);
@@ -179,15 +187,10 @@ public class DefaultUserOptionsService implements UserOptionsService {
             if (imageScan != null) {
                 final String imageScanLabel = imageScan.getId();
                 final String imageScanPath = imageScan.deriveScanDir();
+                final String project = imageScan.getProject();
+                final String experimentLabel = imageScan.getImageSessionData().getLabel();
 
-                if (imageScanPaths.size() == 1) {
-                    // For single image scans, use the label as the key
-                    imageScanPaths.put(imageScanLabel, imageScanPath);
-                } else {
-                    // For multiple scans, use the id as the key. If this method is called from a search there could be
-                    // scans in different projects with the same labels
-                    imageScanPaths.put(imageScanId.toString(), imageScanPath);
-                }
+                imageScanPaths.put("/data/projects/" + project + "/experiments/" + experimentLabel + "/SCANS/" + imageScanLabel, imageScanPath);
             }
         });
 
@@ -378,7 +381,7 @@ public class DefaultUserOptionsService implements UserOptionsService {
                         .writable(false)
                         .xnatHostPath(entry.getValue())
                         .containerHostPath(translatePath(entry.getValue()))
-                        .jupyterHostPath(Paths.get("/data", entry.getKey()).toString())
+                        .jupyterHostPath(Paths.get(entry.getKey()).toString())
                         .build())
                 .collect(Collectors.toList());
 
