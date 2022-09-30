@@ -6,6 +6,7 @@ import org.nrg.xft.security.UserI;
 import org.nrg.xnatx.plugins.jupyterhub.client.JupyterHubClient;
 import org.nrg.xnatx.plugins.jupyterhub.client.exceptions.ResourceAlreadyExistsException;
 import org.nrg.xnatx.plugins.jupyterhub.client.exceptions.UserNotFoundException;
+import org.nrg.xnatx.plugins.jupyterhub.client.models.Hub;
 import org.nrg.xnatx.plugins.jupyterhub.client.models.Server;
 import org.nrg.xnatx.plugins.jupyterhub.client.models.User;
 import org.nrg.xnatx.plugins.jupyterhub.events.JupyterServerEvent;
@@ -18,7 +19,7 @@ import org.nrg.xnatx.plugins.jupyterhub.utils.PermissionsHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.Nullable;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
@@ -46,6 +47,24 @@ public class DefaultJupyterHubService implements JupyterHubService {
     }
 
     /**
+     * Get JupyterHub version
+     * @return Hub with version field populated
+     */
+    @Override
+    public Hub getVersion() {
+        return jupyterHubClient.getVersion();
+    }
+
+    /**
+     * Get full JupyterHub information
+     * @return Hub with all fields populated
+     */
+    @Override
+    public Hub getInfo() {
+        return jupyterHubClient.getInfo();
+    }
+
+    /**
      * Creates the JupyterHub user account for the provided XNAT user.
      *
      * @param user The XNAT user
@@ -67,6 +86,15 @@ public class DefaultJupyterHubService implements JupyterHubService {
     @Override
     public Optional<User> getUser(final UserI user) {
         return jupyterHubClient.getUser(user.getUsername());
+    }
+
+    /**
+     * Gets all the users and their active servers from JupyterHub.
+     * @return List of all users on JupyterHub
+     */
+    @Override
+    public List<User> getUsers() {
+        return jupyterHubClient.getUsers();
     }
 
     /**
@@ -145,31 +173,41 @@ public class DefaultJupyterHubService implements JupyterHubService {
         }
 
         CompletableFuture.runAsync(() -> {
-            // We don't want to update the user options entity if there is a running server
-            eventService.triggerEvent(JupyterServerEvent.progress(eventTrackingId, user.getID(), xsiType, itemId,
-                                                                  JupyterServerEventI.Operation.Start, 0,
-                                                                  "Checking for existing Jupyter notebook servers."));
-
-            if (jupyterHubClient.getServer(user.getUsername(), servername).isPresent()) {
-                eventService.triggerEvent(JupyterServerEvent.failed(eventTrackingId,
-                                                                    user.getID(), xsiType, itemId,
+            // Check if JupyterHub is online
+            try {
+                jupyterHubClient.getVersion();
+            } catch (Exception e) {
+                eventService.triggerEvent(JupyterServerEvent.failed(eventTrackingId, user.getID(), xsiType, itemId,
                                                                     JupyterServerEventI.Operation.Start,
-                                                                    "Failed to launch Jupyter notebook server. " +
-                                                                            "This server already exists."));
+                                                                    "Unable to connect to JupyterHub"));
                 return;
             }
 
-            eventService.triggerEvent(JupyterServerEvent.progress(eventTrackingId, user.getID(), xsiType, itemId,
-                                                                  JupyterServerEventI.Operation.Start, 20,
-                                                                  "Building notebook server container configuration."));
-
-            userOptionsService.storeUserOptions(user, servername, xsiType, itemId, projectId, dockerImage);
-
-            eventService.triggerEvent(JupyterServerEvent.progress(eventTrackingId, user.getID(), xsiType, itemId,
-                                                                  JupyterServerEventI.Operation.Start, 30,
-                                                                  "Saved container configuration. Sending start request to JupyterHub."));
-
             try {
+                // We don't want to update the user options entity if there is a running server
+                eventService.triggerEvent(JupyterServerEvent.progress(eventTrackingId, user.getID(), xsiType, itemId,
+                                                                      JupyterServerEventI.Operation.Start, 0,
+                                                                      "Checking for existing Jupyter notebook servers."));
+
+                if (jupyterHubClient.getServer(user.getUsername(), servername).isPresent()) {
+                    eventService.triggerEvent(JupyterServerEvent.failed(eventTrackingId,
+                                                                        user.getID(), xsiType, itemId,
+                                                                        JupyterServerEventI.Operation.Start,
+                                                                        "Failed to launch Jupyter notebook server. " +
+                                                                                "There is already one running."));
+                    return;
+                }
+
+                eventService.triggerEvent(JupyterServerEvent.progress(eventTrackingId, user.getID(), xsiType, itemId,
+                                                                      JupyterServerEventI.Operation.Start, 20,
+                                                                      "Building notebook server container configuration."));
+
+                userOptionsService.storeUserOptions(user, servername, xsiType, itemId, projectId, dockerImage);
+
+                eventService.triggerEvent(JupyterServerEvent.progress(eventTrackingId, user.getID(), xsiType, itemId,
+                                                                      JupyterServerEventI.Operation.Start, 30,
+                                                                      "Saved container configuration. Sending start request to JupyterHub."));
+
                 // Send empty user options. User's should not be able to directly send bind mounts.
                 // JupyterHub will request the user options.
                 jupyterHubClient.startServer(user.getUsername(), servername,

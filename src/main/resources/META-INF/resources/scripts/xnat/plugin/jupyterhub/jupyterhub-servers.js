@@ -10,6 +10,7 @@ XNAT.app.activityTab = getObject(XNAT.app.activityTab || {});
 XNAT.plugin = getObject(XNAT.plugin || {});
 XNAT.plugin.jupyterhub = getObject(XNAT.plugin.jupyterhub || {});
 XNAT.plugin.jupyterhub.servers = getObject(XNAT.plugin.jupyterhub.servers || {});
+XNAT.plugin.jupyterhub.servers.user_options = getObject(XNAT.plugin.jupyterhub.servers.user_options || {});
 
 (function(factory) {
     if (typeof define === 'function' && define.amd) {
@@ -292,40 +293,35 @@ XNAT.plugin.jupyterhub.servers = getObject(XNAT.plugin.jupyterhub.servers || {})
         }
     }
 
-    let stopServer = XNAT.plugin.jupyterhub.servers.stopServer = function(username = window.username,
-                                                                          servername = '',
-                                                                          eventTrackingId = generateEventTrackingId()) {
+    XNAT.plugin.jupyterhub.servers.stopServer = async function(username = window.username,
+                                                               servername = '',
+                                                               eventTrackingId = generateEventTrackingId()) {
         console.debug(`jupyterhub-servers.js: XNAT.plugin.jupyterhub.servers.stopServer`);
 
         return XNAT.xhr.ajax({
             url: serverUrl(username, servername, eventTrackingId),
-            data : {
-                "eventTrackingId": eventTrackingId
-            },
+            data : {"eventTrackingId": eventTrackingId},
             method: 'DELETE',
-            beforeSend: function() {
-                XNAT.app.activityTab.start('Stop Jupyter Notebook Server',  eventTrackingId, 'XNAT.plugin.jupyterhub.servers.activityTabCallback', 2000);
-            },
-            success: function () {
-                console.log(`Jupyter server ${servername} for user ${username} stopped`);
-            },
-            fail: function (e) {
-                XNAT.dialog.open({
-                    width: 450,
-                    title: "Failed to stop Jupyter Server",
-                    buttons: [
-                        {
-                            label: 'OK',
-                            isDefault: true,
-                            close: true,
-                            action: function() {
-                                XNAT.ui.dialog.closeAll();
-                            }
-                        }
-                    ]
-                });
-            }
         });
+    }
+
+    XNAT.plugin.jupyterhub.servers.user_options.get = async function(username, servername) {
+        let url = servername ?
+            `/xapi/jupyterhub/users/${username}/server/${servername}/user-options`:
+            `/xapi/jupyterhub/users/${username}/server/user-options`;
+
+        url = XNAT.url.restUrl(url);
+
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: {'Content-Type': 'application/json'}
+        })
+
+        if (!response.ok) {
+            throw new Error(`HTTP error getting JupyterHub users: ${response.status}`);
+        }
+
+        return await response.json();
     }
 
     let generateEventTrackingId = XNAT.plugin.jupyterhub.servers.generateEventTrackingId = function() {

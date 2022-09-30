@@ -71,6 +71,20 @@ pathTranslationDockerPrefix:
   description: >
     (Optional) Enter the Docker Server path to the XNAT_HOME mount, i.e. "/docker/my-data/XNAT"
 
+jupyterHubSetup:
+  kind: panel
+  name: jupyterHubSetup
+  label: JupyterHub Setup
+  contents:
+    jupyterHubSetupTable:
+      tag: "div#jupyterhub-setup-table"
+    imagePreferencesScript:
+      tag: script|src="~/scripts/xnat/plugin/jupyterhub/jupyterhub-hub.js"
+    renderImagePreferencesTable:
+      tag: script
+      content: >
+        XNAT.plugin.jupyterhub.hub.initSetupTable('jupyterhub-setup-table');
+
 imagePreferences:
   kind: panel
   name: imagePreferences
@@ -92,7 +106,7 @@ imagePreferences:
 jupyterhubPreferences:
   kind: panel.form
   name: jupyterhubPreferences
-  label: Preferences
+  label: JupyterHub Setup
   method: POST
   contentType: json
   url: /xapi/jupyterhub/preferences
@@ -107,6 +121,23 @@ jupyterhubPreferences:
     ${pathTranslationDockerPrefix}
     ${workspacePath}
 
+jupyterHubUserActivity:
+  kind: panel
+  name: jupyterHubUserActivity
+  label: JupyterHub User Activity
+  contents:
+    jupyterHubActivityDescription:
+      tag: div.message
+      contents:
+        "This panel lists all JupyterHub users and any Jupyter notebook servers they may be running."
+    jupyterHubActivityTable:
+      tag: "div#jupyterhub-user-activity-table"
+    imagePreferencesScript:
+      tag: script|src="~/scripts/xnat/plugin/jupyterhub/jupyterhub-users.js"
+    renderImagePreferencesTable:
+      tag: script
+      content: >
+        XNAT.plugin.jupyterhub.users.activity.init('jupyterhub-user-activity-table');
 
 #################################################
 ####  Root Site Admin Spawner Config Object  ####
@@ -124,9 +155,17 @@ siteSettings:
     jupyterhubPreferencesTab:
       kind: tab
       name: jupyterhubPreferencesTab
-      label: Preferences
+      label: Setup
       group: jupyterhubTabGroup
       active: true
       contents:
-        ${jupyterhubPreferences}
+        ${jupyterHubSetup}
         ${imagePreferences}
+    jupyterhubUserActivityTab:
+      kind: tab
+      name: jupyterhubUserActivityTab
+      label: User Activity
+      group: jupyterhubTabGroup
+      active: true
+      contents:
+        ${jupyterHubUserActivity}

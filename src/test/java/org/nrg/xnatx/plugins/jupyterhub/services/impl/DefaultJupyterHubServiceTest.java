@@ -81,6 +81,24 @@ public class DefaultJupyterHubServiceTest {
     }
 
     @Test
+    public void testGetVersion() {
+        // Test
+        jupyterHubService.getVersion();
+
+        // Verify the jupyter hub client method was called as expected
+        verify(mockJupyterHubClient).getVersion();
+    }
+
+    @Test
+    public void testGetInfo() {
+        // Test
+        jupyterHubService.getInfo();
+
+        // Verify the jupyter hub client method was called as expected
+        verify(mockJupyterHubClient).getInfo();
+    }
+
+    @Test
     public void testCreateUser() {
         // Test
         jupyterHubService.createUser(user);
@@ -96,6 +114,15 @@ public class DefaultJupyterHubServiceTest {
 
         // Verify the jupyter hub client method was called as expected
         verify(mockJupyterHubClient).getUser(username);
+    }
+
+    @Test
+    public void testGetUsers() {
+        // Test
+        jupyterHubService.getUsers();
+
+        // Verify the jupyter hub client method was called as expected
+        verify(mockJupyterHubClient).getUsers();
     }
 
     @Test
@@ -192,6 +219,31 @@ public class DefaultJupyterHubServiceTest {
         jupyterHubService.startServer(user, XnatImagescandata.SCHEMA_ELEMENT_NAME, "456", "Scan 456", projectId, eventTrackingId, dockerImage);
 
         //Verify failure to start event occurred
+        verify(mockEventService, atLeastOnce()).triggerEvent(jupyterServerEventCaptor.capture());
+        JupyterServerEventI capturedEvent = jupyterServerEventCaptor.getValue();
+        assertEquals(JupyterServerEventI.Status.Failed, capturedEvent.getStatus());
+        assertEquals(JupyterServerEventI.Operation.Start, capturedEvent.getOperation());
+
+        // Verify user options are not saved
+        verify(mockUserOptionsEntityService, never()).createOrUpdate(any());
+
+        // Verify no attempts to start a server
+        verify(mockJupyterHubClient, never()).startServer(any(), any(), any());
+    }
+
+    @Test(timeout = 2000)
+    public void testStartServer_HubOffline() throws Exception {
+        // Grant permissions
+        when(mockPermissionsHelper.canRead(any(), anyString(), anyString(), anyString())).thenReturn(true);
+
+        // Connection to JupyterHub failed
+        when(mockJupyterHubClient.getVersion()).thenThrow(RuntimeException.class);
+
+        // Test
+        jupyterHubService.startServer(user, XnatProjectdata.SCHEMA_ELEMENT_NAME, projectId, projectId, projectId, eventTrackingId, dockerImage);
+        Thread.sleep(1000); // Async call, need to wait. Is there a better way to test this?
+
+        // Verify failure to start event occurred
         verify(mockEventService, atLeastOnce()).triggerEvent(jupyterServerEventCaptor.capture());
         JupyterServerEventI capturedEvent = jupyterServerEventCaptor.getValue();
         assertEquals(JupyterServerEventI.Status.Failed, capturedEvent.getStatus());

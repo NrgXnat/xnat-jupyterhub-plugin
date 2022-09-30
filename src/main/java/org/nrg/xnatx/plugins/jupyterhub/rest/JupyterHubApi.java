@@ -14,6 +14,7 @@ import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.nrg.xdat.security.user.exceptions.UserInitException;
 import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
 import org.nrg.xft.security.UserI;
+import org.nrg.xnatx.plugins.jupyterhub.client.models.Hub;
 import org.nrg.xnatx.plugins.jupyterhub.client.models.Server;
 import org.nrg.xnatx.plugins.jupyterhub.client.models.User;
 import org.nrg.xnatx.plugins.jupyterhub.models.XnatUserOptions;
@@ -23,6 +24,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+
+import java.util.List;
 
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 import static org.springframework.web.bind.annotation.RequestMethod.*;
@@ -46,6 +49,29 @@ public class JupyterHubApi extends AbstractXapiRestController {
         this.jupyterHubUserOptionsService = jupyterHubUserOptionsService;
     }
 
+    @ApiOperation(value = "Get the JupyterHub version.", response = Hub.class)
+    @ApiResponses({@ApiResponse(code = 200, message = "JupyterHub version successfully retrieved."),
+                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
+                   @ApiResponse(code = 403, message = "Not authorized."),
+                   @ApiResponse(code = 500, message = "Unexpected error")})
+    @XapiRequestMapping(value = "/version", produces = APPLICATION_JSON_VALUE, method = GET, restrictTo = AccessLevel.Authenticated)
+    public Hub getVersion() {
+        return jupyterHubService.getVersion();
+    }
+
+    @ApiOperation(value = "Get detailed information about JupyterHub",
+                  notes = "Detailed JupyterHub information, including Python version, JupyterHub's version and " +
+                          "executable path, and which Authenticator and Spawner are active.",
+                  response = Hub.class)
+    @ApiResponses({@ApiResponse(code = 200, message = "JupyterHub information successfully retrieved."),
+                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
+                   @ApiResponse(code = 403, message = "Not authorized."),
+                   @ApiResponse(code = 500, message = "Unexpected error")})
+    @XapiRequestMapping(value = "/info", produces = APPLICATION_JSON_VALUE, method = GET, restrictTo = AccessLevel.Admin)
+    public Hub getInfo() {
+        return jupyterHubService.getInfo();
+    }
+
     @ApiOperation(value = "Get a Jupyter Hub user by name.", response = User.class)
     @ApiResponses({@ApiResponse(code = 200, message = "User found."),
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
@@ -54,6 +80,16 @@ public class JupyterHubApi extends AbstractXapiRestController {
     @XapiRequestMapping(value = "/users/{username}", method = GET, produces = APPLICATION_JSON_VALUE, restrictTo = AccessLevel.User)
     public User getUser(@ApiParam(value = "username", required = true) @PathVariable @Username final String username) throws NotFoundException {
         return jupyterHubService.getUser(getSessionUser()).orElseThrow(() -> new NotFoundException("No user with name " + username + "exists on JupyterHub."));
+    }
+
+    @ApiOperation(value = "Get all the users on JupyterHub.", notes = "All users and their active servers will be returned.", response = User.class, responseContainer = "List")
+    @ApiResponses({@ApiResponse(code = 200, message = "Users found."),
+            @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
+            @ApiResponse(code = 403, message = "Not authorized."),
+            @ApiResponse(code = 500, message = "Unexpected error")})
+    @XapiRequestMapping(value = "/users", method = GET, produces = APPLICATION_JSON_VALUE, restrictTo = AccessLevel.Admin)
+    public List<User> getUsers() {
+        return jupyterHubService.getUsers();
     }
 
     @ApiOperation(value = "Create a single user on Jupyter Hub")

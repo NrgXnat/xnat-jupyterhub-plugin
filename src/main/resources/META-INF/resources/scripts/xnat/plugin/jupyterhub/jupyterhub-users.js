@@ -8,6 +8,7 @@ var XNAT = getObject(XNAT || {});
 XNAT.plugin = getObject(XNAT.plugin || {});
 XNAT.plugin.jupyterhub = getObject(XNAT.plugin.jupyterhub || {});
 XNAT.plugin.jupyterhub.users = getObject(XNAT.plugin.jupyterhub.users || {});
+XNAT.plugin.jupyterhub.users.activity = getObject(XNAT.plugin.jupyterhub.users.activity || {});
 
 (function(factory) {
     if (typeof define === 'function' && define.amd) {
@@ -46,6 +47,21 @@ XNAT.plugin.jupyterhub.users = getObject(XNAT.plugin.jupyterhub.users || {});
         })
     }
 
+    XNAT.plugin.jupyterhub.users.getUsers = XNAT.plugin.jupyterhub.users.getAll = async function() {
+        console.debug(`jupyterhub-users.js: XNAT.plugin.jupyterhub.users.getUsers`);
+
+        const response = await fetch(XNAT.url.restUrl(`/xapi/jupyterhub/users`), {
+            method: 'GET',
+            headers: {'Content-Type': 'application/json'}
+        })
+
+        if (!response.ok) {
+            throw new Error(`HTTP error getting JupyterHub users: ${response.status}`);
+        }
+
+        return await response.json();
+    }
+
     XNAT.plugin.jupyterhub.users.createUser = XNAT.plugin.jupyterhub.users.create = function(username = window.username) {
         console.debug(`jupyterhub-users.js: XNAT.plugin.jupyterhub.users.createUser`);
 
@@ -79,6 +95,176 @@ XNAT.plugin.jupyterhub.users = getObject(XNAT.plugin.jupyterhub.users || {});
                 XNAT.plugin.jupyterhub.users.isEnabled = false;
             })
         })
+    }
+
+    XNAT.plugin.jupyterhub.users.activity.table = function(activityTableContainerId) {
+        console.debug(`jupyterhub-hub.js: XNAT.plugin.jupyterhub.users.activity.table`);
+
+        // initialize the table
+        const usersTable = XNAT.table({
+            className: 'users xnat-table',
+            style: {
+                width: '100%',
+                marginTop: '15px',
+                marginBottom: '15px'
+            }
+        })
+
+        // add table header row
+        usersTable.tr()
+            .th({addClass: 'left', html: '<b>User</b>'})
+            .th('<b>Admin</b>')
+            .th('<b>Server</b>')
+            .th('<b>Ready</b>')
+            .th('<b>Started</b>')
+            .th('<b>Last Activity</b>')
+            .th('<b>Actions</b>')
+
+        // Single Server Details Dialog
+        function serverDialog(username, server) {
+            // initialize the server table
+            const serverTable = XNAT.table({
+                className: 'server-table xnat-table',
+                style: {
+                    width: '100%',
+                    marginTop: '15px',
+                    marginBottom: '15px'
+                }
+            })
+
+            // JupyterHub server
+            serverTable.tr()
+                .td([spawn('b', 'server')])
+                .td([ spawn('pre', {style: {'white-space': 'pre-wrap'}},  [spawn('code', [JSON.stringify(server, undefined, 2)])]) ])
+
+            // link onclick -> server details dialog
+            return spawn('a.link|href=#!', {
+                onclick: function (e) {
+                    e.preventDefault();
+
+                    // XNAT user_options
+                    XNAT.plugin.jupyterhub.servers.user_options.get(username, server['name']).then(user_options => {
+                        serverTable.tr()
+                            .td([spawn('b', 'user_options')])
+                            .td([ spawn('pre', {style: {'white-space': 'pre-wrap'}},  [spawn('code', [JSON.stringify(user_options, undefined, 2)])]) ])
+                    }).catch(e => {
+                        console.error("Error fetching user_options: ", e);
+                    })
+
+                    XNAT.dialog.open({
+                        title: 'Server',
+                        content: spawn('div#server-table-container'),
+                        maxBtn: true,
+                        width: 750,
+                        beforeShow: function() {
+                            let serverTableContainerEl = document.getElementById("server-table-container");
+                            serverTableContainerEl.innerHTML = '';
+                            serverTableContainerEl.append(serverTable.table);
+                        },
+                        buttons: [
+                            {
+                                label: 'OK',
+                                isDefault: true,
+                                close: true,
+                            }
+                        ]
+                    })
+                }
+            }, 'Details')
+        }
+
+        function stopServerButton(username, servername) {
+            return spawn('button.btn.sm.delete', {
+                onclick: function() {
+                    xmodal.confirm({
+                        height: 220,
+                        scroll: false,
+                        content: "" +
+                            "<p>Are you sure you'd like to stop this Jupyer server?</p>" +
+                            "<p><b>This action cannot be undone.</b></p>",
+                        okAction: function() {
+                            const eventTrackingId = XNAT.plugin.jupyterhub.servers.generateEventTrackingId()
+                            XNAT.plugin.jupyterhub.servers.stopServer(username, servername, eventTrackingId).then(() => {
+                                const delay = (time) => new Promise(resolve => setTimeout(resolve, time));
+                                delay(500).then(() => XNAT.plugin.jupyterhub.users.activity.refresh(activityTableContainerId));
+                            }).catch(error => {
+                                console.error(error);
+                                XNAT.dialog.alert(`Failed to stop Jupyter server: ${error}`)
+                            });
+                        }
+                    })
+                }
+            }, 'Stop Server');
+        }
+
+        XNAT.plugin.jupyterhub.users.getUsers().then(users => {
+            users.forEach(user => {
+                let name = user['name'];
+                let admin = user['admin'] ? 'admin' : '';
+                let servers = user['servers'];
+                let hasServer = '' in servers;
+                let url = hasServer ? servers['']['url'] : '';
+                let ready = hasServer ? servers['']['ready'] : '';
+                let started = hasServer ? new Date(servers['']['started']) : '';
+                let lastActivity = hasServer ? new Date(servers['']['last_activity']) : '';
+
+                usersTable.tr()
+                    .td([spawn('div.left', [name])])
+                    .td([spawn('div.center', [admin])])
+                    .td([spawn('div.center', [hasServer ? serverDialog(user['name'], servers['']) : ''])])
+                    .td([spawn('div.center', [ready])])
+                    .td([spawn('div.center', [started.toLocaleString()])])
+                    .td([spawn('div.center', [lastActivity.toLocaleString()])])
+                    .td([spawn('div.center', [hasServer ? stopServerButton(name, '') : ''])]);
+            })
+        }).catch(e => {
+            console.error("Unable to fetch user activity.", e);
+
+            usersTable.tr()
+                .td([spawn('div.left', ["Unable to connect to JupyterHub"])])
+                .td([spawn('div.center', [])])
+                .td([spawn('div.center', [])])
+                .td([spawn('div.center', [])])
+                .td([spawn('div.center', [])])
+                .td([spawn('div.center', [])])
+                .td([spawn('div.center', [])]);
+        })
+
+        return usersTable.table;
+    }
+
+    XNAT.plugin.jupyterhub.users.activity.refresh = function(activityTableContainerId) {
+        console.debug(`jupyterhub-users.js: XNAT.plugin.jupyterhub.users.activity.refresh`);
+
+        // Create activity table
+        let activityTable = XNAT.plugin.jupyterhub.users.activity.table(activityTableContainerId)
+
+        // Clear container and insert activity table
+        let containerEl = document.getElementById(activityTableContainerId);
+        if (containerEl && activityTable) {
+            containerEl.innerHTML = "";
+            containerEl.append(activityTable);
+        }
+    }
+
+    XNAT.plugin.jupyterhub.users.activity.init = function(activityTableContainerId = 'jupyterhub-user-activity-table') {
+        console.debug(`jupyterhub-users.js: XNAT.plugin.jupyterhub.users.activity.init`);
+
+        let containerEl = document.getElementById(activityTableContainerId);
+        let footerEl = containerEl.parentElement.parentElement.querySelector(".panel-footer")
+
+        XNAT.plugin.jupyterhub.users.activity.refresh(activityTableContainerId);
+
+        const refreshButton = spawn('button.btn.btn-sm', {
+            html: 'Refresh',
+            onclick: function() {
+                XNAT.plugin.jupyterhub.users.activity.refresh(activityTableContainerId)
+            }
+        });
+
+        // add the 'refresh' button to the panel footer
+        footerEl.append(spawn('div.pull-right', [refreshButton]));
+        footerEl.append(spawn('div.clear.clearFix'));
     }
 
     XNAT.plugin.jupyterhub.users.init();

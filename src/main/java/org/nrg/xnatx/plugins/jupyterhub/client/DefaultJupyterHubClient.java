@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.xnatx.plugins.jupyterhub.client.exceptions.ResourceAlreadyExistsException;
 import org.nrg.xnatx.plugins.jupyterhub.client.exceptions.UserNotFoundException;
+import org.nrg.xnatx.plugins.jupyterhub.client.models.Hub;
 import org.nrg.xnatx.plugins.jupyterhub.client.models.Server;
 import org.nrg.xnatx.plugins.jupyterhub.client.models.User;
 import org.nrg.xnatx.plugins.jupyterhub.client.models.UserOptions;
@@ -13,6 +14,8 @@ import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -25,6 +28,62 @@ public class DefaultJupyterHubClient implements JupyterHubClient {
     public DefaultJupyterHubClient(final String jupyterHubApiToken, final String jupyterHubApiUrl) {
         this.jupyterHubApiToken = jupyterHubApiToken;
         this.jupyterHubApiUrl = jupyterHubApiUrl;
+    }
+
+    /**
+     * Gets the JupyterHub version. Per JupyterHub documentation: This endpoint is not authenticated for the purpose of
+     * clients and user to identify the JupyterHub version before setting up authentication.
+     * <p>
+     * JupyterHub API endpoint: /
+     *
+     * @return Hub with version number only
+     */
+    @Override
+    public Hub getVersion() {
+        log.trace("Getting JupyterHub version");
+
+        RestTemplate restTemplate = new RestTemplate();
+        // Skip authentication
+        HttpEntity<String> request = new HttpEntity<>(null, null);
+
+        try {
+            ResponseEntity<Hub> response = restTemplate.exchange(versionUrl(),
+                                                                 HttpMethod.GET,
+                                                                 request, Hub.class);
+            log.trace("JupyterHub version received.");
+            return response.getBody();
+        } catch (Exception e) {
+            log.error("", e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * Gets detailed JupyterHub information, including Python version, JupyterHub's version and executable path, and
+     * which Authenticator and Spawner are active.
+     * <p>
+     * JupyterHub API endpoint: /info
+     *
+     * @return Hub with version number only
+     */
+    @Override
+    public Hub getInfo() {
+        log.trace("Getting JupyterHub info");
+
+        RestTemplate restTemplate = new RestTemplate();
+        MultiValueMap<String, String> headers = new HttpHeaders();
+        headers.add(HttpHeaders.AUTHORIZATION, "token " + jupyterHubApiToken);
+        HttpEntity<String> request = new HttpEntity<>(null, headers);
+
+        try {
+            ResponseEntity<Hub> response = restTemplate.exchange(infoUrl(),
+                                                                 HttpMethod.GET,
+                                                                 request, Hub.class);
+            log.trace("JupyterHub info received.");
+            return response.getBody();
+        } catch (RestClientException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
@@ -46,6 +105,32 @@ public class DefaultJupyterHubClient implements JupyterHubClient {
             return response.getBody();
         } catch (RestClientException e) {
             log.error("Unable to create user on JupyterHub", e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * Get list of JupyterHub users.
+     *
+     * @return The Hub's user list
+     */
+    @Override
+    public List<User> getUsers() {
+        log.debug("Getting all users from JupyterHub");
+
+        RestTemplate restTemplate = new RestTemplate();
+        MultiValueMap<String, String> headers = new HttpHeaders();
+        headers.add(HttpHeaders.AUTHORIZATION, "token " + jupyterHubApiToken);
+        HttpEntity<String> request = new HttpEntity<>(null, headers);
+
+        try {
+            ResponseEntity<User[]> response = restTemplate.exchange(usersUrl(),
+                                                                  HttpMethod.GET,
+                                                                  request, User[].class);
+
+            return Arrays.asList(response.getBody());
+        } catch (RestClientException e) {
+            log.error("Unable to get users from JupyterHub", e);
             throw new RuntimeException(e);
         }
     }
@@ -75,6 +160,9 @@ public class DefaultJupyterHubClient implements JupyterHubClient {
                 log.error("Unable to get user " + username + " from JupyterHub", e);
                 throw new RuntimeException(e);
             }
+        } catch (Exception e) {
+            log.error("Unable to get user " + username + " from JupyterHub", e);
+            throw new RuntimeException(e);
         }
     }
 
@@ -190,7 +278,19 @@ public class DefaultJupyterHubClient implements JupyterHubClient {
         }
     }
 
+    private String usersUrl() {
+        return jupyterHubApiUrl + "/users";
+    }
+
     private String userUrl(final String username) {
         return jupyterHubApiUrl + "/users/" + username;
+    }
+
+    private String versionUrl() {
+        return jupyterHubApiUrl + "/";
+    }
+
+    private String infoUrl() {
+        return jupyterHubApiUrl + "/info";
     }
 }
