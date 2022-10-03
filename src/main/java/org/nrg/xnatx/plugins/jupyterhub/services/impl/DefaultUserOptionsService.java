@@ -427,6 +427,7 @@ public class DefaultUserOptionsService implements UserOptionsService {
         defaultEnvironmentVariables.put("XNAT_HOST", xnatHostUrl);
         defaultEnvironmentVariables.put("XNAT_USER", token.getAlias());
         defaultEnvironmentVariables.put("XNAT_PASS", token.getSecret());
+        defaultEnvironmentVariables.put("XNAT_DATA", "/data");
         defaultEnvironmentVariables.put("XNAT_XSI_TYPE", xsiType);
         defaultEnvironmentVariables.put("XNAT_ITEM_ID", id);
 
