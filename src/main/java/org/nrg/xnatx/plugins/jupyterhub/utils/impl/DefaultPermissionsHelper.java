@@ -38,21 +38,34 @@ public class DefaultPermissionsHelper implements PermissionsHelper {
     @Override
     public boolean canRead(UserI user, String projectId, String entityId, String xsiType) {
         if (xsiType.equals(XdatStoredSearch.SCHEMA_ELEMENT_NAME)) {
-            return canReadStoredSearch(user, entityId);
+            return canReadStoredSearch(user, entityId, projectId);
         } else {
             return canReadProjSubjExp(user, projectId, entityId, xsiType);
         }
     }
 
     /**
-     * Can the user read the provided stored search.
+     * Can the user read the provided stored search. Can also be used for site wide data search bundles and project data
+     * search bundles. Data search bundles have an id of the form '@xnat:somethingData'. Include the projectId if the
+     * data search is scoped to a project.
      *
      * @param user              The user for which to retrieve permissions.
      * @param storedSearchId    The ID of the stored search
+     * @param projectId         If the stored search was created at the project level, include the project id, otherwise
+     *                          null for site wide searches
      *
      * @return True if the user can read the stored search.
      */
-    private boolean canReadStoredSearch(final UserI user, final String storedSearchId) {
+    private boolean canReadStoredSearch(final UserI user, final String storedSearchId, final String projectId) {
+        if (storedSearchId.startsWith("@")) { // Site wide or project data bundle
+            if (projectId == null) { // Site wide data bundle -> example @xnat:subjectData
+                return true; // User can read data from all projects they have read access too
+            } else {
+                // If the user can read the project they are allowed to read the data within it
+                return canReadProjSubjExp(user, projectId, projectId, XnatProjectdata.SCHEMA_ELEMENT_NAME);
+            }
+        }
+
         return searchHelperService.getSearchForUser(user, storedSearchId) != null;
     }
 

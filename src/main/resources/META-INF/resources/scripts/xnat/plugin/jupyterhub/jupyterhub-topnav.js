@@ -45,6 +45,7 @@ XNAT.plugin.jupyterhub.topnav = getObject(XNAT.plugin.jupyterhub.topnav || {});
             const xsiType = userOptions['xsiType'];
             const itemId = userOptions['itemId'];
             const itemLabel = userOptions['itemLabel'];
+            const projectId = userOptions['projectId'];
 
             switch(xsiType) {
                 case 'xnat:projectData':
@@ -66,25 +67,35 @@ XNAT.plugin.jupyterhub.topnav = getObject(XNAT.plugin.jupyterhub.topnav || {});
                         html: itemLabel,
                     });
                 case 'xdat:stored_search':
-                    if (itemId.startsWith('@')) {// Site wide data bundle
-                        return spawn('a', {
-                            href: restUrl(`/app/template/Search.vm/node/d.${itemId.substring(1)}`),
-                            title: itemLabel,
-                            html: itemLabel,
-                        });
-                    } else if (itemId.includes('@')) { // Project data bundle
-                        let project = itemId.substring(0, itemId.indexOf('@'))
-                        return spawn('a', {
-                            href: restUrl(`/data/projects/${project}`),
-                            title: itemLabel,
-                            html: itemLabel,
-                        });
+                    if (itemId.startsWith('@')) {
+                        if (projectId == null) {// Site wide data bundle
+                            return spawn('a', {
+                                href: restUrl(`/app/template/Search.vm/node/d.${itemId.substring(1)}`),
+                                title: itemLabel,
+                                html: itemLabel,
+                            });
+                        } else { // Project search bundle
+                            return spawn('a', {
+                                href: restUrl(`/data/projects/${projectId}`),
+                                title: itemLabel,
+                                html: itemLabel,
+                            });
+                        }
                     } else { // Stored search
-                        return spawn('a', {
-                            href: restUrl(`/app/template/Search.vm/node/ss.${itemId}`),
-                            title: itemLabel,
-                            html: itemLabel,
-                        });
+                        if (projectId == null) { // Site level stored search
+                            return spawn('a', {
+                                href: restUrl(`/app/template/Search.vm/node/ss.${itemId}`),
+                                title: itemLabel,
+                                html: itemLabel,
+                            });
+                        } else { // Project level stored search
+                            return spawn('a', {
+                                href: restUrl(`/data/projects/${projectId}`),
+                                title: itemLabel,
+                                html: itemLabel,
+                            });
+                        }
+
                     }
             }
         }

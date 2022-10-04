@@ -19,6 +19,7 @@ import org.nrg.xnatx.plugins.jupyterhub.utils.PermissionsHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -137,7 +138,7 @@ public class DefaultJupyterHubService implements JupyterHubService {
      */
     @Override
     public void startServer(final UserI user, final String xsiType, final String itemId,
-                            final String itemLabel, final String projectId, final String eventTrackingId,
+                            final String itemLabel, @Nullable final String projectId, final String eventTrackingId,
                             final String dockerImage) {
         startServer(user, "", xsiType, itemId, itemLabel, projectId, eventTrackingId, dockerImage);
     }
@@ -159,7 +160,7 @@ public class DefaultJupyterHubService implements JupyterHubService {
      */
     @Override
     public void startServer(final UserI user, String servername, final String xsiType, final String itemId,
-                            final String itemLabel, final String projectId, final String eventTrackingId,
+                            final String itemLabel, @Nullable  final String projectId, final String eventTrackingId,
                             final String dockerImage) {
         eventService.triggerEvent(JupyterServerEvent.progress(eventTrackingId, user.getID(), xsiType, itemId,
                                                               JupyterServerEventI.Operation.Start, 0,

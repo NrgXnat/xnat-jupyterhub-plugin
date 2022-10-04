@@ -35,7 +35,8 @@ XNAT.plugin.jupyterhub.servers.user_options = getObject(XNAT.plugin.jupyterhub.s
         //     url = `${url}/${servername}`;
         // }
 
-        url = `${url}?xsiType=${xsiType}&itemId=${itemId}&itemLabel=${itemLabel}&projectId=${projectId}&eventTrackingId=${eventTrackingId}&dockerImage=${dockerImage}`;
+        url = `${url}?xsiType=${xsiType}&itemId=${itemId}&itemLabel=${itemLabel}&eventTrackingId=${eventTrackingId}&dockerImage=${dockerImage}`;
+        if (projectId) url = `${url}&projectId=${projectId}`;
 
         return restUrl(url);
     }
@@ -144,9 +145,9 @@ XNAT.plugin.jupyterhub.servers.user_options = getObject(XNAT.plugin.jupyterhub.s
     }
 
     XNAT.plugin.jupyterhub.servers.startServerForStoredSearch = function(username, servername, xsiType, itemId,
-                                                                         itemLabel, eventTrackingId) {
+                                                                         itemLabel, projectId, eventTrackingId) {
         console.debug(`jupyterhub-servers.js: XNAT.plugin.jupyterhub.servers.startServerForStoredSearch`);
-         startServer(username, servername, xsiType, itemId, itemLabel, undefined, eventTrackingId)
+         startServer(username, servername, xsiType, itemId, itemLabel, projectId, eventTrackingId)
     }
 
 

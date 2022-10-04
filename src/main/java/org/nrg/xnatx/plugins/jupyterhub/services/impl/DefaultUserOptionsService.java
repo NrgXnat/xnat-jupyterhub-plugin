@@ -6,14 +6,10 @@ import org.nrg.xdat.entities.AliasToken;
 import org.nrg.xdat.model.XnatSubjectassessordataI;
 import org.nrg.xdat.om.*;
 import org.nrg.xdat.om.base.BaseXnatExperimentdata;
+import org.nrg.xdat.om.base.auto.AutoXnatProjectdata;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
-import org.nrg.xdat.presentation.CSVPresenter;
-import org.nrg.xdat.search.DisplaySearch;
 import org.nrg.xdat.security.services.SearchHelperServiceI;
 import org.nrg.xdat.services.AliasTokenService;
-import org.nrg.xft.XFTTable;
-import org.nrg.xft.db.MaterializedView;
-import org.nrg.xft.db.MaterializedViewI;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
@@ -30,8 +26,7 @@ import org.nrg.xnatx.plugins.jupyterhub.utils.PermissionsHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.io.BufferedWriter;
-import java.io.FileWriter;
+import javax.annotation.Nullable;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -198,103 +193,47 @@ public class DefaultUserOptionsService implements UserOptionsService {
     }
 
     @Override
-    public Map<String, String> getStoredSearchPaths(UserI user, String storedSearchId) {
-        return getStoredSearchPaths(user, storedSearchId, null);
-    }
-
-    @Override
-    public Map<String, String> getStoredSearchPaths(UserI user, String storedSearchId, Path csv) {
+    public Map<String, String> getStoredSearchPaths(UserI user, String storedSearchId, @Nullable String projectId) {
         Map<String, String> storedSearchPaths = new HashMap<>();
-
         XdatStoredSearch storedSearch;
 
-        // TODO Set Search Description
+        if (storedSearchId.startsWith("@")) { // Site wide or project data bundle @xnat:subjectData
+            if (projectId == null) { // Site wide data bundle
+                // Mount All projects
+                List<String> projectIds = XnatProjectdata.getAllXnatProjectdatas(user, false)
+                        .stream()
+                        .map(AutoXnatProjectdata::getId)
+                        .collect(Collectors.toList());
 
-        if (storedSearchId.contains("@")) { // Site wide or project data bundle
-            if (storedSearchId.startsWith("@")) { // Site wide data bundle -> @xnat:subjectData
-                String elementName = storedSearchId.substring(1);
-                DisplaySearch displaySearch = new DisplaySearch();
-                displaySearch.setUser(user);
-                displaySearch.setDisplay("listing");
-
-                try {
-                    displaySearch.setRootElement(elementName);
-                } catch (XFTInitException | ElementNotFoundException e) {
-                    log.error("Unable to set root element", e);
-                    throw new RuntimeException(e);
-                }
-
-                storedSearch = displaySearch.convertToStoredSearch(storedSearchId);
-                storedSearch.setId(storedSearchId);
-
-                String description = storedSearchId.replace("@", "_").replace(":", "_");
-
-                storedSearch.setDescription(description);
-                storedSearch.setBriefDescription(description);
-            } else { // Project data bundle -> ProjectA@xnat:subjectData
-                String[] splitId = storedSearchId.split("@");
-                String projectId = splitId[0];
-                String elementName = splitId[1];
-
+                return getProjectPaths(user, projectIds);
+            } else { // Project data bundle
                 XnatProjectdata project = XnatProjectdata.getProjectByIDorAlias(projectId, user, false);
 
                 if (project != null) {
-                    storedSearch = project.getDefaultSearch(elementName);
-
-                    String description = storedSearchId.replace("@", "_").replace(":", "_");
-
-                    storedSearch.setDescription(description);
-                    storedSearch.setBriefDescription(description);
+                    // Mount the single project
+                    return getProjectPaths(user, Collections.singletonList(projectId));
                 } else {
                     throw new RuntimeException("Project " + projectId + " not found.");
                 }
             }
         } else { // Stored search
             storedSearch = searchHelperService.getSearchForUser(user, storedSearchId);
-        }
 
-        if (storedSearch == null) {
-            return storedSearchPaths;
-        }
-
-        try {
-            // First get the keys/ids associated with each row of the search.
-            // These will be the ids of the root element
-            MaterializedViewI mv = MaterializedView.getViewBySearchID(storedSearch.getId(), user, MaterializedView.DEFAULT_MATERIALIZED_VIEW_SERVICE_CODE);
-
-            // Add paths for each key
-            final String rootElement = storedSearch.getRootElementName();
-            if (rootElement.equals(XnatSubjectdata.SCHEMA_ELEMENT_NAME)) {
-                final ArrayList<String> subjectIds = mv.getColumnValues("key").convertColumnToArrayList("values");
-                storedSearchPaths.putAll(this.getSubjectPaths(user, subjectIds));
-            } else if (instanceOf(rootElement, XnatExperimentdata.SCHEMA_ELEMENT_NAME)) {
-                final ArrayList<String> experimentIds = mv.getColumnValues("key").convertColumnToArrayList("values");
-                storedSearchPaths.putAll(this.getExperimentPaths(user, experimentIds));
-            } else if (instanceOf(rootElement, XnatImagescandata.SCHEMA_ELEMENT_NAME)) {
-                final ArrayList<Integer> imageScanIds = mv.getColumnValues("key").convertColumnToArrayList("values");
-                storedSearchPaths.putAll(this.getImageScanPaths(user, imageScanIds));
-            } // ELSE -> nothing. Only support searches on subjects, image sessions and image scans // TODO Throw Error??
-
-            if (csv != null) {
-                // Execute the search
-                DisplaySearch ds = storedSearch.getDisplaySearch(user);
-                final XFTTable data = (XFTTable) ds.execute(new CSVPresenter(), user.getLogin());
-
-                // Write search output to csv
-                if (!Files.exists(csv)) {
-                    Files.createDirectories(csv.getParent());
-                    Files.createFile(csv);
-                }
-
-                BufferedWriter writer = new BufferedWriter(new FileWriter(csv.toFile(), false));
-                data.toCSV(writer);
+            if (storedSearch == null) {
+                return storedSearchPaths;
             }
-        } catch (Exception e) {
-            log.error("", e);
-            throw new RuntimeException(e);
-        }
 
-        return storedSearchPaths;
+            // For project level stored searches limit the paths to that project
+            // For site wide stored searches add all readable projects
+            List<String> projectIds = (projectId == null) ?
+                    XnatProjectdata.getAllXnatProjectdatas(user, false)
+                            .stream()
+                            .map(AutoXnatProjectdata::getId)
+                            .collect(Collectors.toList()) :
+                    Collections.singletonList(projectId);
+
+            return getProjectPaths(user, projectIds);
+        }
     }
 
     @Override
@@ -359,8 +298,7 @@ public class DefaultUserOptionsService implements UserOptionsService {
                 break;
             }
             case (XdatStoredSearch.SCHEMA_ELEMENT_NAME): {
-                Path csv = userWorkspaceService.getUserWorkspace(user).resolve("searches").resolve(id + ".csv");
-                paths.putAll(getStoredSearchPaths(user, id, csv));
+                paths.putAll(getStoredSearchPaths(user, id, projectId));
                 break;
             }
         }
