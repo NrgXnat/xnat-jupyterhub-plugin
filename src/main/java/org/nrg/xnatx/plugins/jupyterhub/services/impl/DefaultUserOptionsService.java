@@ -77,13 +77,13 @@ public class DefaultUserOptionsService implements UserOptionsService {
                 // Project resources
                 final Path resourceDirectory = Paths.get(xnatProjectdata.getRootArchivePath() + "/resources");
                 if (Files.exists(resourceDirectory)) {
-                    projectPaths.put("/data/projects/" + projectId + "/project-resources", resourceDirectory.toString());
+                    projectPaths.put("/data/projects/" + projectId + "/resources", resourceDirectory.toString());
                 }
 
                 // Subject resources
                 final Path subjectResourceDirectory = Paths.get(xnatProjectdata.getRootArchivePath() + "/subjects");
                 if (Files.exists(subjectResourceDirectory)) {
-                    projectPaths.put("/data/projects/" + projectId + "/subject-resources", subjectResourceDirectory.toString());
+                    projectPaths.put("/data/projects/" + projectId + "/subjects", subjectResourceDirectory.toString());
                 }
 
             }
