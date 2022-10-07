@@ -115,6 +115,10 @@ public class JupyterHubPreferencesApi extends AbstractXapiRestController {
                 value = jupyterHubPreferences.getDockerImages();
                 break;
             }
+            case (JupyterHubPreferences.CONTAINER_SPEC_LABELS_PREF_ID): {
+                value = jupyterHubPreferences.getContainerSpecLabels();
+                break;
+            }
             default:
                 value = jupyterHubPreferences.get(preference);
         }

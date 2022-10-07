@@ -7,6 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 import org.nrg.xdat.XDAT;
 import org.nrg.xnatx.plugins.jupyterhub.models.BindMount;
+import org.nrg.xnatx.plugins.jupyterhub.models.ContainerSpec;
 import org.nrg.xnatx.plugins.jupyterhub.models.XnatUserOptions;
 
 import javax.persistence.*;
@@ -31,9 +32,9 @@ public class UserOptionsEntity extends AbstractHibernateEntity {
     private String projectId;
     private String eventTrackingId;
 
-    private String dockerImage;
     private Map<String, String> environmentVariables;
     private String bindMountsJson; // List<BindMounts> serialized to json string
+    private String containerSpecJson; // container spec serialized to json string
 
     public Integer getUserId() {
         return userId;
@@ -88,15 +89,6 @@ public class UserOptionsEntity extends AbstractHibernateEntity {
         this.eventTrackingId = trackingId;
     }
 
-    @Column(columnDefinition = "TEXT")
-    public String getDockerImage() {
-        return dockerImage;
-    }
-
-    public void setDockerImage(String dockerImage) {
-        this.dockerImage = dockerImage;
-    }
-
     @ElementCollection(fetch = FetchType.EAGER)
     public Map<String, String> getEnvironmentVariables() {
         return environmentVariables;
@@ -113,6 +105,15 @@ public class UserOptionsEntity extends AbstractHibernateEntity {
 
     public void setBindMountsJson(String bindMountsJson) {
         this.bindMountsJson = bindMountsJson;
+    }
+
+    @Column(columnDefinition = "TEXT")
+    public String getContainerSpecJson() {
+        return containerSpecJson;
+    }
+
+    public void setContainerSpecJson(String containerSpecJson) {
+        this.containerSpecJson = containerSpecJson;
     }
 
     public static String bindMountPojo(List<BindMount> bindMounts) {
@@ -136,6 +137,24 @@ public class UserOptionsEntity extends AbstractHibernateEntity {
         }
     }
 
+    public static String containerSpecPojo(ContainerSpec containerSpec) {
+        try {
+            return XDAT.getSerializerService().getObjectMapper().writeValueAsString(containerSpec);
+        } catch (JsonProcessingException e) {
+            log.error("Unable to serialize containerSpec.", e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    public ContainerSpec containerSpecPojo() {
+        try {
+            return XDAT.getSerializerService().getObjectMapper().readValue(containerSpecJson, ContainerSpec.class);
+        } catch (IOException e) {
+            log.error("Unable to deserialize containerSpec.", e);
+            throw new RuntimeException(e);
+        }
+    }
+
     public XnatUserOptions toPojo() {
         return XnatUserOptions.builder()
                 .userId(userId)
@@ -144,9 +163,9 @@ public class UserOptionsEntity extends AbstractHibernateEntity {
                 .itemId(itemId)
                 .projectId(projectId)
                 .eventTrackingId(eventTrackingId)
-                .dockerImage(dockerImage)
                 .environmentVariables(environmentVariables)
                 .bindMounts(bindMountPojo())
+                .containerSpec(containerSpecPojo())
                 .build();
     }
 
@@ -157,8 +176,8 @@ public class UserOptionsEntity extends AbstractHibernateEntity {
         this.setItemId(update.getItemId());
         this.setProjectId(update.getProjectId());
         this.setEventTrackingId(update.getEventTrackingId());
-        this.setDockerImage(update.getDockerImage());
         this.setEnvironmentVariables(update.getEnvironmentVariables());
         this.setBindMountsJson(update.getBindMountsJson());
+        this.setContainerSpecJson(update.getContainerSpecJson());
     }
 }

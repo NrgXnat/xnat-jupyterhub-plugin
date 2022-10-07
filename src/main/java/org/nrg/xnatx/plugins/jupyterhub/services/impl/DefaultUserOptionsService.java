@@ -17,6 +17,7 @@ import org.nrg.xft.security.UserI;
 import org.nrg.xnat.exceptions.InvalidArchiveStructure;
 import org.nrg.xnatx.plugins.jupyterhub.entities.UserOptionsEntity;
 import org.nrg.xnatx.plugins.jupyterhub.models.BindMount;
+import org.nrg.xnatx.plugins.jupyterhub.models.ContainerSpec;
 import org.nrg.xnatx.plugins.jupyterhub.models.XnatUserOptions;
 import org.nrg.xnatx.plugins.jupyterhub.preferences.JupyterHubPreferences;
 import org.nrg.xnatx.plugins.jupyterhub.services.UserOptionsEntityService;
@@ -330,6 +331,13 @@ public class DefaultUserOptionsService implements UserOptionsService {
         // Get env variables
         Map<String, String> environmentVariables = getDefaultEnvironmentVariables(user, xsiType, id);
 
+        // ContainerSpec
+        Map<String,String> containerSpecLabels = jupyterHubPreferences.getContainerSpecLabels();
+        ContainerSpec containerSpec = ContainerSpec.builder()
+                .labels(containerSpecLabels)
+                .image(dockerImage)
+                .build();
+
         // Store the user options
         UserOptionsEntity userOptionsEntity = UserOptionsEntity.builder()
                 .userId(user.getID())
@@ -337,9 +345,9 @@ public class DefaultUserOptionsService implements UserOptionsService {
                 .xsiType(xsiType)
                 .itemId(id)
                 .projectId(projectId)
-                .dockerImage(dockerImage)
                 .environmentVariables(environmentVariables)
                 .bindMountsJson(UserOptionsEntity.bindMountPojo(mounts))
+                .containerSpecJson(UserOptionsEntity.containerSpecPojo(containerSpec))
                 .build();
 
         userOptionsEntityService.createOrUpdate(userOptionsEntity);

@@ -14,6 +14,7 @@ import org.nrg.xft.security.UserI;
 import org.nrg.xnatx.plugins.jupyterhub.client.models.*;
 import org.nrg.xnatx.plugins.jupyterhub.config.JupyterHubApiConfig;
 import org.nrg.xnatx.plugins.jupyterhub.models.BindMount;
+import org.nrg.xnatx.plugins.jupyterhub.models.ContainerSpec;
 import org.nrg.xnatx.plugins.jupyterhub.models.DockerImage;
 import org.nrg.xnatx.plugins.jupyterhub.models.XnatUserOptions;
 import org.nrg.xnatx.plugins.jupyterhub.services.JupyterHubService;
@@ -64,6 +65,7 @@ public class JupyterHubApiTest {
     private User  nonAdmin_jh;
 
     private XnatUserOptions userOptions;
+    private ContainerSpec containerSpec;
     private Server dummyServer;
     private String servername;
     private Server dummyNamedServer;
@@ -120,6 +122,11 @@ public class JupyterHubApiTest {
                 .jupyterHostPath("/data/TestProject")
                 .build();
 
+        containerSpec = ContainerSpec.builder()
+                .image(image.getImage())
+                .labels(Collections.singletonMap("label", "label"))
+                .build();
+
         userOptions = XnatUserOptions.builder()
                 .userId(nonAdminId)
                 .servername("")
@@ -128,7 +135,7 @@ public class JupyterHubApiTest {
                 .itemLabel("TestProject")
                 .projectId("TestProject")
                 .eventTrackingId("20220822T201541799Z")
-                .dockerImage(image.getImage())
+                .containerSpec(containerSpec)
                 .environmentVariables(environmentalVariables)
                 .bindMounts(Collections.singletonList(bindMount))
                 .build();
@@ -407,7 +414,7 @@ public class JupyterHubApiTest {
                 .param("itemLabel", userOptions.getItemLabel())
                 .param("projectId", userOptions.getProjectId())
                 .param("eventTrackingId", userOptions.getEventTrackingId())
-                .param("dockerImage", userOptions.getDockerImage())
+                .param("dockerImage", containerSpec.getImage())
                 .with(authentication(NONADMIN_AUTH))
                 .with(csrf())
                 .with(testSecurityContext());
@@ -421,7 +428,7 @@ public class JupyterHubApiTest {
                                                             eq(userOptions.getItemLabel()),
                                                             eq(userOptions.getProjectId()),
                                                             eq(userOptions.getEventTrackingId()),
-                                                            eq(userOptions.getDockerImage()));
+                                                            eq(containerSpec.getImage()));
         // Named Server
         verify(mockJupyterHubService, never()).startServer(any(UserI.class),
                                                            anyString(),
@@ -443,7 +450,7 @@ public class JupyterHubApiTest {
                 .param("itemLabel", userOptions.getItemLabel())
                 .param("projectId", userOptions.getProjectId())
                 .param("eventTrackingId", userOptions.getEventTrackingId())
-                .param("dockerImage", userOptions.getDockerImage())
+                .param("dockerImage", containerSpec.getImage())
                 .with(authentication(NONADMIN_AUTH))
                 .with(csrf())
                 .with(testSecurityContext());
@@ -467,7 +474,7 @@ public class JupyterHubApiTest {
                                                             eq(userOptions.getItemLabel()),
                                                             eq(userOptions.getProjectId()),
                                                             eq(userOptions.getEventTrackingId()),
-                                                            eq(userOptions.getDockerImage()));
+                                                            eq(containerSpec.getImage()));
 
     }
 
