@@ -74,7 +74,7 @@ public class JupyterHubApi extends AbstractXapiRestController {
         return jupyterHubService.getInfo();
     }
 
-    @ApiOperation(value = "Get a Jupyter Hub user by name.", response = User.class)
+    @ApiOperation(value = "Get a JupyterHub user by name.", response = User.class)
     @ApiResponses({@ApiResponse(code = 200, message = "User found."),
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Not authorized."),
@@ -86,15 +86,15 @@ public class JupyterHubApi extends AbstractXapiRestController {
 
     @ApiOperation(value = "Get all the users on JupyterHub.", notes = "All users and their active servers will be returned.", response = User.class, responseContainer = "List")
     @ApiResponses({@ApiResponse(code = 200, message = "Users found."),
-            @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
-            @ApiResponse(code = 403, message = "Not authorized."),
-            @ApiResponse(code = 500, message = "Unexpected error")})
+                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
+                   @ApiResponse(code = 403, message = "Not authorized."),
+                   @ApiResponse(code = 500, message = "Unexpected error")})
     @XapiRequestMapping(value = "/users", method = GET, produces = APPLICATION_JSON_VALUE, restrictTo = AccessLevel.Admin)
     public List<User> getUsers() {
         return jupyterHubService.getUsers();
     }
 
-    @ApiOperation(value = "Create a single user on Jupyter Hub")
+    @ApiOperation(value = "Create a single user on JupyterHub")
     @ApiResponses({@ApiResponse(code = 200, message = "The user has been created"),
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Not authorized."),
@@ -114,7 +114,7 @@ public class JupyterHubApi extends AbstractXapiRestController {
         return jupyterHubService.getServer(getUserI(username)).orElse(null);
     }
 
-    @ApiOperation(value = "Get Jupyter Server details for a user.")
+    @ApiOperation(value = "Get Jupyter Server details for a user.", hidden = true)
     @ApiResponses({@ApiResponse(code = 200, message = "Server found."),
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Not authorized."),
@@ -143,11 +143,12 @@ public class JupyterHubApi extends AbstractXapiRestController {
     }
 
     @ApiOperation(value = "Starts a Jupyter server for the user",
-                  notes = "Use the Event Tracking API to track progress.")
+                  notes = "Use the Event Tracking API to track progress.",
+                  hidden = true)
     @ApiResponses({@ApiResponse(code = 200, message = "Jupyter server successfully started"),
-            @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
-            @ApiResponse(code = 403, message = "Not authorized."),
-            @ApiResponse(code = 500, message = "Unexpected error")})
+                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
+                   @ApiResponse(code = 403, message = "Not authorized."),
+                   @ApiResponse(code = 500, message = "Unexpected error")})
     @XapiRequestMapping(value = "/users/{username}/server/{servername}", method = POST, restrictTo = AccessLevel.User)
     public void startNamedServer(@ApiParam(value = "username", required = true) @PathVariable("username") @Username final String username,
                                  @ApiParam(value = "servername", required = true) @PathVariable("servername") final String servername,
@@ -160,26 +161,26 @@ public class JupyterHubApi extends AbstractXapiRestController {
         jupyterHubService.startServer(getUserI(username), servername, xsiType, itemId, itemLabel, projectId, eventTrackingId, dockerImage);
     }
 
-    // TODO start named server
-
     @ApiOperation(value = "Returns the last known user options for the default server", response = XnatUserOptions.class)
     @ApiResponses({@ApiResponse(code = 200, message = "Successfully retrieved user options."),
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Not authorized to access site configuration properties."),
                    @ApiResponse(code = 500, message = "Unexpected error")})
-    @AuthorizedRoles({"JupyterHub", "Administrator"}) // TODO is this the behavior/role we want?
+    @AuthorizedRoles({"JupyterHub", "Administrator"})
     @XapiRequestMapping(value = "/users/{username}/server/user-options", produces = APPLICATION_JSON_VALUE, method = GET, restrictTo = AccessLevel.Role)
     public XnatUserOptions getUserOptions(@ApiParam(value = "username", required = true) @PathVariable("username") @Username final String username) throws UserNotFoundException, UserInitException, NotFoundException {
         UserI user = getUserManagementService().getUser(username);
         return jupyterHubUserOptionsService.retrieveUserOptions(user).orElseThrow(() -> new NotFoundException("Jupyter server configuration not found."));
     }
 
-    @ApiOperation(value = "Returns the last known user options for the named server", response = XnatUserOptions.class)
+    @ApiOperation(value = "Returns the last known user options for the named server",
+                  response = XnatUserOptions.class,
+                  hidden = true)
     @ApiResponses({@ApiResponse(code = 200, message = "Successfully retrieved user options."),
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Not authorized to access site configuration properties."),
                    @ApiResponse(code = 500, message = "Unexpected error")})
-    @AuthorizedRoles({"JupyterHub", "Administrator"}) // TODO is this the behavior/role we want?
+    @AuthorizedRoles({"JupyterHub", "Administrator"})
     @XapiRequestMapping(value = "/users/{username}/server/{servername}/user-options", produces = APPLICATION_JSON_VALUE, method = GET, restrictTo = AccessLevel.Role)
     public XnatUserOptions getUserOptions(@ApiParam(value = "username", required = true) @PathVariable("username") @Username final String username,
                                           @ApiParam(value = "servername", required = true) @PathVariable("servername") @Username final String servername) throws UserNotFoundException, UserInitException, NotFoundException {
@@ -199,11 +200,13 @@ public class JupyterHubApi extends AbstractXapiRestController {
         jupyterHubService.stopServer(user, eventTrackingId);
     }
 
-    @ApiOperation(value = "Stops a users named Jupyter server", notes = "Use the Event Tracking API to track progress.")
+    @ApiOperation(value = "Stops a users named Jupyter server",
+                  notes = "Use the Event Tracking API to track progress.",
+                  hidden = true)
     @ApiResponses({@ApiResponse(code = 200, message = "Jupyter server successfully stopped."),
-            @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
-            @ApiResponse(code = 403, message = "Not authorized."),
-            @ApiResponse(code = 500, message = "Unexpected error")})
+                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
+                   @ApiResponse(code = 403, message = "Not authorized."),
+                   @ApiResponse(code = 500, message = "Unexpected error")})
     @XapiRequestMapping(value = "/users/{username}/server/{serverName}", method = DELETE, restrictTo = AccessLevel.User)
     public void stopServer(@ApiParam(value = "username", required = true) @PathVariable("username") @Username final String username,
                            @ApiParam(value = "serverName", required = true) @PathVariable("serverName") final String serverName,
@@ -212,7 +215,7 @@ public class JupyterHubApi extends AbstractXapiRestController {
         jupyterHubService.stopServer(user, serverName, eventTrackingId);
     }
 
-    @ApiOperation(value = "Create new API Token", notes = "Creates new API token for use with JupyterHub")
+    @ApiOperation(value = "Create new API Token", notes = "Creates new access scoped API token for use with JupyterHub")
     @ApiResponses({@ApiResponse(code = 200, message = "Token created."),
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Not authorized."),
