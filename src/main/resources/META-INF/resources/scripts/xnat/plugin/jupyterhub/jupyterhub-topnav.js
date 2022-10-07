@@ -104,7 +104,7 @@ XNAT.plugin.jupyterhub.topnav = getObject(XNAT.plugin.jupyterhub.topnav || {});
             return spawn('button.btn.sm', {
                 onclick: function(e) {
                     e.preventDefault();
-                    window.open(server['url'], '_blank')
+                    XNAT.plugin.jupyterhub.servers.goTo(server['url'])
                 }
             }, [ spawn('i.fa.fa-book|title="Go to Jupyter notebook server"') ])
         }

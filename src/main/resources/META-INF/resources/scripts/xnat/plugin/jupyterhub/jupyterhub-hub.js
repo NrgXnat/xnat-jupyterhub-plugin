@@ -114,6 +114,7 @@ XNAT.plugin.jupyterhub.hub = getObject(XNAT.plugin.jupyterhub.hub || {});
             }, 'Edit');
         }
 
+        // TODO Break into two
         Promise.all([
             XNAT.plugin.jupyterhub.hub.getInfo(),
             XNAT.plugin.jupyterhub.preferences.getAll()

@@ -288,10 +288,18 @@ XNAT.plugin.jupyterhub.servers.user_options = getObject(XNAT.plugin.jupyterhub.s
     function parseFinalMessage(message, succeeded) {
         if (succeeded) {
             // Surround link to Jupyter server in message with <a> tag
-            return '<div class="prog success">' + message.replace(/(\/.*$)/, "<a target='_blank' href='$1'>$1</a>") + '</div>';
+            return '<div class="prog success">' + message.replace(/(\/.*$)/, "<a onclick='XNAT.plugin.jupyterhub.servers.goTo(\"$1\")'>$1</a>") + '</div>';
         } else {
             return '<div class="prog error">' + message + '</div>'
         }
+    }
+
+    XNAT.plugin.jupyterhub.servers.goTo = function(server_url) {
+        XNAT.plugin.jupyterhub.users.tokens.create().then(token => {
+            window.open(`${server_url}?token=${token['token']}`, '_blank');
+        }).catch(() => {
+            window.open(server_url, '_blank');
+        })
     }
 
     XNAT.plugin.jupyterhub.servers.stopServer = async function(username = window.username,

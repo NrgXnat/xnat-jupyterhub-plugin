@@ -96,6 +96,7 @@ public class JupyterHubApiTest {
         final Integer nonAdminId = 2;
         nonAdmin = mock(UserI.class);
         when(nonAdmin.getLogin()).thenReturn(NON_ADMIN_USERNAME);
+        when(nonAdmin.getUsername()).thenReturn(NON_ADMIN_USERNAME);
         when(nonAdmin.getPassword()).thenReturn(nonAdminPassword);
         when(admin.getID()).thenReturn(nonAdminId);
         when(mockRoleService.isSiteAdmin(nonAdmin)).thenReturn(false);
@@ -554,6 +555,44 @@ public class JupyterHubApiTest {
         XnatUserOptions responseUserOptions = mapper.readValue(response, XnatUserOptions.class);
 
         assertEquals(userOptions, responseUserOptions);
+    }
+
+    @Test
+    public void testGetToken() throws Exception {
+        // Setup
+        final String note = "token note";
+        final Integer expiresIn = 60;
+        final Token token = Token.builder()
+                .note(note)
+                .token("token1234567890")
+                .build();
+
+        when(mockJupyterHubService.createToken(eq(nonAdmin), eq(note), eq(expiresIn))).thenReturn(token);
+
+        // Test
+        final MockHttpServletRequestBuilder request = MockMvcRequestBuilders
+                .post("/jupyterhub/users/" + NON_ADMIN_USERNAME + "/tokens")
+                .param("username", NON_ADMIN_USERNAME)
+                .param("note", note)
+                .param("expiresIn", expiresIn.toString())
+                .accept(JSON)
+                .with(authentication(NONADMIN_AUTH))
+                .with(csrf())
+                .with(testSecurityContext());
+
+        final String response =
+                mockMvc.perform(request)
+                        .andExpect(status().isOk())
+                        .andExpect(content().contentType(JSON))
+                        .andReturn()
+                        .getResponse()
+                        .getContentAsString();
+
+        Token responseToken = mapper.readValue(response, Token.class);
+
+        // Verify
+        verify(mockJupyterHubService, times(1)).createToken(eq(nonAdmin), eq(note), eq(expiresIn));
+        assertEquals(token, responseToken);
     }
 
 }

@@ -17,6 +17,7 @@ import org.nrg.xnatx.plugins.jupyterhub.client.JupyterHubClient;
 import org.nrg.xnatx.plugins.jupyterhub.client.exceptions.ResourceAlreadyExistsException;
 import org.nrg.xnatx.plugins.jupyterhub.client.exceptions.UserNotFoundException;
 import org.nrg.xnatx.plugins.jupyterhub.client.models.Server;
+import org.nrg.xnatx.plugins.jupyterhub.client.models.Token;
 import org.nrg.xnatx.plugins.jupyterhub.client.models.UserOptions;
 import org.nrg.xnatx.plugins.jupyterhub.config.DefaultJupyterHubServiceConfig;
 import org.nrg.xnatx.plugins.jupyterhub.events.JupyterServerEventI;
@@ -28,6 +29,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
+import java.util.Collections;
 import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
@@ -47,6 +49,7 @@ public class DefaultJupyterHubServiceTest {
     @Autowired private JupyterHubPreferences mockJupyterHubPreferences;
 
     @Captor ArgumentCaptor<JupyterServerEventI> jupyterServerEventCaptor;
+    @Captor ArgumentCaptor<Token> tokenArgumentCaptor;
 
     private UserI user;
     private String username;
@@ -64,6 +67,7 @@ public class DefaultJupyterHubServiceTest {
 
         // Capture Jupyter events
         jupyterServerEventCaptor = ArgumentCaptor.forClass(JupyterServerEventI.class);
+        tokenArgumentCaptor = ArgumentCaptor.forClass(Token.class);
 
         // Polling rate and timeout
         when(mockJupyterHubPreferences.getStartTimeout()).thenReturn(2);
@@ -384,6 +388,24 @@ public class DefaultJupyterHubServiceTest {
         JupyterServerEventI capturedEvent = jupyterServerEventCaptor.getValue();
         assertEquals(JupyterServerEventI.Status.Completed, capturedEvent.getStatus());
         assertEquals(JupyterServerEventI.Operation.Stop, capturedEvent.getOperation());
+    }
+
+    @Test
+    public void testCreateToken() {
+        // Setup
+        final String note = "token note";
+        final int expiresIn = 60;
+        final String scope = "access:servers!user=" + username;
+
+        // Test
+        jupyterHubService.createToken(user, note, expiresIn);
+
+        // Verify
+        verify(mockJupyterHubClient, times(1)).createToken(eq(username), tokenArgumentCaptor.capture());
+        Token tokenArgumentCaptorValue = tokenArgumentCaptor.getValue();
+        assertEquals(note, tokenArgumentCaptorValue.getNote());
+        assertEquals(expiresIn, tokenArgumentCaptorValue.getExpires_in());
+        assertEquals(Collections.singletonList(scope), tokenArgumentCaptorValue.getScopes());
     }
 
 }

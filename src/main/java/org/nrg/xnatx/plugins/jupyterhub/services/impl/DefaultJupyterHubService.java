@@ -8,6 +8,7 @@ import org.nrg.xnatx.plugins.jupyterhub.client.exceptions.ResourceAlreadyExistsE
 import org.nrg.xnatx.plugins.jupyterhub.client.exceptions.UserNotFoundException;
 import org.nrg.xnatx.plugins.jupyterhub.client.models.Hub;
 import org.nrg.xnatx.plugins.jupyterhub.client.models.Server;
+import org.nrg.xnatx.plugins.jupyterhub.client.models.Token;
 import org.nrg.xnatx.plugins.jupyterhub.client.models.User;
 import org.nrg.xnatx.plugins.jupyterhub.events.JupyterServerEvent;
 import org.nrg.xnatx.plugins.jupyterhub.events.JupyterServerEventI;
@@ -20,6 +21,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Nullable;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -335,6 +337,27 @@ public class DefaultJupyterHubService implements JupyterHubService {
                 log.error("Failed to stop jupyter server", e);
             }
         });
+    }
+
+    /**
+     * Create a new token for the provided user. Token is given access:severs!user=username scope on JupyterHub.
+     *
+     * @param user User to create token for
+     * @param note The note to identify the new token with. This note will help you keep track of what your tokens
+     *             are for.
+     * @param expiresIn Lifetime of the token in seconds
+     * @return Token with the token field populated. This is the only chance to save the token!!!
+     *
+     */
+    @Override
+    public Token createToken(UserI user, String note, Integer expiresIn) {
+        Token token = Token.builder()
+                .note(note)
+                .expires_in(expiresIn)
+                .scopes(Collections.singletonList("access:servers!user=" + user.getUsername()))
+                .build();
+
+        return jupyterHubClient.createToken(user.getUsername(), token);
     }
 
     private Integer inMilliSec(Integer seconds) {

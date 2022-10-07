@@ -9,6 +9,7 @@ XNAT.plugin = getObject(XNAT.plugin || {});
 XNAT.plugin.jupyterhub = getObject(XNAT.plugin.jupyterhub || {});
 XNAT.plugin.jupyterhub.users = getObject(XNAT.plugin.jupyterhub.users || {});
 XNAT.plugin.jupyterhub.users.activity = getObject(XNAT.plugin.jupyterhub.users.activity || {});
+XNAT.plugin.jupyterhub.users.tokens = getObject(XNAT.plugin.jupyterhub.users.tokens || {});
 
 (function(factory) {
     if (typeof define === 'function' && define.amd) {
@@ -269,4 +270,30 @@ XNAT.plugin.jupyterhub.users.activity = getObject(XNAT.plugin.jupyterhub.users.a
 
     XNAT.plugin.jupyterhub.users.init();
 
+    XNAT.plugin.jupyterhub.users.tokens.create = async function(token = {
+                                                                    username: window.username,
+                                                                    note: "XNAT.plugin.jupyterhub.users.tokens.create",
+                                                                    expires_in: 60
+                                                                },
+                                                                timeout = 375) {
+        console.debug(`jupyterhub-users.js: XNAT.plugin.jupyterhub.users.tokens.create`);
+
+        let username = token['username'];
+        let expires_in = token['expires_in'];
+        let note = token['note'];
+
+        let resource = XNAT.url.restUrl(`/xapi/jupyterhub/users/${username}/tokens?username=${username}&expiresIn=${expires_in}&note=${note}`);
+        const response = await XNAT.plugin.jupyterhub.utils.fetchWithTimeout(resource, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(token),
+            timeout: timeout
+        })
+
+        if (!response.ok) {
+            throw new Error(`HTTP error creating token for user ${username}: ${response.status}`);
+        }
+
+        return await response.json();
+    }
 }));

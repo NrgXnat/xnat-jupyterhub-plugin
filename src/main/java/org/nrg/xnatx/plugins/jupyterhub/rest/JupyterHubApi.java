@@ -16,6 +16,7 @@ import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnatx.plugins.jupyterhub.client.models.Hub;
 import org.nrg.xnatx.plugins.jupyterhub.client.models.Server;
+import org.nrg.xnatx.plugins.jupyterhub.client.models.Token;
 import org.nrg.xnatx.plugins.jupyterhub.client.models.User;
 import org.nrg.xnatx.plugins.jupyterhub.models.XnatUserOptions;
 import org.nrg.xnatx.plugins.jupyterhub.services.JupyterHubService;
@@ -30,6 +31,7 @@ import java.util.List;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 import static org.springframework.web.bind.annotation.RequestMethod.*;
 
+@SuppressWarnings("DefaultAnnotationParam")
 @Api("JupyterHub Plugin API")
 @XapiRestController
 @RequestMapping("/jupyterhub")
@@ -208,6 +210,19 @@ public class JupyterHubApi extends AbstractXapiRestController {
                            @ApiParam(value = "eventTrackingId", required = true) @RequestParam(value = "eventTrackingId") final String eventTrackingId) throws UserNotFoundException, UserInitException {
         UserI user = getUserManagementService().getUser(username);
         jupyterHubService.stopServer(user, serverName, eventTrackingId);
+    }
+
+    @ApiOperation(value = "Create new API Token", notes = "Creates new API token for use with JupyterHub")
+    @ApiResponses({@ApiResponse(code = 200, message = "Token created."),
+                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
+                   @ApiResponse(code = 403, message = "Not authorized."),
+                   @ApiResponse(code = 500, message = "Unexpected error")})
+    @XapiRequestMapping(value = "/users/{username}/tokens", method = POST, restrictTo = AccessLevel.User)
+    public Token createToken(@ApiParam(value = "username", required = true) @PathVariable("username") @Username final String username,
+                             @ApiParam(value = "note", required = true) @RequestParam("note") final String note,
+                             @ApiParam(value = "expiresIn", required = true) @RequestParam(value = "expiresIn") final Integer expiresIn) throws UserNotFoundException, UserInitException {
+        UserI user = getUserManagementService().getUser(username);
+        return jupyterHubService.createToken(user, note, expiresIn);
     }
 
     private UserI getUserI(final String username) throws UserNotFoundException, UserInitException {

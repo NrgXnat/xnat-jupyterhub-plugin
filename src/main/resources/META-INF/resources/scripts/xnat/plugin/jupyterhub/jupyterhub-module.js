@@ -10,6 +10,7 @@ XNAT.app = getObject(XNAT.app || {});
 XNAT.app.activityTab = getObject(XNAT.app.activityTab || {});
 XNAT.plugin = getObject(XNAT.plugin || {});
 XNAT.plugin.jupyterhub = getObject(XNAT.plugin.jupyterhub || {});
+XNAT.plugin.jupyterhub.utils = getObject(XNAT.plugin.jupyterhub.utils || {});
 
 (function(factory) {
     if (typeof define === 'function' && define.amd) {
@@ -22,6 +23,19 @@ XNAT.plugin.jupyterhub = getObject(XNAT.plugin.jupyterhub || {});
         return factory();
     }
 }(function() {
+
+    XNAT.plugin.jupyterhub.utils.fetchWithTimeout = async function(resource, options = {}) {
+        const { timeout = 8000 } = options;
+
+        const controller = new AbortController();
+        const id = setTimeout(() => controller.abort(), timeout);
+        const response = await fetch(resource, {
+            ...options,
+            signal: controller.signal
+        });
+        clearTimeout(id);
+        return response;
+    }
 
     XNAT.plugin.jupyterhub.isSharedItem = function() {
         console.debug(`jupyterhub-module.js: XNAT.plugin.jupyterhub.isSharedItem`);

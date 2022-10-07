@@ -4,10 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.xnatx.plugins.jupyterhub.client.exceptions.ResourceAlreadyExistsException;
 import org.nrg.xnatx.plugins.jupyterhub.client.exceptions.UserNotFoundException;
-import org.nrg.xnatx.plugins.jupyterhub.client.models.Hub;
-import org.nrg.xnatx.plugins.jupyterhub.client.models.Server;
-import org.nrg.xnatx.plugins.jupyterhub.client.models.User;
-import org.nrg.xnatx.plugins.jupyterhub.client.models.UserOptions;
+import org.nrg.xnatx.plugins.jupyterhub.client.models.*;
 import org.springframework.http.*;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.HttpClientErrorException;
@@ -270,6 +267,39 @@ public class DefaultJupyterHubClient implements JupyterHubClient {
         }
     }
 
+    /**
+     * Create a new token for the user
+     * <p>
+     * JupyterHub API endpoint: /users/{name}/tokens
+     *
+     * @param username The user to create the token for.
+     * @param token Token with expires_in, note, and scopes defined.
+     * @return The newly created token.
+     */
+    @Override
+    public Token createToken(String username, Token token) {
+        log.debug("Creating token for user {}", username);
+
+        RestTemplate restTemplate = new RestTemplate();
+
+        MultiValueMap<String, String> headers = new HttpHeaders();
+        headers.add(HttpHeaders.AUTHORIZATION, "token " + jupyterHubApiToken);
+        headers.add(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE);
+        HttpEntity<Token> request = new HttpEntity<>(token, headers);
+
+        try {
+            ResponseEntity<Token> response = restTemplate.exchange(tokenUrl(username, null),
+                                                                    HttpMethod.POST,
+                                                                    request, Token.class);
+
+            log.debug("Token created for user {}", username);
+            return response.getBody();
+        } catch (Exception e) {
+            log.error("Unable to create token for user " + username, e);
+            throw new RuntimeException(e);
+        }
+    }
+
     private String serverUrl(final String username, final String servername) {
         if (StringUtils.isBlank(servername)) {
             return jupyterHubApiUrl + "/users/" + username + "/server";
@@ -292,5 +322,13 @@ public class DefaultJupyterHubClient implements JupyterHubClient {
 
     private String infoUrl() {
         return jupyterHubApiUrl + "/info";
+    }
+
+    private String tokenUrl(final String username, final String tokenId) {
+        if (StringUtils.isBlank(tokenId)) {
+            return jupyterHubApiUrl + "/users/" + username + "/tokens";
+        } else {
+            return jupyterHubApiUrl + "/users/" + username + "/tokens/" + tokenId;
+        }
     }
 }
