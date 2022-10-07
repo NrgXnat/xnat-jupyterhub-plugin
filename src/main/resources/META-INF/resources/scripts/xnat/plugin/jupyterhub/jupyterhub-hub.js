@@ -31,12 +31,13 @@ XNAT.plugin.jupyterhub.hub = getObject(XNAT.plugin.jupyterhub.hub || {});
         return XNAT.url.restUrl(`/xapi/jupyterhub/version`)
     }
 
-    XNAT.plugin.jupyterhub.hub.getInfo = async function() {
+    XNAT.plugin.jupyterhub.hub.getInfo = async function(timeout = 1500) {
         console.debug(`jupyterhub-hub.js: XNAT.plugin.jupyterhub.hub.getInfo`);
 
-        const response = await fetch(XNAT.plugin.jupyterhub.hub.infoUrl(), {
+        const response = await XNAT.plugin.jupyterhub.utils.fetchWithTimeout(XNAT.plugin.jupyterhub.hub.infoUrl(), {
             method: 'GET',
-            headers: {'Content-Type': 'application/json'}
+            headers: {'Content-Type': 'application/json'},
+            timeout: timeout
         })
 
         if (!response.ok) {
@@ -114,7 +115,6 @@ XNAT.plugin.jupyterhub.hub = getObject(XNAT.plugin.jupyterhub.hub || {});
             }, 'Edit');
         }
 
-        // TODO Break into two
         Promise.all([
             XNAT.plugin.jupyterhub.hub.getInfo(),
             XNAT.plugin.jupyterhub.preferences.getAll()
@@ -129,8 +129,8 @@ XNAT.plugin.jupyterhub.hub = getObject(XNAT.plugin.jupyterhub.hub || {});
             console.error("Error fetching hub info and preferences", e);
 
             hubTable.tr()
-                .td([spawn('div.left', ['Unable to fetch JupyterHub setup preferences'])])
-                .td([spawn('div.center', [])])
+                .td([spawn('div.left', ['Unable to connect to JupyterHub'])])
+                .td([spawn('div.center.warning', ['Down'])])
                 .td([spawn('div.center', [])])
                 .td([spawn('div.center', [editButton()])]);
         })

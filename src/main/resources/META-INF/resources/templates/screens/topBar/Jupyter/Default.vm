@@ -1,5 +1,5 @@
 <!-- Browse/Default -->
-<li><a href="#!" class="nolink">My Jupyter Servers</a>
+<li><a href="#!" class="nolink">Jupyter Notebook Servers</a>
     <ul id="my-jupyter-servers" class="shadowed dark-shadow">
         <!-- Sequence: 10 -->
 

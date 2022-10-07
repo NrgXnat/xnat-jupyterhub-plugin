@@ -1,5 +1,5 @@
 <li class="yuimenuitem">
     <a class="yuimenuitemlabel" id="start-jupyter-server" onclick="XNAT.plugin.jupyterhub.servers.startServerForExperiment()">
-        Start Jupyter Server
+        Start Jupyter
     </a>
 </li>

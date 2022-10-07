@@ -44,7 +44,7 @@
 
     if (jupyterHandler) {
         let jupyterMenuOption = {
-            'label' : 'Start Jupyter Server',
+            'label' : 'Start Jupyter',
             'handler': jupyterHandler
         }
 

@@ -30,30 +30,31 @@ XNAT.plugin.jupyterhub.users.tokens = getObject(XNAT.plugin.jupyterhub.users.tok
         return restUrl(url)
     }
 
-    XNAT.plugin.jupyterhub.users.getUser = XNAT.plugin.jupyterhub.users.get = function(username = window.username) {
+    XNAT.plugin.jupyterhub.users.getUser = XNAT.plugin.jupyterhub.users.get = async function(username = window.username,
+                                                                                             timeout  = 2000) {
         console.debug(`jupyterhub-users.js: XNAT.plugin.jupyterhub.users.getUser`);
 
-        return XNAT.xhr.ajax({
-            url: userUrl(username),
+        let url = userUrl(username);
+        const response = await XNAT.plugin.jupyterhub.utils.fetchWithTimeout(url, {
             method: 'GET',
-            contentType: 'application/json',
-            success: function (user) {
-                console.debug(`JupyterHub user ${username} exists.`);
-                return user;
-            },
-            fail: function (e) {
-                console.error(`User ${username} does not exist on JupyterHub.`);
-                return e;
-            }
+            headers: {'Content-Type': 'application/json'},
+            timeout: timeout,
         })
+
+        if (!response.ok) {
+            throw new Error(`HTTP error getting JupyterHub user ${username}: ${response.status}`);
+        }
+
+        return await response.json();
     }
 
-    XNAT.plugin.jupyterhub.users.getUsers = XNAT.plugin.jupyterhub.users.getAll = async function() {
+    XNAT.plugin.jupyterhub.users.getUsers = XNAT.plugin.jupyterhub.users.getAll = async function(timeout = 2000) {
         console.debug(`jupyterhub-users.js: XNAT.plugin.jupyterhub.users.getUsers`);
 
-        const response = await fetch(XNAT.url.restUrl(`/xapi/jupyterhub/users`), {
+        const response = await XNAT.plugin.jupyterhub.utils.fetchWithTimeout(XNAT.url.restUrl(`/xapi/jupyterhub/users`), {
             method: 'GET',
-            headers: {'Content-Type': 'application/json'}
+            headers: {'Content-Type': 'application/json'},
+            timeout: timeout
         })
 
         if (!response.ok) {
@@ -83,7 +84,7 @@ XNAT.plugin.jupyterhub.users.tokens = getObject(XNAT.plugin.jupyterhub.users.tok
     XNAT.plugin.jupyterhub.users.init = function(username = window.username) {
         console.debug(`jupyterhub-users.js: XNAT.plugin.jupyterhub.users.init`);
 
-        XNAT.plugin.jupyterhub.users.getUser(username).then(() => {
+        XNAT.plugin.jupyterhub.users.getUser(username, 2000).then(() => {
             console.debug(`User ${username} exists on JupyterHub`)
             XNAT.plugin.jupyterhub.users.isEnabled = true;
         }).catch(() => {

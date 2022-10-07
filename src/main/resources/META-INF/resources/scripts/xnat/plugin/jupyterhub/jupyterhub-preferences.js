@@ -23,13 +23,14 @@ XNAT.plugin.jupyterhub.preferences = getObject(XNAT.plugin.jupyterhub.preference
     }
 }(function() {
 
-    XNAT.plugin.jupyterhub.preferences.getAll = async function () {
+    XNAT.plugin.jupyterhub.preferences.getAll = async function (timeout = 1000) {
         console.debug(`jupyterhub-preferences.js: XNAT.plugin.jupyterhub.preferences.getAll`);
 
         let url = XNAT.url.restUrl('/xapi/jupyterhub/preferences');
-        const response = await fetch(url, {
+        const response = await XNAT.plugin.jupyterhub.utils.fetchWithTimeout(url, {
             method: 'GET',
-            headers: {'Content-Type': 'application/json'}
+            headers: {'Content-Type': 'application/json'},
+            timeout: timeout,
         })
 
         if (!response.ok) {
