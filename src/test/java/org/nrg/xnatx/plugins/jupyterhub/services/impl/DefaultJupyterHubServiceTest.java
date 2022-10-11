@@ -12,12 +12,15 @@ import org.nrg.xdat.om.XnatExperimentdata;
 import org.nrg.xdat.om.XnatImagescandata;
 import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xdat.om.XnatSubjectdata;
+import org.nrg.xdat.security.services.UserManagementServiceI;
+import org.nrg.xdat.security.user.exceptions.UserInitException;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnatx.plugins.jupyterhub.client.JupyterHubClient;
 import org.nrg.xnatx.plugins.jupyterhub.client.exceptions.ResourceAlreadyExistsException;
 import org.nrg.xnatx.plugins.jupyterhub.client.exceptions.UserNotFoundException;
 import org.nrg.xnatx.plugins.jupyterhub.client.models.Server;
 import org.nrg.xnatx.plugins.jupyterhub.client.models.Token;
+import org.nrg.xnatx.plugins.jupyterhub.client.models.User;
 import org.nrg.xnatx.plugins.jupyterhub.client.models.UserOptions;
 import org.nrg.xnatx.plugins.jupyterhub.config.DefaultJupyterHubServiceConfig;
 import org.nrg.xnatx.plugins.jupyterhub.events.JupyterServerEventI;
@@ -29,7 +32,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
@@ -47,6 +54,7 @@ public class DefaultJupyterHubServiceTest {
     @Autowired private UserOptionsEntityService mockUserOptionsEntityService;
     @Autowired private UserOptionsService mockUserOptionsService;
     @Autowired private JupyterHubPreferences mockJupyterHubPreferences;
+    @Autowired private UserManagementServiceI mockUserManagementServiceI;
 
     @Captor ArgumentCaptor<JupyterServerEventI> jupyterServerEventCaptor;
     @Captor ArgumentCaptor<Token> tokenArgumentCaptor;
@@ -59,11 +67,12 @@ public class DefaultJupyterHubServiceTest {
     private final String dockerImage = "jupyter/scipy-notebook:hub-2.3.0";
 
     @Before
-    public void before() {
+    public void before() throws org.nrg.xdat.security.user.exceptions.UserNotFoundException, UserInitException {
         // Mock the user
         user = mock(UserI.class);
         username = "user";
         when(user.getUsername()).thenReturn(username);
+        when(mockUserManagementServiceI.getUser(eq(username))).thenReturn(user);
 
         // Capture Jupyter events
         jupyterServerEventCaptor = ArgumentCaptor.forClass(JupyterServerEventI.class);
@@ -82,6 +91,7 @@ public class DefaultJupyterHubServiceTest {
         Mockito.reset(mockEventService);
         Mockito.reset(mockPermissionsHelper);
         Mockito.reset(mockUserOptionsEntityService);
+        Mockito.reset(mockUserManagementServiceI);
     }
 
     @Test
@@ -406,6 +416,80 @@ public class DefaultJupyterHubServiceTest {
         assertEquals(note, tokenArgumentCaptorValue.getNote());
         assertEquals(expiresIn, tokenArgumentCaptorValue.getExpires_in());
         assertEquals(Collections.singletonList(scope), tokenArgumentCaptorValue.getScopes());
+    }
+
+    @Test(timeout = 3000)
+    public void testCullIdleServers_Cull() throws Exception {
+        // Setup
+        when(mockJupyterHubPreferences.getInactivityTimeout()).thenReturn(90L);
+
+        Server server_active = Server.builder()
+                .name("server_active")
+                .last_activity(ZonedDateTime.now(ZoneId.of("UTC")))
+                .build();
+
+        Server server_inactive = Server.builder()
+                .name("server_inactive")
+                .last_activity(ZonedDateTime.now(ZoneId.of("UTC")).minusHours(2L))
+                .build();
+
+        Map<String, Server> servers = new HashMap<>();
+        servers.put("server_active", server_active);
+        servers.put("server_inactive", server_inactive);
+
+        User user = User.builder()
+                .name(username)
+                .servers(servers)
+                .build();
+
+        when(mockJupyterHubClient.getUsers()).thenReturn(Collections.singletonList(user));
+
+        // Test
+        jupyterHubService.cullInactiveServers();
+        Thread.sleep(2000); // Stop server is async call, need to wait.
+
+        // Verify active server not stopped
+        verify(mockJupyterHubClient, never()).stopServer(eq(username), eq(server_active.getName()));
+
+        // Verify inactive server stopped
+        verify(mockJupyterHubClient, times(1)).stopServer(eq(username), eq(server_inactive.getName()));
+    }
+
+    @Test
+    public void testCullIdleServers_NoCull() throws InterruptedException {
+        // Setup -> timeout set to zero
+        when(mockJupyterHubPreferences.getInactivityTimeout()).thenReturn(0L);
+
+        Server server_active = Server.builder()
+                .name("server_active")
+                .last_activity(ZonedDateTime.now(ZoneId.of("UTC")))
+                .build();
+
+        Server server_inactive = Server.builder()
+                .name("server_inactive")
+                .last_activity(ZonedDateTime.now(ZoneId.of("UTC")).minusHours(2L))
+                .build();
+
+        Map<String, Server> servers = new HashMap<>();
+        servers.put("server_active", server_active);
+        servers.put("server_inactive", server_inactive);
+
+        User user = User.builder()
+                .name(username)
+                .servers(servers)
+                .build();
+
+        when(mockJupyterHubClient.getUsers()).thenReturn(Collections.singletonList(user));
+
+        // Test
+        jupyterHubService.cullInactiveServers();
+        Thread.sleep(2000); // Stop server is async call, need to wait.
+
+        // Verify active server not stopped
+        verify(mockJupyterHubClient, never()).stopServer(eq(username), eq(server_active.getName()));
+
+        // Verify inactive server not stopped. Timeout is set to zero
+        verify(mockJupyterHubClient, never()).stopServer(eq(username), eq(server_inactive.getName()));
     }
 
 }

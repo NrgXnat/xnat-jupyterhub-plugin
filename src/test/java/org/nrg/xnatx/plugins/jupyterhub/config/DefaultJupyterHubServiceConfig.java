@@ -1,6 +1,7 @@
 package org.nrg.xnatx.plugins.jupyterhub.config;
 
 import org.nrg.framework.services.NrgEventServiceI;
+import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.nrg.xnatx.plugins.jupyterhub.client.JupyterHubClient;
 import org.nrg.xnatx.plugins.jupyterhub.preferences.JupyterHubPreferences;
 import org.nrg.xnatx.plugins.jupyterhub.services.UserOptionsService;
@@ -19,12 +20,14 @@ public class DefaultJupyterHubServiceConfig {
                                                              final NrgEventServiceI mockNrgEventService,
                                                              final PermissionsHelper mockPermissionsHelper,
                                                              final UserOptionsService mockUserOptionsService,
-                                                             final JupyterHubPreferences mockJupyterHubPreferences) {
+                                                             final JupyterHubPreferences mockJupyterHubPreferences,
+                                                             final UserManagementServiceI mockUserManagementService) {
         return new DefaultJupyterHubService(mockJupyterHubClient,
                                             mockNrgEventService,
                                             mockPermissionsHelper,
                                             mockUserOptionsService,
-                                            mockJupyterHubPreferences);
+                                            mockJupyterHubPreferences,
+                                            mockUserManagementService);
     }
 
 }

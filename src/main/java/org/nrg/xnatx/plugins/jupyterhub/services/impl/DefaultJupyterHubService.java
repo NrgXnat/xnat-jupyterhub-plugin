@@ -2,6 +2,8 @@ package org.nrg.xnatx.plugins.jupyterhub.services.impl;
 
 import lombok.extern.slf4j.Slf4j;
 import org.nrg.framework.services.NrgEventServiceI;
+import org.nrg.xdat.security.services.UserManagementServiceI;
+import org.nrg.xdat.security.user.exceptions.UserInitException;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnatx.plugins.jupyterhub.client.JupyterHubClient;
 import org.nrg.xnatx.plugins.jupyterhub.client.exceptions.ResourceAlreadyExistsException;
@@ -21,11 +23,16 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Nullable;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
+@SuppressWarnings("BusyWait")
 @Service
 @Slf4j
 public class DefaultJupyterHubService implements JupyterHubService {
@@ -35,18 +42,21 @@ public class DefaultJupyterHubService implements JupyterHubService {
     private final PermissionsHelper permissionsHelper;
     private final UserOptionsService userOptionsService;
     private final JupyterHubPreferences jupyterHubPreferences;
+    private final UserManagementServiceI userManagementService;
 
     @Autowired
     public DefaultJupyterHubService(final JupyterHubClient jupyterHubClient,
                                     final NrgEventServiceI eventService,
                                     final PermissionsHelper permissionsHelper,
                                     final UserOptionsService userOptionsService,
-                                    final JupyterHubPreferences jupyterHubPreferences) {
+                                    final JupyterHubPreferences jupyterHubPreferences,
+                                    final UserManagementServiceI userManagementService) {
         this.jupyterHubClient = jupyterHubClient;
         this.eventService = eventService;
         this.permissionsHelper = permissionsHelper;
         this.userOptionsService = userOptionsService;
         this.jupyterHubPreferences = jupyterHubPreferences;
+        this.userManagementService = userManagementService;
     }
 
     /**
@@ -358,6 +368,37 @@ public class DefaultJupyterHubService implements JupyterHubService {
                 .build();
 
         return jupyterHubClient.createToken(user.getUsername(), token);
+    }
+
+    /**
+     * Stop servers that have been inactive for some period of time
+     */
+    @Override
+    public void cullInactiveServers() {
+        if (jupyterHubPreferences.getInactivityTimeout() > 0) {
+            log.debug("Culling idle Jupyter notebook servers");
+
+            final List<User> users = getUsers();
+            final ZonedDateTime now = ZonedDateTime.now(ZoneId.of("UTC"));
+
+            users.forEach(user -> {
+                Map<String, Server> servers = user.getServers();
+                servers.forEach((servername, server) -> {
+                    final ZonedDateTime lastActivity = server.getLast_activity();
+                    long inactiveTime = ChronoUnit.MINUTES.between(lastActivity, now);
+
+                    if (inactiveTime > jupyterHubPreferences.getInactivityTimeout()) {
+                        try {
+                            UserI userI = userManagementService.getUser(user.getName());
+                            log.info("Removing Jupyter server {} for user {} due to inactivity.", servername, user.getName());
+                            stopServer(userI, servername, now + "_cullIdleServers");
+                        } catch (UserInitException | org.nrg.xdat.security.user.exceptions.UserNotFoundException e) {
+                            log.error("Unable to delete long running Jupyter server for user " + user.getName(), e);
+                        }
+                    }
+                });
+            });
+        }
     }
 
     private Integer inMilliSec(Integer seconds) {

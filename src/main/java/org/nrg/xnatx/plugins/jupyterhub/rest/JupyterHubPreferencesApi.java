@@ -119,6 +119,10 @@ public class JupyterHubPreferencesApi extends AbstractXapiRestController {
                 value = jupyterHubPreferences.getContainerSpecLabels();
                 break;
             }
+            case (JupyterHubPreferences.INACTIVITY_TIMEOUT_PREF_ID): {
+                value = jupyterHubPreferences.getInactivityTimeout();
+                break;
+            }
             default:
                 value = jupyterHubPreferences.get(preference);
         }

@@ -14,7 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import java.util.List;
 import java.util.Map;
 
-@SuppressWarnings("unused")
+@SuppressWarnings({"unused", "DefaultAnnotationParam"})
 @NrgPreferenceBean(toolId = JupyterHubPreferences.TOOL_ID,
                    toolName = "JupyterHub Preferences",
                    description = "Manages preferences for JupyterHub plugin")
@@ -24,6 +24,7 @@ public class JupyterHubPreferences extends AbstractPreferenceBean {
     public static final String TOOL_ID = "jupyterhub";
     public static final String DOCKER_IMAGES_PREF_ID = "dockerImages";
     public static final String CONTAINER_SPEC_LABELS_PREF_ID = "containerSpecLabels";
+    public static final String INACTIVITY_TIMEOUT_PREF_ID = "inactivityTimeout";
 
     @Autowired
     protected JupyterHubPreferences(NrgPreferenceService preferenceService, ConfigPaths configFolderPaths, OrderedProperties initPrefs) {
@@ -174,6 +175,19 @@ public class JupyterHubPreferences extends AbstractPreferenceBean {
             setMapValue(CONTAINER_SPEC_LABELS_PREF_ID, containerSpecLabels);
         } catch (InvalidPreferenceName e) {
             log.error("Invalid preference name 'containerSpecLabels': something is very wrong here.", e);
+        }
+    }
+
+    @NrgPreference(defaultValue = "60")
+    public long getInactivityTimeout() {
+        return getLongValue(INACTIVITY_TIMEOUT_PREF_ID);
+    }
+
+    public void setInactivityTimeout(final long inactivityTimeout) {
+        try {
+            setLongValue(inactivityTimeout, INACTIVITY_TIMEOUT_PREF_ID);
+        } catch (InvalidPreferenceName e) {
+            log.error("Invalid preference name 'inactivityTimeout': something is very wrong here.", e);
         }
     }
 

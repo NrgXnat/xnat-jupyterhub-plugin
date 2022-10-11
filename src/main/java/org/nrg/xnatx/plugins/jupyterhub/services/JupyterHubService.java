@@ -22,7 +22,7 @@ public interface JupyterHubService {
     void startServer(UserI user, String servername, String xsiType, String itemId, String itemLabel, String projectId, String eventTrackingId, String dockerImage);
     void stopServer(UserI user, String eventTrackingId);
     void stopServer(UserI user, String servername, String eventTrackingId);
-
     Token createToken(UserI user, String note, Integer expiresIn);
+    void cullInactiveServers();
 
 }

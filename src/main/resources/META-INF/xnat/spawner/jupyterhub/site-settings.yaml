@@ -24,34 +24,38 @@ jupyterHubToken:
     The service token used by XNAT to launch a user's Jupyter Notebook Servers
 
 startTimeout:
-  kind: panel.input.text
+  kind: panel.input.number
   id: startTimeout
   name: startTimeout
   label: Start Timeout
+  validation: integer gte:1 onblur
   description: >
     Timeout (in seconds) before giving up on starting of single-user server. XNAT will assume that startup has failed if it takes longer than this.
 
 startPollingInterval:
-  kind: panel.input.text
+  kind: panel.input.number
   id: startPollingInterval
   name: startPollingInterval
   label: Start Polling Interval
+  validation: integer gte:1 onblur
   description: >
     The rate (in seconds) at which to poll JupyterHub to check if the single-user server has started.
 
 stopTimeout:
-  kind: panel.input.text
+  kind: panel.input.number
   id: stopTimeout
   name: stopTimeout
   label: Stop Timeout
+  validation: integer gte:1 onblur
   description: >
     Timeout (in seconds) before giving up on stopping a single-user server. XNAT will assume that stopping has failed if it takes longer than this.
 
 stopPollingInterval:
-  kind: panel.input.text
+  kind: panel.input.number
   id: stopPollingInterval
   name: stopPollingInterval
   label: Stop Polling Interval
+  validation: integer gte:1 onblur
   description: >
     The rate (in seconds) at which to poll JupyterHub to check if the single-user server has stopped.
 
@@ -70,6 +74,15 @@ pathTranslationDockerPrefix:
   label: Path Translation Docker Prefix
   description: >
     (Optional) Enter the Docker Server path to the XNAT_HOME mount, i.e. "/docker/my-data/XNAT"
+
+inactivityTimeout:
+  kind: panel.input.number
+  id: inactivityTimeout
+  name: inactivityTimeout
+  label: Inactivity Timeout (minutes)
+  validation: integer gte:0 onblur
+  description: >
+    Automatically shut down idle Jupyter notebook servers if they've been inactive for some time. Set the timeout to 0 to not cull any inactive servers.
 
 jupyterHubSetup:
   kind: panel
@@ -117,6 +130,7 @@ jupyterhubPreferences:
     ${startPollingInterval}
     ${stopTimeout}
     ${stopPollingInterval}
+    ${inactivityTimeout}
     ${pathTranslationXnatPrefix}
     ${pathTranslationDockerPrefix}
     ${workspacePath}
