@@ -65,6 +65,9 @@ public class DefaultJupyterHubServiceTest {
     private final String eventTrackingId = "eventTrackingId";
     private final String projectId = "TestProject";
     private final String dockerImage = "jupyter/scipy-notebook:hub-2.3.0";
+    private User userWithServers;
+    private User userNoServers;
+    private Server server;
 
     @Before
     public void before() throws org.nrg.xdat.security.user.exceptions.UserNotFoundException, UserInitException {
@@ -73,6 +76,20 @@ public class DefaultJupyterHubServiceTest {
         username = "user";
         when(user.getUsername()).thenReturn(username);
         when(mockUserManagementServiceI.getUser(eq(username))).thenReturn(user);
+
+        server = Server.builder()
+                .name(servername)
+                .build();
+
+        userWithServers = User.builder()
+                .name(username)
+                .servers(Collections.singletonMap("", server))
+                .build();
+
+        userNoServers = User.builder()
+                .name(username)
+                .servers(Collections.emptyMap())
+                .build();
 
         // Capture Jupyter events
         jupyterServerEventCaptor = ArgumentCaptor.forClass(JupyterServerEventI.class);
@@ -276,7 +293,7 @@ public class DefaultJupyterHubServiceTest {
         when(mockPermissionsHelper.canRead(any(), anyString(), anyString(), anyString())).thenReturn(true);
 
         // Setup existing server
-        when(mockJupyterHubClient.getServer(anyString(), anyString())).thenReturn(Optional.of(Server.builder().build()));
+        when(mockJupyterHubClient.getUser(anyString())).thenReturn(Optional.of(userWithServers));
 
         // Test
         jupyterHubService.startServer(user, XnatProjectdata.SCHEMA_ELEMENT_NAME, projectId, projectId, projectId, eventTrackingId, dockerImage);
@@ -302,6 +319,7 @@ public class DefaultJupyterHubServiceTest {
 
         // To successfully start a server there should be no running servers at first.
         // A subsequent call should contain a server, but let's presume it is never ready
+        when(mockJupyterHubClient.getUser(anyString())).thenReturn(Optional.of(userNoServers));
         when(mockJupyterHubClient.getServer(anyString(), anyString())).thenReturn(Optional.empty());
 
         // Test
@@ -314,9 +332,8 @@ public class DefaultJupyterHubServiceTest {
         // Verify JupyterHub start server request sent
         verify(mockJupyterHubClient, times(1)).startServer(eq(username), eq(""), any(UserOptions.class));
 
-        // Verify attempts to get server from JupyterHub
-        // One time to see if server exists before starting and 2 times with polling rate and timeout
-        verify(mockJupyterHubClient, times(3)).getServer(eq(username), eq(""));
+        // Verify 2 attempts to get server from JupyterHub with polling rate and timeout
+        verify(mockJupyterHubClient, times(2)).getServer(eq(username), eq(""));
 
         // Verify failure to start event occurred
         verify(mockEventService, atLeastOnce()).triggerEvent(jupyterServerEventCaptor.capture());
@@ -332,8 +349,8 @@ public class DefaultJupyterHubServiceTest {
 
         // To successfully start a server there should be no running servers at first.
         // A subsequent call should eventually return a server in the ready state
-        when(mockJupyterHubClient.getServer(anyString(), anyString()))
-                .thenReturn(Optional.empty(), Optional.of(Server.builder().ready(true).build()));
+        when(mockJupyterHubClient.getUser(anyString())).thenReturn(Optional.of(userNoServers));
+        when(mockJupyterHubClient.getServer(anyString(), anyString())).thenReturn(Optional.of(Server.builder().ready(true).build()));
 
         // Test
         jupyterHubService.startServer(user, XnatProjectdata.SCHEMA_ELEMENT_NAME, projectId, projectId, projectId, eventTrackingId, dockerImage);
@@ -345,8 +362,37 @@ public class DefaultJupyterHubServiceTest {
         // Verify JupyterHub start server request sent
         verify(mockJupyterHubClient, times(1)).startServer(eq(username), eq(""), any(UserOptions.class));
 
-        // Should be at two calls to JupyterHub, first to see no server is running, second to see it does after starting
-        verify(mockJupyterHubClient, times(2)).getServer(username, "");
+        // Verify start completed event occurred
+        verify(mockEventService, atLeastOnce()).triggerEvent(jupyterServerEventCaptor.capture());
+        JupyterServerEventI capturedEvent = jupyterServerEventCaptor.getValue();
+        assertEquals(JupyterServerEventI.Status.Completed, capturedEvent.getStatus());
+        assertEquals(JupyterServerEventI.Operation.Start, capturedEvent.getOperation());
+    }
+
+    @Test(timeout = 3000)
+    public void testStartServer_CreateUser_Success() throws Exception {
+        // Grant permissions
+        when(mockPermissionsHelper.canRead(any(), anyString(), anyString(), anyString())).thenReturn(true);
+
+        // To successfully start a server there should be no running servers at first.
+        // A subsequent call should eventually return a server in the ready state
+        // Start with a user who does not yet exist on JupyterHub
+        when(mockJupyterHubClient.getUser(anyString())).thenReturn(Optional.empty());
+        when(mockJupyterHubClient.createUser(anyString())).thenReturn(userNoServers);
+        when(mockJupyterHubClient.getServer(anyString(), anyString())).thenReturn(Optional.of(Server.builder().ready(true).build()));
+
+        // Test
+        jupyterHubService.startServer(user, XnatProjectdata.SCHEMA_ELEMENT_NAME, projectId, projectId, projectId, eventTrackingId, dockerImage);
+        Thread.sleep(2500); // Async call, need to wait. Is there a better way to test this?
+
+        // Verify create user attempt
+        verify(mockJupyterHubClient, times(1)).createUser(anyString());
+
+        // Verify user options are stored
+        verify(mockUserOptionsService, times(1)).storeUserOptions(eq(user), eq(""), eq(XnatProjectdata.SCHEMA_ELEMENT_NAME), eq(projectId), eq(projectId), eq(dockerImage));
+
+        // Verify JupyterHub start server request sent
+        verify(mockJupyterHubClient, times(1)).startServer(eq(username), eq(""), any(UserOptions.class));
 
         // Verify start completed event occurred
         verify(mockEventService, atLeastOnce()).triggerEvent(jupyterServerEventCaptor.capture());

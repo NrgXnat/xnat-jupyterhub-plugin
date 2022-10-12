@@ -202,7 +202,11 @@ public class DefaultJupyterHubService implements JupyterHubService {
                                                                       JupyterServerEventI.Operation.Start, 0,
                                                                       "Checking for existing Jupyter notebook servers."));
 
-                if (jupyterHubClient.getServer(user.getUsername(), servername).isPresent()) {
+                boolean hasRunningServer = jupyterHubClient.getUser(user.getUsername())
+                                                           .orElseGet(() -> createUser(user))
+                                                           .getServers()
+                                                           .containsKey(servername);
+                if (hasRunningServer) {
                     eventService.triggerEvent(JupyterServerEvent.failed(eventTrackingId,
                                                                         user.getID(), xsiType, itemId,
                                                                         JupyterServerEventI.Operation.Start,
@@ -246,6 +250,7 @@ public class DefaultJupyterHubService implements JupyterHubService {
 
                     if (server.isPresent()) {
                         if (server.get().getReady()) {
+                            log.info("Jupyter server started for user {}", user.getUsername());
                             eventService.triggerEvent(JupyterServerEvent.completed(eventTrackingId, user.getID(), xsiType, itemId,
                                                                                    JupyterServerEventI.Operation.Start,
                                                                                    "Jupyter notebook server is available at: " + server.get().getUrl()));
@@ -328,6 +333,7 @@ public class DefaultJupyterHubService implements JupyterHubService {
                     Optional<Server> server = jupyterHubClient.getServer(user.getUsername(), servername);
 
                     if (!server.isPresent()) {
+                        log.info("Jupyter server stopped for user {}", user.getUsername());
                         eventService.triggerEvent(JupyterServerEvent.completed(eventTrackingId, user.getID(),
                                                                                JupyterServerEventI.Operation.Stop,
                                                                                "Jupyter Server Stopped."));

@@ -42,6 +42,11 @@ XNAT.plugin.jupyterhub.users.tokens = getObject(XNAT.plugin.jupyterhub.users.tok
         })
 
         if (!response.ok) {
+            if (response.status === 404) {
+                // User does not exist on JupyterHub, create the user then try again.
+                return XNAT.plugin.jupyterhub.users.createUser(username).then(() => XNAT.plugin.jupyterhub.users.getUser(username));
+            }
+
             throw new Error(`HTTP error getting JupyterHub user ${username}: ${response.status}`);
         }
 
@@ -64,39 +69,19 @@ XNAT.plugin.jupyterhub.users.tokens = getObject(XNAT.plugin.jupyterhub.users.tok
         return await response.json();
     }
 
-    XNAT.plugin.jupyterhub.users.createUser = XNAT.plugin.jupyterhub.users.create = function(username = window.username) {
+    XNAT.plugin.jupyterhub.users.createUser = XNAT.plugin.jupyterhub.users.create = async function(username = window.username,
+                                                                                                   timeout  = 2000) {
         console.debug(`jupyterhub-users.js: XNAT.plugin.jupyterhub.users.createUser`);
 
-        return XNAT.xhr.ajax({
-            url: userUrl(username),
+        let url = userUrl(username);
+        const response = await XNAT.plugin.jupyterhub.utils.fetchWithTimeout(url, {
             method: 'POST',
-            success: function (user) {
-                console.debug(`JupyterHub user ${username} created.`);
-                return user;
-            },
-            fail: function (e) {
-                console.error(`Unable to create JupyterHub user ${username}`);
-                return e;
-            }
+            timeout: timeout,
         })
-    }
 
-    XNAT.plugin.jupyterhub.users.init = function(username = window.username) {
-        console.debug(`jupyterhub-users.js: XNAT.plugin.jupyterhub.users.init`);
-
-        XNAT.plugin.jupyterhub.users.getUser(username, 2000).then(() => {
-            console.debug(`User ${username} exists on JupyterHub`)
-            XNAT.plugin.jupyterhub.users.isEnabled = true;
-        }).catch(() => {
-            console.debug(`User ${username} does not exists on JupyterHub. Trying to create user.`)
-
-            XNAT.plugin.jupyterhub.users.createUser(username).then(() => {
-                XNAT.plugin.jupyterhub.users.isEnabled = true;
-            }).catch(error => {
-                console.error(error)
-                XNAT.plugin.jupyterhub.users.isEnabled = false;
-            })
-        })
+        if (!response.ok) {
+            throw new Error(`HTTP error creating JupyterHub user ${username}: ${response.status}`);
+        }
     }
 
     XNAT.plugin.jupyterhub.users.activity.table = function(activityTableContainerId) {
@@ -268,8 +253,6 @@ XNAT.plugin.jupyterhub.users.tokens = getObject(XNAT.plugin.jupyterhub.users.tok
         footerEl.append(spawn('div.pull-right', [refreshButton]));
         footerEl.append(spawn('div.clear.clearFix'));
     }
-
-    XNAT.plugin.jupyterhub.users.init();
 
     XNAT.plugin.jupyterhub.users.tokens.create = async function(token = {
                                                                     username: window.username,
