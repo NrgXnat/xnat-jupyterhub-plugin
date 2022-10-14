@@ -2,15 +2,20 @@ package org.nrg.xnatx.plugins.jupyterhub.services.impl;
 
 import lombok.extern.slf4j.Slf4j;
 import org.nrg.framework.services.NrgEventServiceI;
+import org.nrg.xdat.security.services.UserManagementServiceI;
+import org.nrg.xdat.security.user.exceptions.UserInitException;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnatx.plugins.jupyterhub.client.JupyterHubClient;
 import org.nrg.xnatx.plugins.jupyterhub.client.exceptions.ResourceAlreadyExistsException;
 import org.nrg.xnatx.plugins.jupyterhub.client.exceptions.UserNotFoundException;
+import org.nrg.xnatx.plugins.jupyterhub.client.models.Hub;
 import org.nrg.xnatx.plugins.jupyterhub.client.models.Server;
+import org.nrg.xnatx.plugins.jupyterhub.client.models.Token;
 import org.nrg.xnatx.plugins.jupyterhub.client.models.User;
 import org.nrg.xnatx.plugins.jupyterhub.events.JupyterServerEvent;
 import org.nrg.xnatx.plugins.jupyterhub.events.JupyterServerEventI;
 import org.nrg.xnatx.plugins.jupyterhub.models.XnatUserOptions;
+import org.nrg.xnatx.plugins.jupyterhub.preferences.JupyterHubPreferences;
 import org.nrg.xnatx.plugins.jupyterhub.services.JupyterHubService;
 import org.nrg.xnatx.plugins.jupyterhub.services.UserOptionsService;
 import org.nrg.xnatx.plugins.jupyterhub.utils.PermissionsHelper;
@@ -18,9 +23,16 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Nullable;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
+@SuppressWarnings("BusyWait")
 @Service
 @Slf4j
 public class DefaultJupyterHubService implements JupyterHubService {
@@ -29,16 +41,40 @@ public class DefaultJupyterHubService implements JupyterHubService {
     private final NrgEventServiceI eventService;
     private final PermissionsHelper permissionsHelper;
     private final UserOptionsService userOptionsService;
+    private final JupyterHubPreferences jupyterHubPreferences;
+    private final UserManagementServiceI userManagementService;
 
     @Autowired
     public DefaultJupyterHubService(final JupyterHubClient jupyterHubClient,
                                     final NrgEventServiceI eventService,
                                     final PermissionsHelper permissionsHelper,
-                                    final UserOptionsService userOptionsService) {
+                                    final UserOptionsService userOptionsService,
+                                    final JupyterHubPreferences jupyterHubPreferences,
+                                    final UserManagementServiceI userManagementService) {
         this.jupyterHubClient = jupyterHubClient;
         this.eventService = eventService;
         this.permissionsHelper = permissionsHelper;
         this.userOptionsService = userOptionsService;
+        this.jupyterHubPreferences = jupyterHubPreferences;
+        this.userManagementService = userManagementService;
+    }
+
+    /**
+     * Get JupyterHub version
+     * @return Hub with version field populated
+     */
+    @Override
+    public Hub getVersion() {
+        return jupyterHubClient.getVersion();
+    }
+
+    /**
+     * Get full JupyterHub information
+     * @return Hub with all fields populated
+     */
+    @Override
+    public Hub getInfo() {
+        return jupyterHubClient.getInfo();
     }
 
     /**
@@ -63,6 +99,15 @@ public class DefaultJupyterHubService implements JupyterHubService {
     @Override
     public Optional<User> getUser(final UserI user) {
         return jupyterHubClient.getUser(user.getUsername());
+    }
+
+    /**
+     * Gets all the users and their active servers from JupyterHub.
+     * @return List of all users on JupyterHub
+     */
+    @Override
+    public List<User> getUsers() {
+        return jupyterHubClient.getUsers();
     }
 
     /**
@@ -98,12 +143,16 @@ public class DefaultJupyterHubService implements JupyterHubService {
      * @param xsiType         Accepts xnat:projectData, xnat:subjectData, xnat:experimentData and its children, and
      *                        xdat:stored_search
      * @param itemId          The provided id's resources will be mounted to the Jupyter notebook server container
+     * @param itemLabel       The label of the provided item (e.g. the subject label or experiment label).
      * @param projectId       Can be null for xdat:stored_search
      * @param eventTrackingId Use with the event tracking api to track progress.
+     * @param dockerImage     The docker image to use for the single-user notebook server container
      */
     @Override
-    public void startServer(final UserI user, final String xsiType, final String itemId, final String projectId, final String eventTrackingId) {
-        startServer(user, "", xsiType, itemId, projectId, eventTrackingId);
+    public void startServer(final UserI user, final String xsiType, final String itemId,
+                            final String itemLabel, @Nullable final String projectId, final String eventTrackingId,
+                            final String dockerImage) {
+        startServer(user, "", xsiType, itemId, itemLabel, projectId, eventTrackingId, dockerImage);
     }
 
     /**
@@ -116,14 +165,18 @@ public class DefaultJupyterHubService implements JupyterHubService {
      * @param xsiType           Accepts xnat:projectData, xnat:subjectData, xnat:experimentData and its children, and
      *                          xdat:stored_search
      * @param itemId            The provided id's resources will be mounted to the Jupyter notebook server container
+     * @param itemLabel         The label of the provided item (e.g. the subject label or experiment label).
      * @param projectId         Can be null for xdat:stored_search
      * @param eventTrackingId   Use with the event tracking api to track progress.
+     * @param dockerImage       The docker image to use for the single-user notebook server container
      */
     @Override
-    public void startServer(final UserI user, String servername, final String xsiType, final String itemId, @Nullable final String projectId, final String eventTrackingId) {
+    public void startServer(final UserI user, String servername, final String xsiType, final String itemId,
+                            final String itemLabel, @Nullable  final String projectId, final String eventTrackingId,
+                            final String dockerImage) {
         eventService.triggerEvent(JupyterServerEvent.progress(eventTrackingId, user.getID(), xsiType, itemId,
                                                               JupyterServerEventI.Operation.Start, 0,
-                                                              "Starting Jupyter notebook server."));
+                                                              "Starting Jupyter notebook server for user " + user.getUsername()));
 
         if (!permissionsHelper.canRead(user, projectId, itemId, xsiType)) {
             eventService.triggerEvent(JupyterServerEvent.failed(eventTrackingId, user.getID(), xsiType, itemId,
@@ -133,31 +186,45 @@ public class DefaultJupyterHubService implements JupyterHubService {
         }
 
         CompletableFuture.runAsync(() -> {
-            // We don't want to update the user options entity if there is a running server
-            eventService.triggerEvent(JupyterServerEvent.progress(eventTrackingId, user.getID(), xsiType, itemId,
-                                                                  JupyterServerEventI.Operation.Start, 0,
-                                                                  "Checking for existing Jupyter notebook server."));
-
-            if (jupyterHubClient.getServer(user.getUsername(), servername).isPresent()) {
-                eventService.triggerEvent(JupyterServerEvent.failed(eventTrackingId,
-                                                                    user.getID(), xsiType, itemId,
+            // Check if JupyterHub is online
+            try {
+                jupyterHubClient.getVersion();
+            } catch (Exception e) {
+                eventService.triggerEvent(JupyterServerEvent.failed(eventTrackingId, user.getID(), xsiType, itemId,
                                                                     JupyterServerEventI.Operation.Start,
-                                                                    "Failed to launch Jupyter notebook server. " +
-                                                                            "This server already exists."));
+                                                                    "Unable to connect to JupyterHub"));
                 return;
             }
 
-            eventService.triggerEvent(JupyterServerEvent.progress(eventTrackingId, user.getID(), xsiType, itemId,
-                                                                  JupyterServerEventI.Operation.Start, 20,
-                                                                  "Building Jupyter server container configuration."));
-
-            userOptionsService.storeUserOptions(user, servername, xsiType, itemId, projectId);
-
-            eventService.triggerEvent(JupyterServerEvent.progress(eventTrackingId, user.getID(), xsiType, itemId,
-                                                                  JupyterServerEventI.Operation.Start, 30,
-                                                                  "Saved server container configuration."));
-
             try {
+                // We don't want to update the user options entity if there is a running server
+                eventService.triggerEvent(JupyterServerEvent.progress(eventTrackingId, user.getID(), xsiType, itemId,
+                                                                      JupyterServerEventI.Operation.Start, 0,
+                                                                      "Checking for existing Jupyter notebook servers."));
+
+                boolean hasRunningServer = jupyterHubClient.getUser(user.getUsername())
+                                                           .orElseGet(() -> createUser(user))
+                                                           .getServers()
+                                                           .containsKey(servername);
+                if (hasRunningServer) {
+                    eventService.triggerEvent(JupyterServerEvent.failed(eventTrackingId,
+                                                                        user.getID(), xsiType, itemId,
+                                                                        JupyterServerEventI.Operation.Start,
+                                                                        "Failed to launch Jupyter notebook server. " +
+                                                                                "There is already one running."));
+                    return;
+                }
+
+                eventService.triggerEvent(JupyterServerEvent.progress(eventTrackingId, user.getID(), xsiType, itemId,
+                                                                      JupyterServerEventI.Operation.Start, 20,
+                                                                      "Building notebook server container configuration."));
+
+                userOptionsService.storeUserOptions(user, servername, xsiType, itemId, projectId, dockerImage);
+
+                eventService.triggerEvent(JupyterServerEvent.progress(eventTrackingId, user.getID(), xsiType, itemId,
+                                                                      JupyterServerEventI.Operation.Start, 30,
+                                                                      "Saved container configuration. Sending start request to JupyterHub."));
+
                 // Send empty user options. User's should not be able to directly send bind mounts.
                 // JupyterHub will request the user options.
                 jupyterHubClient.startServer(user.getUsername(), servername,
@@ -165,25 +232,28 @@ public class DefaultJupyterHubService implements JupyterHubService {
                                                      .userId(user.getID())
                                                      .xsiType(xsiType)
                                                      .itemId(itemId)
+                                                     .itemLabel(itemLabel)
                                                      .projectId(projectId)
                                                      .eventTrackingId(eventTrackingId)
                                                      .build());
 
                 eventService.triggerEvent(JupyterServerEvent.progress(eventTrackingId, user.getID(), xsiType, itemId,
                                                                       JupyterServerEventI.Operation.Start, 40,
-                                                                      "Spawn request sent to JupyterHub."));
+                                                                      "JupyterHub is spawning notebook server container."));
 
                 // TODO consume progress api
-                int requestCount = 0;
-                while (requestCount < 5) {
-                    Thread.sleep(1000); // Give JupyterHub a chance to spawn the server before asking about it;
+                int time = 0;
+                while (time < inMilliSec(jupyterHubPreferences.getStartTimeout())) {
+                    // Give JupyterHub a chance to spawn the server before polling
+                    Thread.sleep(inMilliSec(jupyterHubPreferences.getStartPollingInterval()));
                     Optional<Server> server = jupyterHubClient.getServer(user.getUsername(), servername);
 
                     if (server.isPresent()) {
                         if (server.get().getReady()) {
+                            log.info("Jupyter server started for user {}", user.getUsername());
                             eventService.triggerEvent(JupyterServerEvent.completed(eventTrackingId, user.getID(), xsiType, itemId,
                                                                                    JupyterServerEventI.Operation.Start,
-                                                                                   "Jupyter server is available at: " + server.get().getUrl()));
+                                                                                   "Jupyter notebook server is available at: " + server.get().getUrl()));
                             return;
                         }
                     } else {
@@ -192,12 +262,12 @@ public class DefaultJupyterHubService implements JupyterHubService {
                                                                               "Waiting for JupyterHub to spawn server."));
                     }
 
-                    requestCount++;
+                    time += inMilliSec(jupyterHubPreferences.getStartPollingInterval());
                 }
 
                 eventService.triggerEvent(JupyterServerEvent.failed(eventTrackingId, user.getID(), xsiType, itemId,
                                                                     JupyterServerEventI.Operation.Start,
-                                                                    "Failed to launch Jupyter notebook server. Timeout error."));
+                                                                    "Failed to launch Jupyter notebook server. Timeout reached."));
             } catch (UserNotFoundException e) {
                 eventService.triggerEvent(JupyterServerEvent.failed(eventTrackingId, user.getID(), xsiType, itemId,
                                                                     JupyterServerEventI.Operation.Start,
@@ -255,20 +325,22 @@ public class DefaultJupyterHubService implements JupyterHubService {
 
                 jupyterHubClient.stopServer(user.getUsername(), servername);
 
-                int requestCount = 0;
-                while (requestCount < 2) {
-                    Thread.sleep(1000); // Give JupyterHub a chance to shut down the server before asking about it
+                int time = 0;
+                while (time < inMilliSec(jupyterHubPreferences.getStopTimeout())) {
+                    // Give JupyterHub a chance to shut down the server before polling
+                    Thread.sleep(inMilliSec(jupyterHubPreferences.getStopPollingInterval()));
 
                     Optional<Server> server = jupyterHubClient.getServer(user.getUsername(), servername);
 
                     if (!server.isPresent()) {
+                        log.info("Jupyter server stopped for user {}", user.getUsername());
                         eventService.triggerEvent(JupyterServerEvent.completed(eventTrackingId, user.getID(),
                                                                                JupyterServerEventI.Operation.Stop,
                                                                                "Jupyter Server Stopped."));
                         return;
                     }
 
-                    requestCount++;
+                    time += inMilliSec(jupyterHubPreferences.getStopPollingInterval());
                 }
 
                 eventService.triggerEvent(JupyterServerEvent.failed(eventTrackingId, user.getID(),
@@ -281,6 +353,62 @@ public class DefaultJupyterHubService implements JupyterHubService {
                 log.error("Failed to stop jupyter server", e);
             }
         });
+    }
+
+    /**
+     * Create a new token for the provided user. Token is given access:severs!user=username scope on JupyterHub.
+     *
+     * @param user User to create token for
+     * @param note The note to identify the new token with. This note will help you keep track of what your tokens
+     *             are for.
+     * @param expiresIn Lifetime of the token in seconds
+     * @return Token with the token field populated. This is the only chance to save the token!!!
+     *
+     */
+    @Override
+    public Token createToken(UserI user, String note, Integer expiresIn) {
+        Token token = Token.builder()
+                .note(note)
+                .expires_in(expiresIn)
+                .scopes(Collections.singletonList("access:servers!user=" + user.getUsername()))
+                .build();
+
+        return jupyterHubClient.createToken(user.getUsername(), token);
+    }
+
+    /**
+     * Stop servers that have been inactive for some period of time
+     */
+    @Override
+    public void cullInactiveServers() {
+        if (jupyterHubPreferences.getInactivityTimeout() > 0) {
+            log.debug("Culling idle Jupyter notebook servers");
+
+            final List<User> users = getUsers();
+            final ZonedDateTime now = ZonedDateTime.now(ZoneId.of("UTC"));
+
+            users.forEach(user -> {
+                Map<String, Server> servers = user.getServers();
+                servers.forEach((servername, server) -> {
+                    final ZonedDateTime lastActivity = server.getLast_activity();
+                    long inactiveTime = ChronoUnit.MINUTES.between(lastActivity, now);
+
+                    if (inactiveTime > jupyterHubPreferences.getInactivityTimeout()) {
+                        try {
+                            UserI userI = userManagementService.getUser(user.getName());
+                            log.info("Removing Jupyter server {} for user {} due to inactivity.", servername, user.getName());
+                            stopServer(userI, servername, now + "_cullIdleServers");
+                        } catch (UserInitException | org.nrg.xdat.security.user.exceptions.UserNotFoundException e) {
+                            log.error("Unable to delete long running Jupyter server for user " + user.getName(), e);
+                        }
+                    }
+                });
+            });
+        }
+    }
+
+    private Integer inMilliSec(Integer seconds) {
+        return seconds * 1000;
     }
 
 }

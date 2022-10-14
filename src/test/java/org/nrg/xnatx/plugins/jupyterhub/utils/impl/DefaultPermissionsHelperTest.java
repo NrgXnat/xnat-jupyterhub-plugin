@@ -35,7 +35,10 @@ public class DefaultPermissionsHelperTest {
     private final String projectId = "TestProject";
     private final String subjectId = "XNAT_S00001";
     private final String experimentId = "XNAT_E00001";
-    private final String storedSearchId = "xs12345653";
+    private final String siteStoredSearchId = "xs12345653";
+    private final String projectStoredSearchId = "xs123452211";
+    private final String siteDataSearchId = "@xnat:subjectData";
+    private final String projectDataSearchId = "@xnat:subjectData";
 
     @After
     public void after() {
@@ -44,28 +47,100 @@ public class DefaultPermissionsHelperTest {
     }
 
     @Test
-    public void testCantReadStoredSearch() {
+    public void testCanReadSiteStoredSearch() {
+        // Setup
+        XdatStoredSearch ss = new XdatStoredSearch(user);
+        when(mockSearchHelperService.getSearchForUser(any(UserI.class), anyString())).thenReturn(ss);
+
+        // Test
+        final boolean canRead = permissionsHelper.canRead(user, null, siteStoredSearchId, XdatStoredSearch.SCHEMA_ELEMENT_NAME);
+
+        // Assert
+        assertTrue(canRead);
+    }
+
+    @Test
+    public void testCantReadSiteStoredSearch() {
         // Setup
         when(mockSearchHelperService.getSearchForUser(any(UserI.class), anyString())).thenReturn(null);
 
         // Test
-        final boolean canRead = permissionsHelper.canRead(user, null, storedSearchId, XdatStoredSearch.SCHEMA_ELEMENT_NAME);
+        final boolean canRead = permissionsHelper.canRead(user, null, siteStoredSearchId, XdatStoredSearch.SCHEMA_ELEMENT_NAME);
 
         // Assert
         assertFalse(canRead);
     }
 
     @Test
-    public void testCanReadStoredSearch() {
-        // Setup
+    public void testCanReadProjectStoredSearch() throws Exception {
+        // Setup stored search
         XdatStoredSearch ss = new XdatStoredSearch(user);
         when(mockSearchHelperService.getSearchForUser(any(UserI.class), anyString())).thenReturn(ss);
 
+        // Setup project permission
+        when(mockPermissionsService.canRead(any(UserI.class), eq("xnat:projectData/ID"), any(Object.class))).thenReturn(true);
+
         // Test
-        final boolean canRead = permissionsHelper.canRead(user, null, storedSearchId, XdatStoredSearch.SCHEMA_ELEMENT_NAME);
+        final boolean canRead = permissionsHelper.canRead(user, projectId, projectStoredSearchId, XdatStoredSearch.SCHEMA_ELEMENT_NAME);
 
         // Assert
         assertTrue(canRead);
+    }
+
+    @Test
+    public void testCantReadProjectStoredSearch() throws Exception {
+        // Setup stored search
+        when(mockSearchHelperService.getSearchForUser(any(UserI.class), anyString())).thenReturn(null);
+
+        // Setup project permission
+        when(mockPermissionsService.canRead(any(UserI.class), eq("xnat:projectData/ID"), any(Object.class))).thenReturn(false);
+
+        // Test
+        final boolean canRead = permissionsHelper.canRead(user, projectId, projectDataSearchId, XdatStoredSearch.SCHEMA_ELEMENT_NAME);
+
+        // Assert
+        assertFalse(canRead);
+    }
+
+    @Test
+    public void testCanReadSiteDataSearch() {
+        // Test
+        final boolean canRead = permissionsHelper.canRead(user, null, siteDataSearchId, XdatStoredSearch.SCHEMA_ELEMENT_NAME);
+
+        // Assert
+        assertTrue(canRead);
+    }
+
+    @Test
+    public void testCanReadProjectDataSearch() throws Exception {
+        // Setup stored search
+        XdatStoredSearch ss = new XdatStoredSearch(user);
+        when(mockSearchHelperService.getSearchForUser(any(UserI.class), anyString())).thenReturn(ss);
+
+        // Setup project permission
+        when(mockPermissionsService.canRead(any(UserI.class), eq("xnat:projectData/ID"), any(Object.class))).thenReturn(true);
+
+        // Test
+        final boolean canRead = permissionsHelper.canRead(user, projectId, projectDataSearchId, XdatStoredSearch.SCHEMA_ELEMENT_NAME);
+
+        // Assert
+        assertTrue(canRead);
+    }
+
+    @Test
+    public void testCantReadProjectDataSearch() throws Exception {
+        // Setup stored search
+        XdatStoredSearch ss = new XdatStoredSearch(user);
+        when(mockSearchHelperService.getSearchForUser(any(UserI.class), anyString())).thenReturn(ss);
+
+        // Setup project permission
+        when(mockPermissionsService.canRead(any(UserI.class), eq("xnat:projectData/ID"), any(Object.class))).thenReturn(false);
+
+        // Test
+        final boolean canRead = permissionsHelper.canRead(user, projectId, projectDataSearchId, XdatStoredSearch.SCHEMA_ELEMENT_NAME);
+
+        // Assert
+        assertFalse(canRead);
     }
 
     @Test

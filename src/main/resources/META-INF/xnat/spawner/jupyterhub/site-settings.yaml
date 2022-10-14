@@ -9,11 +9,11 @@ workspacePath:
 
 jupyterhubApiUrl:
   kind: panel.input.text
-  id: jupyterHubUrl
-  name: jupyterHubUrl
-  label: JupyterHub URL
+  id: jupyterHubApiUrl
+  name: jupyterHubApiUrl
+  label: JupyterHub API URL
   description: >
-    The URL for JupyterHub
+    The URL for the JupyterHub API
 
 jupyterHubToken:
   kind: panel.input.password
@@ -22,6 +22,42 @@ jupyterHubToken:
   label: JupyterHub Token
   description: >
     The service token used by XNAT to launch a user's Jupyter Notebook Servers
+
+startTimeout:
+  kind: panel.input.number
+  id: startTimeout
+  name: startTimeout
+  label: Start Timeout
+  validation: integer gte:1 onblur
+  description: >
+    Timeout (in seconds) before giving up on starting of single-user server. XNAT will assume that startup has failed if it takes longer than this.
+
+startPollingInterval:
+  kind: panel.input.number
+  id: startPollingInterval
+  name: startPollingInterval
+  label: Start Polling Interval
+  validation: integer gte:1 onblur
+  description: >
+    The rate (in seconds) at which to poll JupyterHub to check if the single-user server has started.
+
+stopTimeout:
+  kind: panel.input.number
+  id: stopTimeout
+  name: stopTimeout
+  label: Stop Timeout
+  validation: integer gte:1 onblur
+  description: >
+    Timeout (in seconds) before giving up on stopping a single-user server. XNAT will assume that stopping has failed if it takes longer than this.
+
+stopPollingInterval:
+  kind: panel.input.number
+  id: stopPollingInterval
+  name: stopPollingInterval
+  label: Stop Polling Interval
+  validation: integer gte:1 onblur
+  description: >
+    The rate (in seconds) at which to poll JupyterHub to check if the single-user server has stopped.
 
 pathTranslationXnatPrefix:
   kind: panel.input.text
@@ -39,20 +75,83 @@ pathTranslationDockerPrefix:
   description: >
     (Optional) Enter the Docker Server path to the XNAT_HOME mount, i.e. "/docker/my-data/XNAT"
 
+inactivityTimeout:
+  kind: panel.input.number
+  id: inactivityTimeout
+  name: inactivityTimeout
+  label: Inactivity Timeout (minutes)
+  validation: integer gte:0 onblur
+  description: >
+    Automatically shut down idle Jupyter notebook servers if they've been inactive for some time. Set the timeout to 0 to not cull any inactive servers.
+
+jupyterHubSetup:
+  kind: panel
+  name: jupyterHubSetup
+  label: JupyterHub Setup
+  contents:
+    jupyterHubSetupTable:
+      tag: "div#jupyterhub-setup-table"
+    imagePreferencesScript:
+      tag: script|src="~/scripts/xnat/plugin/jupyterhub/jupyterhub-hub.js"
+    renderImagePreferencesTable:
+      tag: script
+      content: >
+        XNAT.plugin.jupyterhub.hub.initSetupTable('jupyterhub-setup-table');
+
+imagePreferences:
+  kind: panel
+  name: imagePreferences
+  label: Images
+  contents:
+    imageDescription:
+      tag: div.message
+      contents:
+        "This panel lists the containers which JupyterHub can use to launch single-user Jupyter notebook servers. JupyterHub supports any of the existing Jupyter docker stacks provided the version of JupyterHub in the image matches. Please see the documentation for building your own images. Pull each image on every swarm node."
+    imagesTable:
+      tag: "div#jupyterhub-image-preferences"
+    imagePreferencesScript:
+      tag: script|src="~/scripts/xnat/plugin/jupyterhub/jupyterhub-docker-images.js"
+    renderImagePreferencesTable:
+      tag: script
+      content: >
+        XNAT.plugin.jupyterhub.dockerImages.init('#jupyterhub-image-preferences');
+
 jupyterhubPreferences:
   kind: panel.form
   name: jupyterhubPreferences
-  label: Preferences
+  label: JupyterHub Setup
   method: POST
   contentType: json
   url: /xapi/jupyterhub/preferences
   contents:
     ${jupyterhubApiUrl}
     ${jupyterHubToken}
+    ${startTimeout}
+    ${startPollingInterval}
+    ${stopTimeout}
+    ${stopPollingInterval}
+    ${inactivityTimeout}
     ${pathTranslationXnatPrefix}
     ${pathTranslationDockerPrefix}
     ${workspacePath}
 
+jupyterHubUserActivity:
+  kind: panel
+  name: jupyterHubUserActivity
+  label: JupyterHub User Activity
+  contents:
+    jupyterHubActivityDescription:
+      tag: div.message
+      contents:
+        "This panel lists all JupyterHub users and any Jupyter notebook servers they may be running."
+    jupyterHubActivityTable:
+      tag: "div#jupyterhub-user-activity-table"
+    imagePreferencesScript:
+      tag: script|src="~/scripts/xnat/plugin/jupyterhub/jupyterhub-users.js"
+    renderImagePreferencesTable:
+      tag: script
+      content: >
+        XNAT.plugin.jupyterhub.users.activity.init('jupyterhub-user-activity-table');
 
 #################################################
 ####  Root Site Admin Spawner Config Object  ####
@@ -70,8 +169,17 @@ siteSettings:
     jupyterhubPreferencesTab:
       kind: tab
       name: jupyterhubPreferencesTab
-      label: Preferences
+      label: Setup
       group: jupyterhubTabGroup
       active: true
       contents:
-        ${jupyterhubPreferences}
+        ${jupyterHubSetup}
+        ${imagePreferences}
+    jupyterhubUserActivityTab:
+      kind: tab
+      name: jupyterhubUserActivityTab
+      label: User Activity
+      group: jupyterhubTabGroup
+      active: true
+      contents:
+        ${jupyterHubUserActivity}

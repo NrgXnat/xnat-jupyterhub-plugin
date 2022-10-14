@@ -6,7 +6,6 @@ import org.nrg.framework.annotations.XapiRestController;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
 import org.nrg.xapi.exceptions.NotFoundException;
 import org.nrg.xapi.rest.AbstractXapiRestController;
-import org.nrg.xapi.rest.AuthorizedRoles;
 import org.nrg.xapi.rest.XapiRequestMapping;
 import org.nrg.xdat.security.helpers.AccessLevel;
 import org.nrg.xdat.security.services.RoleHolder;
@@ -18,6 +17,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -94,23 +94,41 @@ public class JupyterHubPreferencesApi extends AbstractXapiRestController {
     }
 
     @ApiOperation(value = "Returns the value of the selected JupyterHub plugin preference.",
-                  notes = "Complex objects may be returned as encapsulated JSON strings.",
-            response = Object.class)
+                  notes = "Returns singleton map from preference name to preference object.",
+                  response = Map.class)
     @ApiResponses({
             @ApiResponse(code = 200, message = "JupyterHub plugin preference successfully retrieved."),
             @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
             @ApiResponse(code = 403, message = "Not authorized to access JupyterHub plugin preferences."),
             @ApiResponse(code = 500, message = "Unexpected error")
     })
-    @AuthorizedRoles({"JupyterHub", "Administrator"})
     @XapiRequestMapping(value = "/{preference}", produces = APPLICATION_JSON_VALUE, method = GET, restrictTo = AccessLevel.Authenticated)
-    public Object getSpecifiedPreference(@ApiParam(value = "The JupyterHub plugin preference to retrieve.", required = true) @PathVariable final String preference) throws NotFoundException {
+    public Map<String, Object> getSpecifiedPreference(@ApiParam(value = "The JupyterHub plugin preference to retrieve.", required = true) @PathVariable final String preference) throws NotFoundException {
         if (!jupyterHubPreferences.containsKey(preference)) {
             throw new NotFoundException("No JupyterHub plugin preference named " + preference);
         }
-        final Object value = jupyterHubPreferences.get(preference);
+        final Object value;
+
+        // I think there is a bug in the preference library with caching hence the switch.
+        switch (preference) {
+            case (JupyterHubPreferences.DOCKER_IMAGES_PREF_ID): {
+                value = jupyterHubPreferences.getDockerImages();
+                break;
+            }
+            case (JupyterHubPreferences.CONTAINER_SPEC_LABELS_PREF_ID): {
+                value = jupyterHubPreferences.getContainerSpecLabels();
+                break;
+            }
+            case (JupyterHubPreferences.INACTIVITY_TIMEOUT_PREF_ID): {
+                value = jupyterHubPreferences.getInactivityTimeout();
+                break;
+            }
+            default:
+                value = jupyterHubPreferences.get(preference);
+        }
+
         log.debug("User {} requested the value for the JupyterHub plugin preference {}, got value: {}", getSessionUser().getUsername(), preference, value);
-        return value;
+        return Collections.singletonMap(preference, value);
     }
 
     @ApiOperation(value = "Sets a single JupyterHub plugin preference.")

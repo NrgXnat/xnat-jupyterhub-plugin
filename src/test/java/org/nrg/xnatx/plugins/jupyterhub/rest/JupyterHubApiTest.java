@@ -1,7 +1,6 @@
 package org.nrg.xnatx.plugins.jupyterhub.rest;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.Lists;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -12,10 +11,11 @@ import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xdat.security.services.RoleServiceI;
 import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.nrg.xft.security.UserI;
-import org.nrg.xnatx.plugins.jupyterhub.client.models.Server;
-import org.nrg.xnatx.plugins.jupyterhub.client.models.User;
+import org.nrg.xnatx.plugins.jupyterhub.client.models.*;
 import org.nrg.xnatx.plugins.jupyterhub.config.JupyterHubApiConfig;
 import org.nrg.xnatx.plugins.jupyterhub.models.BindMount;
+import org.nrg.xnatx.plugins.jupyterhub.models.ContainerSpec;
+import org.nrg.xnatx.plugins.jupyterhub.models.DockerImage;
 import org.nrg.xnatx.plugins.jupyterhub.models.XnatUserOptions;
 import org.nrg.xnatx.plugins.jupyterhub.services.JupyterHubService;
 import org.nrg.xnatx.plugins.jupyterhub.services.UserOptionsService;
@@ -34,10 +34,7 @@ import org.springframework.web.context.WebApplicationContext;
 
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.*;
@@ -63,13 +60,17 @@ public class JupyterHubApiTest {
     private final MediaType JSON = MediaType.APPLICATION_JSON_UTF8;
 
     private UserI admin;
+    private User admin_jh;
     private UserI nonAdmin;
     private User  nonAdmin_jh;
 
     private XnatUserOptions userOptions;
+    private ContainerSpec containerSpec;
     private Server dummyServer;
     private String servername;
     private Server dummyNamedServer;
+    private Hub hubLimited;
+    private Hub hubFull;
 
     @Autowired private WebApplicationContext wac;
     @Autowired private ObjectMapper mapper;
@@ -97,6 +98,7 @@ public class JupyterHubApiTest {
         final Integer nonAdminId = 2;
         nonAdmin = mock(UserI.class);
         when(nonAdmin.getLogin()).thenReturn(NON_ADMIN_USERNAME);
+        when(nonAdmin.getUsername()).thenReturn(NON_ADMIN_USERNAME);
         when(nonAdmin.getPassword()).thenReturn(nonAdminPassword);
         when(admin.getID()).thenReturn(nonAdminId);
         when(mockRoleService.isSiteAdmin(nonAdmin)).thenReturn(false);
@@ -107,6 +109,11 @@ public class JupyterHubApiTest {
         Map<String, String> environmentalVariables = new HashMap<>();
         environmentalVariables.put("XNAT_HOST", "fake://localhost");
 
+        DockerImage image = DockerImage.builder()
+                .image("xnat/jupyterhub-single-user:latest")
+                .enabled(true)
+                .build();
+
         BindMount bindMount = BindMount.builder()
                 .name("TestProject")
                 .writable(false)
@@ -115,16 +122,22 @@ public class JupyterHubApiTest {
                 .jupyterHostPath("/data/TestProject")
                 .build();
 
+        containerSpec = ContainerSpec.builder()
+                .image(image.getImage())
+                .labels(Collections.singletonMap("label", "label"))
+                .build();
+
         userOptions = XnatUserOptions.builder()
                 .userId(nonAdminId)
                 .servername("")
                 .xsiType(XnatProjectdata.SCHEMA_ELEMENT_NAME)
                 .itemId("TestProject")
+                .itemLabel("TestProject")
                 .projectId("TestProject")
                 .eventTrackingId("20220822T201541799Z")
-                .dockerImage("xnat/jupyterhub-user:latest")
+                .containerSpec(containerSpec)
                 .environmentVariables(environmentalVariables)
-                .bindMounts(Lists.newArrayList(bindMount))
+                .bindMounts(Collections.singletonList(bindMount))
                 .build();
 
         dummyServer = Server.builder()
@@ -147,6 +160,16 @@ public class JupyterHubApiTest {
                 .build();
 
         // Mock the JupyterHub user
+        admin_jh = User.builder()
+                .name(ADMIN_USERNAME)
+                .admin(false)
+                .roles(Collections.emptyList())
+                .groups(Collections.emptyList())
+                .server("/jupyterhub/users/" + ADMIN_USERNAME + "/server")
+                .last_activity(ZonedDateTime.now().withZoneSameInstant(ZoneId.of("UTC")))
+                .servers(Collections.singletonMap(servername, dummyNamedServer))
+                .build();
+
         nonAdmin_jh = User.builder()
                 .name(NON_ADMIN_USERNAME)
                 .admin(false)
@@ -156,12 +179,84 @@ public class JupyterHubApiTest {
                 .last_activity(ZonedDateTime.now().withZoneSameInstant(ZoneId.of("UTC")))
                 .servers(Collections.singletonMap(servername, dummyNamedServer))
                 .build();
+
+        // Mock hub info
+        hubLimited = Hub.builder()
+                .version("3.0.0")
+                .build();
+
+        Authenticator authenticator = Authenticator.builder()
+                .version("unknown")
+                .authenticatorClass("builtins.XnatAuthenticator")
+                .build();
+
+        Spawner spawner = Spawner.builder()
+                .version("12.1.0")
+                .spawnerClass("dockerspawner.swarmspawner.SwarmSpawner")
+                .build();
+
+        hubFull = Hub.builder()
+                .version("3.0.0")
+                .python("3.10.4 (main, Jun 29 2022, 12:14:53) [GCC 11.2.0]")
+                .authenticator(authenticator)
+                .spawner(spawner)
+                .build();
+
     }
 
     @After
     public void after() {
         Mockito.reset(admin);
         Mockito.reset(mockJupyterHubService);
+    }
+
+
+    @Test
+    public void testGetVersion() throws Exception {
+        when(mockJupyterHubService.getVersion()).thenReturn(hubLimited);
+
+        final MockHttpServletRequestBuilder request = MockMvcRequestBuilders
+                .get("/jupyterhub/version")
+                .accept(JSON)
+                .with(authentication(NONADMIN_AUTH))
+                .with(csrf())
+                .with(testSecurityContext());
+
+        final String response =
+                mockMvc.perform(request)
+                        .andExpect(status().isOk())
+                        .andExpect(content().contentType(JSON))
+                        .andReturn()
+                        .getResponse()
+                        .getContentAsString();
+
+        Hub responseHub = mapper.readValue(response, Hub.class);
+
+        assertEquals(hubLimited, responseHub);
+    }
+
+    @Test
+    public void testGetInfo() throws Exception {
+        when(mockJupyterHubService.getInfo()).thenReturn(hubFull);
+
+        final MockHttpServletRequestBuilder request = MockMvcRequestBuilders
+                .get("/jupyterhub/info")
+                .accept(JSON)
+                .with(authentication(NONADMIN_AUTH))
+                .with(csrf())
+                .with(testSecurityContext());
+
+        final String response =
+                mockMvc.perform(request)
+                        .andExpect(status().isOk())
+                        .andExpect(content().contentType(JSON))
+                        .andReturn()
+                        .getResponse()
+                        .getContentAsString();
+
+        Hub responseHub = mapper.readValue(response, Hub.class);
+
+        assertEquals(hubFull, responseHub);
     }
 
     @Test
@@ -186,6 +281,31 @@ public class JupyterHubApiTest {
         User responseUser = mapper.readValue(response, User.class);
 
         assertEquals(nonAdmin_jh, responseUser);
+    }
+
+    @Test
+    public void testGetUsers() throws Exception {
+        List<User> users = Arrays.asList(nonAdmin_jh, admin_jh);
+        when(mockJupyterHubService.getUsers()).thenReturn(users);
+
+        final MockHttpServletRequestBuilder request = MockMvcRequestBuilders
+                .get("/jupyterhub/users")
+                .accept(JSON)
+                .with(authentication(ADMIN_AUTH))
+                .with(csrf())
+                .with(testSecurityContext());
+
+        final String response =
+                mockMvc.perform(request)
+                        .andExpect(status().isOk())
+                        .andExpect(content().contentType(JSON))
+                        .andReturn()
+                        .getResponse()
+                        .getContentAsString();
+
+        User[] responseUsers = mapper.readValue(response, User[].class);
+
+        assertEquals(users, Arrays.asList(responseUsers));
     }
 
     @Test
@@ -291,8 +411,10 @@ public class JupyterHubApiTest {
                 .param("username", NON_ADMIN_USERNAME)
                 .param("xsiType", userOptions.getXsiType())
                 .param("itemId", userOptions.getItemId())
+                .param("itemLabel", userOptions.getItemLabel())
                 .param("projectId", userOptions.getProjectId())
                 .param("eventTrackingId", userOptions.getEventTrackingId())
+                .param("dockerImage", containerSpec.getImage())
                 .with(authentication(NONADMIN_AUTH))
                 .with(csrf())
                 .with(testSecurityContext());
@@ -303,10 +425,14 @@ public class JupyterHubApiTest {
         verify(mockJupyterHubService, times(1)).startServer(eq(nonAdmin),
                                                             eq(userOptions.getXsiType()),
                                                             eq(userOptions.getItemId()),
+                                                            eq(userOptions.getItemLabel()),
                                                             eq(userOptions.getProjectId()),
-                                                            eq(userOptions.getEventTrackingId()));
+                                                            eq(userOptions.getEventTrackingId()),
+                                                            eq(containerSpec.getImage()));
         // Named Server
         verify(mockJupyterHubService, never()).startServer(any(UserI.class),
+                                                           anyString(),
+                                                           anyString(),
                                                            anyString(),
                                                            anyString(),
                                                            anyString(),
@@ -321,8 +447,10 @@ public class JupyterHubApiTest {
                 .param("username", NON_ADMIN_USERNAME)
                 .param("xsiType", userOptions.getXsiType())
                 .param("itemId", userOptions.getItemId())
+                .param("itemLabel", userOptions.getItemLabel())
                 .param("projectId", userOptions.getProjectId())
                 .param("eventTrackingId", userOptions.getEventTrackingId())
+                .param("dockerImage", containerSpec.getImage())
                 .with(authentication(NONADMIN_AUTH))
                 .with(csrf())
                 .with(testSecurityContext());
@@ -334,6 +462,8 @@ public class JupyterHubApiTest {
                                                            anyString(),
                                                            anyString(),
                                                            anyString(),
+                                                           anyString(),
+                                                           anyString(),
                                                            anyString());
 
         // Named Server
@@ -341,8 +471,10 @@ public class JupyterHubApiTest {
                                                             eq(servername),
                                                             eq(userOptions.getXsiType()),
                                                             eq(userOptions.getItemId()),
+                                                            eq(userOptions.getItemLabel()),
                                                             eq(userOptions.getProjectId()),
-                                                            eq(userOptions.getEventTrackingId()));
+                                                            eq(userOptions.getEventTrackingId()),
+                                                            eq(containerSpec.getImage()));
 
     }
 
@@ -430,6 +562,44 @@ public class JupyterHubApiTest {
         XnatUserOptions responseUserOptions = mapper.readValue(response, XnatUserOptions.class);
 
         assertEquals(userOptions, responseUserOptions);
+    }
+
+    @Test
+    public void testGetToken() throws Exception {
+        // Setup
+        final String note = "token note";
+        final Integer expiresIn = 60;
+        final Token token = Token.builder()
+                .note(note)
+                .token("token1234567890")
+                .build();
+
+        when(mockJupyterHubService.createToken(eq(nonAdmin), eq(note), eq(expiresIn))).thenReturn(token);
+
+        // Test
+        final MockHttpServletRequestBuilder request = MockMvcRequestBuilders
+                .post("/jupyterhub/users/" + NON_ADMIN_USERNAME + "/tokens")
+                .param("username", NON_ADMIN_USERNAME)
+                .param("note", note)
+                .param("expiresIn", expiresIn.toString())
+                .accept(JSON)
+                .with(authentication(NONADMIN_AUTH))
+                .with(csrf())
+                .with(testSecurityContext());
+
+        final String response =
+                mockMvc.perform(request)
+                        .andExpect(status().isOk())
+                        .andExpect(content().contentType(JSON))
+                        .andReturn()
+                        .getResponse()
+                        .getContentAsString();
+
+        Token responseToken = mapper.readValue(response, Token.class);
+
+        // Verify
+        verify(mockJupyterHubService, times(1)).createToken(eq(nonAdmin), eq(note), eq(expiresIn));
+        assertEquals(token, responseToken);
     }
 
 }

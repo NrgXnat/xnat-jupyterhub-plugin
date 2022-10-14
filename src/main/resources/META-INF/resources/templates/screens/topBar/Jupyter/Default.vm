@@ -1,11 +1,15 @@
 <!-- Browse/Default -->
-<li><a href="#!" class="nolink">My Jupyter Servers</a>
+<li><a href="#!" class="nolink">Jupyter Notebook Servers</a>
     <ul id="my-jupyter-servers" class="shadowed dark-shadow">
         <!-- Sequence: 10 -->
 
     </ul>
 </li>
 
+<script src="$content.getURI("/scripts/xnat/plugin/jupyterhub/jupyterhub-module.js")"></script>
+<script src="$content.getURI("/scripts/xnat/plugin/jupyterhub/jupyterhub-preferences.js")"></script>
+<script src="$content.getURI("/scripts/xnat/plugin/jupyterhub/jupyterhub-hub.js")"></script>
+<script src="$content.getURI("/scripts/xnat/plugin/jupyterhub/jupyterhub-docker-images.js")"></script>
 <script src="$content.getURI("/scripts/xnat/plugin/jupyterhub/jupyterhub-users.js")"></script>
 <script src="$content.getURI("/scripts/xnat/plugin/jupyterhub/jupyterhub-servers.js")"></script>
 <script src="$content.getURI("/scripts/xnat/plugin/jupyterhub/jupyterhub-topnav.js")"></script>

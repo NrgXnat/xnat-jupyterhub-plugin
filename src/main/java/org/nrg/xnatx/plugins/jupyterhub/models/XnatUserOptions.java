@@ -22,11 +22,13 @@ public class XnatUserOptions implements UserOptions {
     private String servername;
     private String xsiType;
     private String itemId;
+    private String itemLabel;
     private String projectId;
     private String eventTrackingId;
 
-    @JsonProperty("docker-image") private String dockerImage; // The image to use for single-user servers
     @JsonProperty("environment-variables") private Map<String, String> environmentVariables; // Extra environment variables to set for the single-user server’s process.
     @JsonProperty("mounts") private List<BindMount> bindMounts;
+
+    @JsonProperty("container-spec") private ContainerSpec containerSpec;
 
 }

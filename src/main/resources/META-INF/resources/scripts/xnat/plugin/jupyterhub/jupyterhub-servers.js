@@ -10,6 +10,7 @@ XNAT.app.activityTab = getObject(XNAT.app.activityTab || {});
 XNAT.plugin = getObject(XNAT.plugin || {});
 XNAT.plugin.jupyterhub = getObject(XNAT.plugin.jupyterhub || {});
 XNAT.plugin.jupyterhub.servers = getObject(XNAT.plugin.jupyterhub.servers || {});
+XNAT.plugin.jupyterhub.servers.user_options = getObject(XNAT.plugin.jupyterhub.servers.user_options || {});
 
 (function(factory) {
     if (typeof define === 'function' && define.amd) {
@@ -25,14 +26,17 @@ XNAT.plugin.jupyterhub.servers = getObject(XNAT.plugin.jupyterhub.servers || {})
 
     let restUrl = XNAT.url.restUrl;
 
-    let newServerUrl = XNAT.plugin.jupyterhub.servers.newServerUrl = function(username, servername, xsiType, itemId, projectId, eventTrackingId) {
+    let newServerUrl = XNAT.plugin.jupyterhub.servers.newServerUrl = function(username, servername, xsiType, itemId,
+                                                                              itemLabel, projectId, eventTrackingId,
+                                                                              dockerImage) {
         let url = `/xapi/jupyterhub/users/${username}/server`;
 
         // if (servername !== '') {
         //     url = `${url}/${servername}`;
         // }
 
-        url = `${url}?xsiType=${xsiType}&itemId=${itemId}&projectId=${projectId}&eventTrackingId=${eventTrackingId}`
+        url = `${url}?xsiType=${xsiType}&itemId=${itemId}&itemLabel=${itemLabel}&eventTrackingId=${eventTrackingId}&dockerImage=${dockerImage}`;
+        if (projectId) url = `${url}&projectId=${projectId}`;
 
         return restUrl(url);
     }
@@ -42,6 +46,34 @@ XNAT.plugin.jupyterhub.servers = getObject(XNAT.plugin.jupyterhub.servers || {})
         return restUrl(url);
     }
 
+    let getSubjectLabel = async function(subjectId) {
+        console.debug(`jupyterhub-servers.js: getSubjectLabel`);
+
+        const response = await fetch(XNAT.url.restUrl(`/data/subjects/${subjectId}?format=json`), {
+            method: 'GET',
+            headers: {'Content-Type': 'application/json'}
+        })
+
+        if (response.ok) {
+            let result = await response.json()
+            return result['items'][0]['data_fields']['label']
+        }
+    }
+
+    let getExperimentLabel = async function(experimentId) {
+        console.debug(`jupyterhub-servers.js: getExperimentLabel`);
+
+        const response = await fetch(XNAT.url.restUrl(`/data/experiments/${experimentId}?format=json`), {
+            method: 'GET',
+            headers: {'Content-Type': 'application/json'}
+        })
+
+        if (response.ok) {
+            let result = await response.json()
+            return result['items'][0]['data_fields']['label']
+        }
+    }
+
     XNAT.plugin.jupyterhub.servers.startServerForProject = function(username = window.username,
                                                             servername = XNAT.data.context.projectID,
                                                             xsiType = XNAT.data.context.xsiType,
@@ -49,7 +81,7 @@ XNAT.plugin.jupyterhub.servers = getObject(XNAT.plugin.jupyterhub.servers || {})
                                                             projectId = XNAT.data.context.projectID,
                                                             eventTrackingId = generateEventTrackingId()) {
         console.debug(`jupyterhub-servers.js: XNAT.plugin.jupyterhub.servers.startServerForProject`);
-        startServer(username, servername, xsiType, itemId, projectId, eventTrackingId)
+        startServer(username, servername, xsiType, itemId, projectId, projectId, eventTrackingId)
     }
 
     XNAT.plugin.jupyterhub.servers.startServerForSubject = function(username = window.username,
@@ -59,7 +91,27 @@ XNAT.plugin.jupyterhub.servers = getObject(XNAT.plugin.jupyterhub.servers || {})
                                                             projectId = XNAT.data.context.projectID,
                                                             eventTrackingId = generateEventTrackingId()) {
         console.debug(`jupyterhub-servers.js: XNAT.plugin.jupyterhub.servers.startServerForSubject`);
-        startServer(username, servername, xsiType, itemId, projectId, eventTrackingId)
+
+        if (XNAT.plugin.jupyterhub.isSharedItem()) {
+            XNAT.dialog.open({
+                width: 450,
+                title: "Unsupported Operation",
+                content: "Cannot start a Jupyter server on a shared subject.",
+                buttons: [
+                    {
+                        label: 'OK',
+                        isDefault: true,
+                        close: true,
+                        action: function() {
+                                xmodal.closeAll();
+                        }
+                    }
+                ]
+            });
+        } else {
+            getSubjectLabel(itemId).then(subjectLabel => startServer(username, servername, xsiType, itemId,
+                                                                     subjectLabel, projectId, eventTrackingId))
+        }
     }
 
     XNAT.plugin.jupyterhub.servers.startServerForExperiment = function(username = window.username,
@@ -69,16 +121,33 @@ XNAT.plugin.jupyterhub.servers = getObject(XNAT.plugin.jupyterhub.servers || {})
                                                                projectId = XNAT.data.context.projectID,
                                                                eventTrackingId = generateEventTrackingId()) {
         console.debug(`jupyterhub-servers.js: XNAT.plugin.jupyterhub.servers.startServerForExperiment`);
-        startServer(username, servername, xsiType, itemId, projectId, eventTrackingId)
+
+        if (XNAT.plugin.jupyterhub.isSharedItem()) {
+            XNAT.dialog.open({
+                width: 450,
+                title: "Unsupported Operation",
+                content: "Cannot start a Jupyter server on a shared experiment.",
+                buttons: [
+                    {
+                        label: 'OK',
+                        isDefault: true,
+                        close: true,
+                        action: function() {
+                            xmodal.closeAll();
+                        }
+                    }
+                ]
+            });
+        } else {
+            getExperimentLabel(itemId).then(experimentLabel => startServer(username, servername, xsiType, itemId,
+                                                                           experimentLabel, projectId, eventTrackingId))
+        }
     }
 
-    XNAT.plugin.jupyterhub.servers.startServerForStoredSearch = function(username = window.username,
-                                                                 servername = '', // this is not in XNAT.data.context.ID
-                                                                 xsiType = "xdat:stored_search",
-                                                                 itemId = '', // this is not in XNAT.data.context.ID
-                                                                 eventTrackingId = generateEventTrackingId()) {
+    XNAT.plugin.jupyterhub.servers.startServerForStoredSearch = function(username, servername, xsiType, itemId,
+                                                                         itemLabel, projectId, eventTrackingId) {
         console.debug(`jupyterhub-servers.js: XNAT.plugin.jupyterhub.servers.startServerForStoredSearch`);
-        startServer(username, servername, xsiType, itemId, undefined, eventTrackingId)
+         startServer(username, servername, xsiType, itemId, itemLabel, projectId, eventTrackingId)
     }
 
 
@@ -108,21 +177,70 @@ XNAT.plugin.jupyterhub.servers = getObject(XNAT.plugin.jupyterhub.servers || {})
         });
     }
 
-    let startServer = XNAT.plugin.jupyterhub.servers.startServer = function(username, servername, xsiType, itemId, projectId, eventTrackingId) {
+    let startServer = XNAT.plugin.jupyterhub.servers.startServer = function(username, servername, xsiType, itemId, itemLabel, projectId, eventTrackingId) {
         console.debug(`jupyterhub-servers.js: XNAT.plugin.jupyterhub.servers.startServer`);
-        console.debug(`Launching jupyter server. User: ${username}, Server Name: ${servername}, XSI Type: ${xsiType}, ID: ${itemId}, Project ID: ${projectId}, eventTrackingId: ${eventTrackingId}`);
+        console.debug(`Launching jupyter server. User: ${username}, Server Name: ${servername}, XSI Type: ${xsiType}, ID: ${itemId}, Label: ${itemLabel}, Project ID: ${projectId}, eventTrackingId: ${eventTrackingId}`);
 
-        return XNAT.xhr.ajax({
-            url: newServerUrl(username, servername, xsiType, itemId, projectId, eventTrackingId),
-            method: 'POST',
-            contentType: 'application/json',
-            beforeSend: function () {
-                XNAT.app.activityTab.start('Start Jupyter Notebook Server', eventTrackingId, 'XNAT.plugin.jupyterhub.servers.activityTabCallback', 2000);
-            },
-            fail: function (error) {
-                console.error(`Failed to send : ${error}`)
-            }
-        });
+        XNAT.plugin.jupyterhub.dockerImages.getImages().then(images => {
+            XNAT.dialog.open({
+                title: 'Jupyter Configuration',
+                content: spawn('form'),
+                maxBtn: true,
+                width: 600,
+                beforeShow: function(obj) {
+                    let imageOptions = images.filter(i => i['enabled'] )
+                                             .map(i => i['image'])
+                                             .sort()
+                                             .map(i => [{value: i}])
+                                             .flat();
+
+                    // spawn new image form
+                    const formContainer$ = obj.$modal.find('.xnat-dialog-content');
+                    formContainer$.addClass('panel');
+                    obj.$modal.find('form').append(
+                        spawn('!', [
+                            XNAT.ui.panel.select.single({
+                                name: 'dockerImage',
+                                id: 'dockerImage',
+                                options: imageOptions,
+                                label: 'Docker image',
+                                validation: 'required not-empty',
+                                description: 'Select a Docker image to use for your Jupyter notebook server.'
+                            }).element
+                        ])
+                    );
+                },
+                buttons: [
+                    {
+                        label: 'Start Jupyter',
+                        isDefault: true,
+                        close: true,
+                        action: function() {
+                            const dockerImageEl = document.getElementById("dockerImage");
+
+                            XNAT.xhr.ajax({
+                                url: newServerUrl(username, servername, xsiType, itemId, itemLabel,
+                                                  projectId, eventTrackingId, dockerImageEl.value),
+                                method: 'POST',
+                                contentType: 'application/json',
+                                beforeSend: function () {
+                                    XNAT.app.activityTab.start('Start Jupyter Notebook Server', eventTrackingId,
+                                                               'XNAT.plugin.jupyterhub.servers.activityTabCallback', 2000);
+                                },
+                                fail: function (error) {
+                                    console.error(`Failed to send Jupyter server request: ${error}`)
+                                }
+                            });
+
+                        }
+                    },
+                    {
+                        label: 'Cancel',
+                        close: true
+                    }
+                ]
+            });
+        })
     }
 
     let activityTabCallback = XNAT.plugin.jupyterhub.servers.activityTabCallback = function(itemDivId, detailsTag, jsonobj, lastProgressIdx) {
@@ -170,46 +288,49 @@ XNAT.plugin.jupyterhub.servers = getObject(XNAT.plugin.jupyterhub.servers || {})
     function parseFinalMessage(message, succeeded) {
         if (succeeded) {
             // Surround link to Jupyter server in message with <a> tag
-            return '<div class="prog success">' + message.replace(/(\/.*$)/, "<a target='_blank' href='$1'>$1</a>") + '</div>';
+            return '<div class="prog success">' + message.replace(/(\/.*$)/, "<a onclick='XNAT.plugin.jupyterhub.servers.goTo(\"$1\")'>$1</a>") + '</div>';
         } else {
             return '<div class="prog error">' + message + '</div>'
         }
     }
 
-    let stopServer = XNAT.plugin.jupyterhub.servers.stopServer = function(username = window.username,
-                                                                          servername = '',
-                                                                          eventTrackingId = generateEventTrackingId()) {
+    XNAT.plugin.jupyterhub.servers.goTo = function(server_url) {
+        XNAT.plugin.jupyterhub.users.tokens.create().then(token => {
+            window.open(`${server_url}?token=${token['token']}`, '_blank');
+        }).catch(() => {
+            window.open(server_url, '_blank');
+        })
+    }
+
+    XNAT.plugin.jupyterhub.servers.stopServer = async function(username = window.username,
+                                                               servername = '',
+                                                               eventTrackingId = generateEventTrackingId()) {
         console.debug(`jupyterhub-servers.js: XNAT.plugin.jupyterhub.servers.stopServer`);
 
         return XNAT.xhr.ajax({
             url: serverUrl(username, servername, eventTrackingId),
-            data : {
-                "eventTrackingId": eventTrackingId
-            },
+            data : {"eventTrackingId": eventTrackingId},
             method: 'DELETE',
-            beforeSend: function() {
-                XNAT.app.activityTab.start('Stop Jupyter Notebook Server',  eventTrackingId, 'XNAT.plugin.jupyterhub.servers.activityTabCallback', 2000);
-            },
-            success: function () {
-                console.log(`Jupyter server ${servername} for user ${username} stopped`);
-            },
-            fail: function (e) {
-                XNAT.dialog.open({
-                    width: 450,
-                    title: "Failed to stop Jupyter Server",
-                    buttons: [
-                        {
-                            label: 'OK',
-                            isDefault: true,
-                            close: true,
-                            action: function() {
-                                XNAT.ui.dialog.closeAll();
-                            }
-                        }
-                    ]
-                });
-            }
         });
+    }
+
+    XNAT.plugin.jupyterhub.servers.user_options.get = async function(username, servername) {
+        let url = servername ?
+            `/xapi/jupyterhub/users/${username}/server/${servername}/user-options`:
+            `/xapi/jupyterhub/users/${username}/server/user-options`;
+
+        url = XNAT.url.restUrl(url);
+
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: {'Content-Type': 'application/json'}
+        })
+
+        if (!response.ok) {
+            throw new Error(`HTTP error getting JupyterHub users: ${response.status}`);
+        }
+
+        return await response.json();
     }
 
     let generateEventTrackingId = XNAT.plugin.jupyterhub.servers.generateEventTrackingId = function() {
