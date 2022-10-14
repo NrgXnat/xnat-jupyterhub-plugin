@@ -10,7 +10,7 @@ plugins {
 }
 
 group "org.nrg.xnatx.plugins"
-version "0.1.1-SNAPSHOT"
+version "0.2.1-dev0"
 description "XNAT JupyterHub Plugin for XNAT 1.8.5"
 
 repositories {
