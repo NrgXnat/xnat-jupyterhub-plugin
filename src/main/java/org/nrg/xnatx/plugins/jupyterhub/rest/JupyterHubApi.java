@@ -80,8 +80,8 @@ public class JupyterHubApi extends AbstractXapiRestController {
                    @ApiResponse(code = 403, message = "Not authorized."),
                    @ApiResponse(code = 500, message = "Unexpected error")})
     @XapiRequestMapping(value = "/users/{username}", method = GET, produces = APPLICATION_JSON_VALUE, restrictTo = AccessLevel.User)
-    public User getUser(@ApiParam(value = "username", required = true) @PathVariable @Username final String username) throws NotFoundException {
-        return jupyterHubService.getUser(getSessionUser()).orElseThrow(() -> new NotFoundException("No user with name " + username + "exists on JupyterHub."));
+    public User getUser(@ApiParam(value = "username", required = true) @PathVariable @Username final String username) throws NotFoundException, UserNotFoundException, UserInitException {
+        return jupyterHubService.getUser(getUserI(username)).orElseThrow(() -> new NotFoundException("No user with name " + username + "exists on JupyterHub."));
     }
 
     @ApiOperation(value = "Get all the users on JupyterHub.", notes = "All users and their active servers will be returned.", response = User.class, responseContainer = "List")
