@@ -8,6 +8,7 @@ import org.nrg.prefs.services.NrgPreferenceService;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.services.*;
 import org.nrg.xdat.services.AliasTokenService;
+import org.nrg.xnat.tracking.services.EventTrackingDataHibernateService;
 import org.nrg.xnatx.plugins.jupyterhub.client.JupyterHubClient;
 import org.nrg.xnatx.plugins.jupyterhub.preferences.JupyterHubPreferences;
 import org.nrg.xnatx.plugins.jupyterhub.services.JupyterHubService;
@@ -124,5 +125,10 @@ public class MockConfig {
     @Bean
     public XFTManagerHelper mockXFTManagerHelper() {
         return Mockito.mock(XFTManagerHelper.class);
+    }
+
+    @Bean
+    public EventTrackingDataHibernateService mockEventTrackingDataHibernateService() {
+        return Mockito.mock(EventTrackingDataHibernateService.class);
     }
 }

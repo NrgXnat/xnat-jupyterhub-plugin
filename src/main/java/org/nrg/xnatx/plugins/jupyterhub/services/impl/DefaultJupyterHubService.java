@@ -219,7 +219,7 @@ public class DefaultJupyterHubService implements JupyterHubService {
                                                                       JupyterServerEventI.Operation.Start, 20,
                                                                       "Building notebook server container configuration."));
 
-                userOptionsService.storeUserOptions(user, servername, xsiType, itemId, projectId, dockerImage);
+                userOptionsService.storeUserOptions(user, servername, xsiType, itemId, projectId, dockerImage, eventTrackingId);
 
                 eventService.triggerEvent(JupyterServerEvent.progress(eventTrackingId, user.getID(), xsiType, itemId,
                                                                       JupyterServerEventI.Operation.Start, 30,

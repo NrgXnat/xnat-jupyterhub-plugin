@@ -264,7 +264,8 @@ public class DefaultUserOptionsService implements UserOptionsService {
     }
 
     @Override
-    public void storeUserOptions(UserI user, String servername, String xsiType, String id, String projectId, String dockerImage) {
+    public void storeUserOptions(UserI user, String servername, String xsiType, String id, String projectId,
+                                 String dockerImage, String eventTrackingId) {
         log.debug("Storing user options for user '{}' server '{}' xsiType '{}' id '{}' projectId '{}'",
                   user.getUsername(), servername, xsiType, id, projectId);
 
@@ -345,6 +346,7 @@ public class DefaultUserOptionsService implements UserOptionsService {
                 .xsiType(xsiType)
                 .itemId(id)
                 .projectId(projectId)
+                .eventTrackingId(eventTrackingId)
                 .environmentVariables(environmentVariables)
                 .bindMountsJson(UserOptionsEntity.bindMountPojo(mounts))
                 .containerSpecJson(UserOptionsEntity.containerSpecPojo(containerSpec))

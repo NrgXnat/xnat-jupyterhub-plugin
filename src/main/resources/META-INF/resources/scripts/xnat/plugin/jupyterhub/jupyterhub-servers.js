@@ -225,7 +225,7 @@ XNAT.plugin.jupyterhub.servers.user_options = getObject(XNAT.plugin.jupyterhub.s
                                 contentType: 'application/json',
                                 beforeSend: function () {
                                     XNAT.app.activityTab.start('Start Jupyter Notebook Server', eventTrackingId,
-                                                               'XNAT.plugin.jupyterhub.servers.activityTabCallback', 2000);
+                                                               'XNAT.plugin.jupyterhub.servers.activityTabCallback', 1000);
                                 },
                                 fail: function (error) {
                                     console.error(`Failed to send Jupyter server request: ${error}`)
