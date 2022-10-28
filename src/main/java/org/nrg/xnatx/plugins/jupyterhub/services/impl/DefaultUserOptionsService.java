@@ -16,9 +16,7 @@ import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.exceptions.InvalidArchiveStructure;
 import org.nrg.xnatx.plugins.jupyterhub.entities.UserOptionsEntity;
-import org.nrg.xnatx.plugins.jupyterhub.models.BindMount;
-import org.nrg.xnatx.plugins.jupyterhub.models.ContainerSpec;
-import org.nrg.xnatx.plugins.jupyterhub.models.XnatUserOptions;
+import org.nrg.xnatx.plugins.jupyterhub.models.*;
 import org.nrg.xnatx.plugins.jupyterhub.preferences.JupyterHubPreferences;
 import org.nrg.xnatx.plugins.jupyterhub.services.UserOptionsEntityService;
 import org.nrg.xnatx.plugins.jupyterhub.services.UserOptionsService;
@@ -342,6 +340,20 @@ public class DefaultUserOptionsService implements UserOptionsService {
                 .image(dockerImage)
                 .build();
 
+        // PlacementSpec
+        List<String> placementSpecConstraints = jupyterHubPreferences.getPlacementSpecConstraints();
+        PlacementSpec placementSpec = PlacementSpec.builder()
+                .constraints(placementSpecConstraints)
+                .build();
+
+        // ResourceSpec
+        ResourceSpec resourceSpec = ResourceSpec.builder()
+                .cpuLimit(jupyterHubPreferences.getResourceSpecCpuLimit())
+                .cpuReservation(jupyterHubPreferences.getResourceSpecCpuReservation())
+                .memLimit(jupyterHubPreferences.getResourceSpecMemLimit())
+                .memReservation(jupyterHubPreferences.getResourceSpecMemReservation())
+                .build();
+
         // Store the user options
         UserOptionsEntity userOptionsEntity = UserOptionsEntity.builder()
                 .userId(user.getID())
@@ -353,6 +365,8 @@ public class DefaultUserOptionsService implements UserOptionsService {
                 .environmentVariables(environmentVariables)
                 .bindMountsJson(UserOptionsEntity.bindMountPojo(mounts))
                 .containerSpecJson(UserOptionsEntity.containerSpecPojo(containerSpec))
+                .placementSpecJson(UserOptionsEntity.placementSpecPojo(placementSpec))
+                .resourceSpecJson(UserOptionsEntity.resourceSpecPojo(resourceSpec))
                 .build();
 
         userOptionsEntityService.createOrUpdate(userOptionsEntity);

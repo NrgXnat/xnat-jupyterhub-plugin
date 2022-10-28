@@ -6,9 +6,7 @@ import lombok.*;
 import lombok.extern.slf4j.Slf4j;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 import org.nrg.xdat.XDAT;
-import org.nrg.xnatx.plugins.jupyterhub.models.BindMount;
-import org.nrg.xnatx.plugins.jupyterhub.models.ContainerSpec;
-import org.nrg.xnatx.plugins.jupyterhub.models.XnatUserOptions;
+import org.nrg.xnatx.plugins.jupyterhub.models.*;
 
 import javax.persistence.*;
 import java.io.IOException;
@@ -35,6 +33,8 @@ public class UserOptionsEntity extends AbstractHibernateEntity {
     private Map<String, String> environmentVariables;
     private String bindMountsJson; // List<BindMounts> serialized to json string
     private String containerSpecJson; // container spec serialized to json string
+    private String placementSpecJson; // container spec serialized to json string
+    private String resourceSpecJson; // container spec serialized to json string
 
     public Integer getUserId() {
         return userId;
@@ -116,6 +116,25 @@ public class UserOptionsEntity extends AbstractHibernateEntity {
         this.containerSpecJson = containerSpecJson;
     }
 
+    @Column(columnDefinition = "TEXT")
+    public String getPlacementSpecJson() {
+        return placementSpecJson;
+    }
+
+    public void setPlacementSpecJson(String placementSpecJson) {
+        this.placementSpecJson = placementSpecJson;
+    }
+
+    @Column(columnDefinition = "TEXT")
+    public String getResourceSpecJson() {
+        return resourceSpecJson;
+    }
+
+    public void setResourceSpecJson(String resourceSpecJson) {
+        this.resourceSpecJson = resourceSpecJson;
+    }
+
+
     public static String bindMountPojo(List<BindMount> bindMounts) {
         try {
             return XDAT.getSerializerService().getObjectMapper().writeValueAsString(bindMounts);
@@ -155,6 +174,45 @@ public class UserOptionsEntity extends AbstractHibernateEntity {
         }
     }
 
+    public PlacementSpec placementSpecPojo() {
+        try {
+            return XDAT.getSerializerService().getObjectMapper().readValue(placementSpecJson, PlacementSpec.class);
+        } catch (IOException e) {
+            log.error("Unable to deserialize containerSpec.", e);
+            throw new RuntimeException(e);
+        }
+    }
+
+
+    public static String placementSpecPojo(PlacementSpec placementSpec) {
+        try {
+            return XDAT.getSerializerService().getObjectMapper().writeValueAsString(placementSpec);
+        } catch (JsonProcessingException e) {
+            log.error("Unable to serialize placementSpec.", e);
+            throw new RuntimeException(e);
+        }
+    }
+
+
+    public ResourceSpec resourceSpecPojo() {
+        try {
+            return XDAT.getSerializerService().getObjectMapper().readValue(resourceSpecJson, ResourceSpec.class);
+        } catch (IOException e) {
+            log.error("Unable to deserialize resourceSpecJson.", e);
+            throw new RuntimeException(e);
+        }
+    }
+
+
+    public static String resourceSpecPojo(ResourceSpec resourceSpec) {
+        try {
+            return XDAT.getSerializerService().getObjectMapper().writeValueAsString(resourceSpec);
+        } catch (JsonProcessingException e) {
+            log.error("Unable to serialize resourceSpecJson.", e);
+            throw new RuntimeException(e);
+        }
+    }
+
     public XnatUserOptions toPojo() {
         return XnatUserOptions.builder()
                 .userId(userId)
@@ -166,6 +224,8 @@ public class UserOptionsEntity extends AbstractHibernateEntity {
                 .environmentVariables(environmentVariables)
                 .bindMounts(bindMountPojo())
                 .containerSpec(containerSpecPojo())
+                .placementSpec(placementSpecPojo())
+                .resourceSpec(resourceSpecPojo())
                 .build();
     }
 
@@ -179,5 +239,7 @@ public class UserOptionsEntity extends AbstractHibernateEntity {
         this.setEnvironmentVariables(update.getEnvironmentVariables());
         this.setBindMountsJson(update.getBindMountsJson());
         this.setContainerSpecJson(update.getContainerSpecJson());
+        this.setPlacementSpecJson(update.getPlacementSpecJson());
+        this.setResourceSpecJson(update.getResourceSpecJson());
     }
 }

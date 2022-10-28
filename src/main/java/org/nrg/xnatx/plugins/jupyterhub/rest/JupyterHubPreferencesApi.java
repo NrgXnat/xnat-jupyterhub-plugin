@@ -119,6 +119,26 @@ public class JupyterHubPreferencesApi extends AbstractXapiRestController {
                 value = jupyterHubPreferences.getContainerSpecLabels();
                 break;
             }
+            case (JupyterHubPreferences.PLACEMENT_SPEC_CONSTRAINTS_PREF_ID): {
+                value = jupyterHubPreferences.getPlacementSpecConstraints();
+                break;
+            }
+            case (JupyterHubPreferences.RESOURCE_SPEC_CPU_LIMIT_PREF_ID): {
+                value = jupyterHubPreferences.getResourceSpecCpuLimit();
+                break;
+            }
+            case (JupyterHubPreferences.RESOURCE_SPEC_CPU_RESERVATION_PREF_ID): {
+                value = jupyterHubPreferences.getResourceSpecCpuReservation();
+                break;
+            }
+            case (JupyterHubPreferences.RESOURCE_SPEC_MEM_LIMIT_PREF_ID): {
+                value = jupyterHubPreferences.getResourceSpecMemLimit();
+                break;
+            }
+            case (JupyterHubPreferences.RESOURCE_SPEC_MEM_RESERVATION_PREF_ID): {
+                value = jupyterHubPreferences.getResourceSpecMemReservation();
+                break;
+            }
             case (JupyterHubPreferences.INACTIVITY_TIMEOUT_PREF_ID): {
                 value = jupyterHubPreferences.getInactivityTimeout();
                 break;
