@@ -84,6 +84,60 @@ inactivityTimeout:
   description: >
     Automatically shut down idle Jupyter notebook servers if they've been inactive for some time. Set the timeout to 0 to not cull any inactive servers.
 
+resourceSpecCpuLimit:
+  kind: panel.input.number
+  id: resourceSpecCpuLimit
+  name: resourceSpecCpuLimit
+  label: CPU Limit
+  validation: decimal gte:0.0 onblur
+  element:
+    step: 0.1
+  description: >
+    (Optional) Maximum number of cpu-cores a single-user notebook server is allowed to use. If this value is set to 0.5,
+    allows use of 50% of one CPU. If this value is set to 2, allows use of up to 2 CPUs. Set to 0 for this preference 
+    to be ignored.
+
+resourceSpecCpuReservation:
+  kind: panel.input.number
+  id: resourceSpecCpuReservation
+  name: resourceSpecCpuReservation
+  label: CPU Reservation
+  validation: decimal gte:0.0 onblur
+  element:
+    step: 0.1
+  description: >
+    (Optional) Minimum number of cpu-cores a single-user notebook server is guaranteed to have available. If this value 
+    is set to 0.5, allows use of 50% of one CPU. If this value is set to 2, allows use of up to 2 CPUs. Set to 0 for 
+    this preference to be ignored.
+
+resourceSpecMemLimit:
+  kind: panel.input.text
+  id: resourceSpecMemLimit
+  name: resourceSpecMemLimit
+  label: Memory Limit
+  description: >
+    (Optional) Maximum number of bytes a single-user notebook server is allowed to use. Leave this input empty for this
+    preference to be ignored.
+    Allows the following suffixes: 
+      K -> Kilobytes
+      M -> Megabytes
+      G -> Gigabytes
+      T -> Terabytes
+
+resourceSpecMemReservation:
+  kind: panel.input.text
+  id: resourceSpecMemReservation
+  name: resourceSpecMemReservation
+  label: Memory Reservation
+  description: >
+    (Optional) Minimum number of bytes a single-user notebook server is guaranteed to have available. Leave this input 
+    empty for this preference to be ignored.
+    Allows the following suffixes: 
+      K -> Kilobytes
+      M -> Megabytes
+      G -> Gigabytes
+      T -> Terabytes
+
 jupyterHubSetup:
   kind: panel
   name: jupyterHubSetup
@@ -134,6 +188,10 @@ jupyterhubPreferences:
     ${pathTranslationXnatPrefix}
     ${pathTranslationDockerPrefix}
     ${workspacePath}
+    ${resourceSpecCpuLimit}
+    ${resourceSpecCpuReservation}
+    ${resourceSpecMemLimit}
+    ${resourceSpecMemReservation}
 
 jupyterHubUserActivity:
   kind: panel

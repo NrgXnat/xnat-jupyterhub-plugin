@@ -36,7 +36,7 @@ public class JupyterHubPreferences extends AbstractPreferenceBean {
         super(preferenceService, configFolderPaths, initPrefs);
     }
 
-    @NrgPreference(defaultValue = "http://host.docker.internal/jupyterhub/hub/api")
+    @NrgPreference(defaultValue = "http://172.17.0.1/jupyterhub/hub/api")
     public String getJupyterHubApiUrl() {
         return getValue("jupyterHubApiUrl");
     }
@@ -63,8 +63,7 @@ public class JupyterHubPreferences extends AbstractPreferenceBean {
     }
 
     @NrgPreference(defaultValue = "[\n   " +
-            "{\"image\": \"jupyter/scipy-notebook:hub-3.0.0\", \"enabled\": \"true\"},\n   " +
-            "{\"image\": \"jupyter/tensorflow-notebook:hub-3.0.0\", \"enabled\": \"true\"}\n   " +
+            "{\"image\": \"jupyter/scipy-notebook:hub-3.0.0\", \"enabled\": \"true\"}\n   " +
             "]",
             key = "image")
     public List<DockerImage> getDockerImages() {
@@ -79,7 +78,7 @@ public class JupyterHubPreferences extends AbstractPreferenceBean {
         }
     }
 
-    @NrgPreference(defaultValue = "120")
+    @NrgPreference(defaultValue = "180")
     public Integer getStartTimeout() {
         return getIntegerValue("startTimeout");
     }
@@ -105,7 +104,7 @@ public class JupyterHubPreferences extends AbstractPreferenceBean {
         }
     }
 
-    @NrgPreference(defaultValue = "30")
+    @NrgPreference(defaultValue = "8")
     public Integer getStartPollingInterval() {
         return getIntegerValue("startPollingInterval");
     }
@@ -118,7 +117,7 @@ public class JupyterHubPreferences extends AbstractPreferenceBean {
         }
     }
 
-    @NrgPreference(defaultValue = "30")
+    @NrgPreference(defaultValue = "2")
     public Integer getStopPollingInterval() {
         return getIntegerValue("stopPollingInterval");
     }
@@ -170,7 +169,7 @@ public class JupyterHubPreferences extends AbstractPreferenceBean {
         }
     }
 
-    @NrgPreference(defaultValue = "{\"engine.labels.jupyter\": \"true\"}")
+    @NrgPreference(defaultValue = "")
     public Map<String, String> getContainerSpecLabels() {
         return getMapValue(CONTAINER_SPEC_LABELS_PREF_ID);
     }

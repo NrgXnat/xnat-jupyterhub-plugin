@@ -37,7 +37,7 @@ XNAT.plugin.jupyterhub.topnav = getObject(XNAT.plugin.jupyterhub.topnav || {});
 
         // add table header row
         jupyterServerTable.tr()
-            .th({addClass: 'left', style: {width: '200px'}, html: '<b>Item</b>'})
+            .th({addClass: 'left', style: {width: '200px'}, html: '<b>Context</b>'})
             .th({addClass: 'center', style: {width: '100px'}, html: '<b>Actions</b>'})
 
         function xnatItem(server) {
@@ -153,7 +153,7 @@ XNAT.plugin.jupyterhub.topnav = getObject(XNAT.plugin.jupyterhub.topnav || {});
 
             isEmpty(servers) ?
                 jupyterServerTable.tr()
-                    .td([ spawn('div.left', {style: {'font-size': '12px'}}, ['None']) ])
+                    .td([ spawn('div.left', {style: {'font-size': '12px'}}, ['No running Jupyter servers. Go to a project, subject, or experiment to start Jupyter.']) ])
                     .td([ spawn('div.center', ['']) ]) :
                 Object.values(servers).forEach(server => {
                     jupyterServerTable.tr()
