@@ -10,8 +10,8 @@ plugins {
 }
 
 group "org.nrg.xnatx.plugins"
-version "0.2.1-SNAPSHOT"
-description "XNAT JupyterHub Plugin for XNAT 1.8.6"
+version "0.3.0-beta1"
+description "JupyterHub Plugin for XNAT 1.8.6"
 
 repositories {
     maven { url "https://nrgxnat.jfrog.io/nrgxnat/libs-release" }
