@@ -24,6 +24,11 @@ public class JupyterHubPreferences extends AbstractPreferenceBean {
     public static final String TOOL_ID = "jupyterhub";
     public static final String DOCKER_IMAGES_PREF_ID = "dockerImages";
     public static final String CONTAINER_SPEC_LABELS_PREF_ID = "containerSpecLabels";
+    public static final String PLACEMENT_SPEC_CONSTRAINTS_PREF_ID = "placementSpecConstraints";
+    public static final String RESOURCE_SPEC_CPU_LIMIT_PREF_ID = "resourceSpecCpuLimit";
+    public static final String RESOURCE_SPEC_CPU_RESERVATION_PREF_ID = "resourceSpecCpuReservation";
+    public static final String RESOURCE_SPEC_MEM_LIMIT_PREF_ID = "resourceSpecMemLimit";
+    public static final String RESOURCE_SPEC_MEM_RESERVATION_PREF_ID = "resourceSpecMemReservation";
     public static final String INACTIVITY_TIMEOUT_PREF_ID = "inactivityTimeout";
 
     @Autowired
@@ -31,7 +36,7 @@ public class JupyterHubPreferences extends AbstractPreferenceBean {
         super(preferenceService, configFolderPaths, initPrefs);
     }
 
-    @NrgPreference(defaultValue = "http://host.docker.internal/jupyterhub/hub/api")
+    @NrgPreference(defaultValue = "http://172.17.0.1/jupyterhub/hub/api")
     public String getJupyterHubApiUrl() {
         return getValue("jupyterHubApiUrl");
     }
@@ -58,8 +63,7 @@ public class JupyterHubPreferences extends AbstractPreferenceBean {
     }
 
     @NrgPreference(defaultValue = "[\n   " +
-            "{\"image\": \"jupyter/scipy-notebook:hub-3.0.0\", \"enabled\": \"true\"},\n   " +
-            "{\"image\": \"jupyter/tensorflow-notebook:hub-3.0.0\", \"enabled\": \"true\"}\n   " +
+            "{\"image\": \"jupyter/scipy-notebook:hub-3.0.0\", \"enabled\": \"true\"}\n   " +
             "]",
             key = "image")
     public List<DockerImage> getDockerImages() {
@@ -74,7 +78,7 @@ public class JupyterHubPreferences extends AbstractPreferenceBean {
         }
     }
 
-    @NrgPreference(defaultValue = "120")
+    @NrgPreference(defaultValue = "180")
     public Integer getStartTimeout() {
         return getIntegerValue("startTimeout");
     }
@@ -100,7 +104,7 @@ public class JupyterHubPreferences extends AbstractPreferenceBean {
         }
     }
 
-    @NrgPreference(defaultValue = "30")
+    @NrgPreference(defaultValue = "8")
     public Integer getStartPollingInterval() {
         return getIntegerValue("startPollingInterval");
     }
@@ -113,7 +117,7 @@ public class JupyterHubPreferences extends AbstractPreferenceBean {
         }
     }
 
-    @NrgPreference(defaultValue = "30")
+    @NrgPreference(defaultValue = "2")
     public Integer getStopPollingInterval() {
         return getIntegerValue("stopPollingInterval");
     }
@@ -165,7 +169,7 @@ public class JupyterHubPreferences extends AbstractPreferenceBean {
         }
     }
 
-    @NrgPreference(defaultValue = "{\"engine.labels.jupyter\": \"true\"}")
+    @NrgPreference(defaultValue = "")
     public Map<String, String> getContainerSpecLabels() {
         return getMapValue(CONTAINER_SPEC_LABELS_PREF_ID);
     }
@@ -175,6 +179,71 @@ public class JupyterHubPreferences extends AbstractPreferenceBean {
             setMapValue(CONTAINER_SPEC_LABELS_PREF_ID, containerSpecLabels);
         } catch (InvalidPreferenceName e) {
             log.error("Invalid preference name 'containerSpecLabels': something is very wrong here.", e);
+        }
+    }
+
+    @NrgPreference(defaultValue = "[]")
+    public List<String> getPlacementSpecConstraints() {
+        return getListValue(PLACEMENT_SPEC_CONSTRAINTS_PREF_ID);
+    }
+
+    public void setPlacementSpecConstraints(List<String> placementSpecConstraints) {
+        try {
+            setListValue(PLACEMENT_SPEC_CONSTRAINTS_PREF_ID, placementSpecConstraints);
+        } catch (InvalidPreferenceName e) {
+            log.error("Invalid preference name 'placementSpecConstraints': something is very wrong here.", e);
+        }
+    }
+
+    @NrgPreference(defaultValue = "0")
+    public Double getResourceSpecCpuLimit() {
+        return getDoubleValue(RESOURCE_SPEC_CPU_LIMIT_PREF_ID);
+    }
+
+    public void setResourceSpecCpuLimit(final Double resourceSpecCpuLimit) {
+        try {
+            setDoubleValue(resourceSpecCpuLimit, RESOURCE_SPEC_CPU_LIMIT_PREF_ID);
+        } catch (InvalidPreferenceName e) {
+            log.error("Invalid preference name, something is very wrong here.", e);
+        }
+    }
+
+    @NrgPreference(defaultValue = "0")
+    public Double getResourceSpecCpuReservation() {
+        return getDoubleValue(RESOURCE_SPEC_CPU_RESERVATION_PREF_ID);
+    }
+
+    public void setResourceSpecCpuReservation(final Double resourceSpecCpuReservation) {
+        try {
+            setDoubleValue(resourceSpecCpuReservation, RESOURCE_SPEC_CPU_RESERVATION_PREF_ID);
+        } catch (InvalidPreferenceName e) {
+            log.error("Invalid preference name, something is very wrong here.", e);
+        }
+    }
+
+    @NrgPreference(defaultValue = "")
+    public String getResourceSpecMemLimit() {
+        return getValue(RESOURCE_SPEC_MEM_LIMIT_PREF_ID);
+    }
+
+    public void setResourceSpecMemLimit(final String resourceSpecMemLimit) {
+        try {
+            set(resourceSpecMemLimit, RESOURCE_SPEC_MEM_LIMIT_PREF_ID);
+        } catch (InvalidPreferenceName e) {
+            log.error("Invalid preference name, something is very wrong here.", e);
+        }
+    }
+
+    @NrgPreference(defaultValue = "")
+    public String getResourceSpecMemReservation() {
+        return getValue(RESOURCE_SPEC_MEM_RESERVATION_PREF_ID);
+    }
+
+    public void setResourceSpecMemReservation(final String resourceSpecMemReservation) {
+        try {
+            set(resourceSpecMemReservation, RESOURCE_SPEC_MEM_RESERVATION_PREF_ID);
+        } catch (InvalidPreferenceName e) {
+            log.error("Invalid preference name, something is very wrong here.", e);
         }
     }
 

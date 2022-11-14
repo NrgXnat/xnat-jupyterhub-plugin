@@ -16,9 +16,7 @@ import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.exceptions.InvalidArchiveStructure;
 import org.nrg.xnatx.plugins.jupyterhub.entities.UserOptionsEntity;
-import org.nrg.xnatx.plugins.jupyterhub.models.BindMount;
-import org.nrg.xnatx.plugins.jupyterhub.models.ContainerSpec;
-import org.nrg.xnatx.plugins.jupyterhub.models.XnatUserOptions;
+import org.nrg.xnatx.plugins.jupyterhub.models.*;
 import org.nrg.xnatx.plugins.jupyterhub.preferences.JupyterHubPreferences;
 import org.nrg.xnatx.plugins.jupyterhub.services.UserOptionsEntityService;
 import org.nrg.xnatx.plugins.jupyterhub.services.UserOptionsService;
@@ -73,7 +71,10 @@ public class DefaultUserOptionsService implements UserOptionsService {
 
             if (xnatProjectdata != null) {
                 // Experiments
-                projectPaths.put("/data/projects/" + projectId + "/experiments", xnatProjectdata.getRootArchivePath() + xnatProjectdata.getCurrentArc());
+                final Path projectDirectory = Paths.get(xnatProjectdata.getRootArchivePath() + xnatProjectdata.getCurrentArc());
+                if (Files.exists(projectDirectory)) {
+                    projectPaths.put("/data/projects/" + projectId + "/experiments", projectDirectory.toString());
+                }
 
                 // Project resources
                 final Path resourceDirectory = Paths.get(xnatProjectdata.getRootArchivePath() + "/resources");
@@ -264,7 +265,8 @@ public class DefaultUserOptionsService implements UserOptionsService {
     }
 
     @Override
-    public void storeUserOptions(UserI user, String servername, String xsiType, String id, String projectId, String dockerImage) {
+    public void storeUserOptions(UserI user, String servername, String xsiType, String id, String projectId,
+                                 String dockerImage, String eventTrackingId) {
         log.debug("Storing user options for user '{}' server '{}' xsiType '{}' id '{}' projectId '{}'",
                   user.getUsername(), servername, xsiType, id, projectId);
 
@@ -338,6 +340,20 @@ public class DefaultUserOptionsService implements UserOptionsService {
                 .image(dockerImage)
                 .build();
 
+        // PlacementSpec
+        List<String> placementSpecConstraints = jupyterHubPreferences.getPlacementSpecConstraints();
+        PlacementSpec placementSpec = PlacementSpec.builder()
+                .constraints(placementSpecConstraints)
+                .build();
+
+        // ResourceSpec
+        ResourceSpec resourceSpec = ResourceSpec.builder()
+                .cpuLimit(jupyterHubPreferences.getResourceSpecCpuLimit())
+                .cpuReservation(jupyterHubPreferences.getResourceSpecCpuReservation())
+                .memLimit(jupyterHubPreferences.getResourceSpecMemLimit())
+                .memReservation(jupyterHubPreferences.getResourceSpecMemReservation())
+                .build();
+
         // Store the user options
         UserOptionsEntity userOptionsEntity = UserOptionsEntity.builder()
                 .userId(user.getID())
@@ -345,9 +361,12 @@ public class DefaultUserOptionsService implements UserOptionsService {
                 .xsiType(xsiType)
                 .itemId(id)
                 .projectId(projectId)
+                .eventTrackingId(eventTrackingId)
                 .environmentVariables(environmentVariables)
                 .bindMountsJson(UserOptionsEntity.bindMountPojo(mounts))
                 .containerSpecJson(UserOptionsEntity.containerSpecPojo(containerSpec))
+                .placementSpecJson(UserOptionsEntity.placementSpecPojo(placementSpec))
+                .resourceSpecJson(UserOptionsEntity.resourceSpecPojo(resourceSpec))
                 .build();
 
         userOptionsEntityService.createOrUpdate(userOptionsEntity);

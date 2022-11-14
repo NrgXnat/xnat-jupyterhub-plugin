@@ -3,15 +3,15 @@
  */
 plugins {
     id "java"
-    id "org.nrg.xnat.build.xnat-data-builder" version "1.8.5"
+    id "org.nrg.xnat.build.xnat-data-builder" version "1.8.6"
     id "io.freefair.lombok" version "6.0.0-m2"
     id "com.palantir.git-version" version "0.12.1"
     id "jacoco"
 }
 
 group "org.nrg.xnatx.plugins"
-version "0.2.0"
-description "XNAT JupyterHub Plugin for XNAT 1.8.5"
+version "0.3.0"
+description "JupyterHub Plugin for XNAT 1.8.6"
 
 repositories {
     maven { url "https://nrgxnat.jfrog.io/nrgxnat/libs-release" }
@@ -28,7 +28,7 @@ configurations {
 }
 
 dependencies {
-    xnatProvided platform("org.nrg:parent:1.8.5")
+    xnatProvided platform("org.nrg:parent:1.8.6")
     xnatProvided "org.nrg:framework"
     xnatProvided "org.nrg.xnat:xnat-data-models"
     xnatProvided "org.nrg.xnat:web"
@@ -39,9 +39,9 @@ dependencies {
 
 dependencies {
     implementation 'org.projectlombok:lombok:1.18.24'
-    implementation "com.fasterxml.jackson.datatype:jackson-datatype-guava"
+    testImplementation "com.fasterxml.jackson.datatype:jackson-datatype-guava"
     testImplementation "junit:junit"
-    testImplementation 'org.mockito:mockito-core:4.6.1'
+    testImplementation 'org.mockito:mockito-core:4.8.0'
     testImplementation "org.springframework:spring-test"
     testImplementation "org.springframework.security:spring-security-test"
     testImplementation "org.springframework.security:spring-security-config"

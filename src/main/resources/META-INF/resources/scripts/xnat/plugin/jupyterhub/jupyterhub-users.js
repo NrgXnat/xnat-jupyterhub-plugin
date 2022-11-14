@@ -257,7 +257,7 @@ XNAT.plugin.jupyterhub.users.tokens = getObject(XNAT.plugin.jupyterhub.users.tok
     XNAT.plugin.jupyterhub.users.tokens.create = async function(token = {
                                                                     username: window.username,
                                                                     note: "XNAT.plugin.jupyterhub.users.tokens.create",
-                                                                    expires_in: 60
+                                                                    expires_in: 172800 // 2 days in seconds
                                                                 },
                                                                 timeout = 375) {
         console.debug(`jupyterhub-users.js: XNAT.plugin.jupyterhub.users.tokens.create`);

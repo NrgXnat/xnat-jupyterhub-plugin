@@ -13,10 +13,7 @@ import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnatx.plugins.jupyterhub.client.models.*;
 import org.nrg.xnatx.plugins.jupyterhub.config.JupyterHubApiConfig;
-import org.nrg.xnatx.plugins.jupyterhub.models.BindMount;
-import org.nrg.xnatx.plugins.jupyterhub.models.ContainerSpec;
-import org.nrg.xnatx.plugins.jupyterhub.models.DockerImage;
-import org.nrg.xnatx.plugins.jupyterhub.models.XnatUserOptions;
+import org.nrg.xnatx.plugins.jupyterhub.models.*;
 import org.nrg.xnatx.plugins.jupyterhub.services.JupyterHubService;
 import org.nrg.xnatx.plugins.jupyterhub.services.UserOptionsService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -66,6 +63,8 @@ public class JupyterHubApiTest {
 
     private XnatUserOptions userOptions;
     private ContainerSpec containerSpec;
+    private PlacementSpec placementSpec;
+    private ResourceSpec resourceSpec;
     private Server dummyServer;
     private String servername;
     private Server dummyNamedServer;
@@ -127,6 +126,17 @@ public class JupyterHubApiTest {
                 .labels(Collections.singletonMap("label", "label"))
                 .build();
 
+        placementSpec = PlacementSpec.builder()
+                .constraints(Collections.singletonList("engine.labels.instance.type==jupyter"))
+                .build();
+
+        resourceSpec = ResourceSpec.builder()
+                .cpuLimit(4.0)
+                .cpuReservation(4.0)
+                .memLimit("16G")
+                .memReservation("16G")
+                .build();
+
         userOptions = XnatUserOptions.builder()
                 .userId(nonAdminId)
                 .servername("")
@@ -136,6 +146,8 @@ public class JupyterHubApiTest {
                 .projectId("TestProject")
                 .eventTrackingId("20220822T201541799Z")
                 .containerSpec(containerSpec)
+                .placementSpec(placementSpec)
+                .resourceSpec(resourceSpec)
                 .environmentVariables(environmentalVariables)
                 .bindMounts(Collections.singletonList(bindMount))
                 .build();

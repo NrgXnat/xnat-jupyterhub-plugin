@@ -14,6 +14,8 @@ import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.nrg.xdat.security.user.exceptions.UserInitException;
 import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
 import org.nrg.xft.security.UserI;
+import org.nrg.xnat.tracking.entities.EventTrackingData;
+import org.nrg.xnat.tracking.services.EventTrackingDataHibernateService;
 import org.nrg.xnatx.plugins.jupyterhub.client.models.Hub;
 import org.nrg.xnatx.plugins.jupyterhub.client.models.Server;
 import org.nrg.xnatx.plugins.jupyterhub.client.models.Token;
@@ -26,7 +28,9 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 import static org.springframework.web.bind.annotation.RequestMethod.*;
@@ -40,15 +44,17 @@ public class JupyterHubApi extends AbstractXapiRestController {
 
     private final JupyterHubService jupyterHubService;
     private final UserOptionsService jupyterHubUserOptionsService;
+    private final EventTrackingDataHibernateService eventTrackingDataHibernateService;
 
     @Autowired
     public JupyterHubApi(final UserManagementServiceI userManagementService,
                          final RoleHolder roleHolder,
                          final JupyterHubService jupyterHubService,
-                         final UserOptionsService jupyterHubUserOptionsService) {
+                         final UserOptionsService jupyterHubUserOptionsService, EventTrackingDataHibernateService eventTrackingDataHibernateService) {
         super(userManagementService, roleHolder);
         this.jupyterHubService = jupyterHubService;
         this.jupyterHubUserOptionsService = jupyterHubUserOptionsService;
+        this.eventTrackingDataHibernateService = eventTrackingDataHibernateService;
     }
 
     @ApiOperation(value = "Get the JupyterHub version.", response = Hub.class)
@@ -80,8 +86,8 @@ public class JupyterHubApi extends AbstractXapiRestController {
                    @ApiResponse(code = 403, message = "Not authorized."),
                    @ApiResponse(code = 500, message = "Unexpected error")})
     @XapiRequestMapping(value = "/users/{username}", method = GET, produces = APPLICATION_JSON_VALUE, restrictTo = AccessLevel.User)
-    public User getUser(@ApiParam(value = "username", required = true) @PathVariable @Username final String username) throws NotFoundException {
-        return jupyterHubService.getUser(getSessionUser()).orElseThrow(() -> new NotFoundException("No user with name " + username + "exists on JupyterHub."));
+    public User getUser(@ApiParam(value = "username", required = true) @PathVariable @Username final String username) throws NotFoundException, UserNotFoundException, UserInitException {
+        return jupyterHubService.getUser(getUserI(username)).orElseThrow(() -> new NotFoundException("No user with name " + username + "exists on JupyterHub."));
     }
 
     @ApiOperation(value = "Get all the users on JupyterHub.", notes = "All users and their active servers will be returned.", response = User.class, responseContainer = "List")
@@ -186,6 +192,24 @@ public class JupyterHubApi extends AbstractXapiRestController {
                                           @ApiParam(value = "servername", required = true) @PathVariable("servername") @Username final String servername) throws UserNotFoundException, UserInitException, NotFoundException {
         UserI user = getUserManagementService().getUser(username);
         return jupyterHubUserOptionsService.retrieveUserOptions(user, servername).orElseThrow(() -> new NotFoundException("User options not found."));
+    }
+
+    @ApiOperation(value = "Event tracking for the Jupyter notebook server", hidden = true)
+    @XapiRequestMapping(value = "/users/{username}/server/events", produces = APPLICATION_JSON_VALUE, method = GET, restrictTo = AccessLevel.Admin)
+    public Map<String, String> getEvents(@ApiParam(value = "username", required = true) @PathVariable("username") @Username final String username) throws UserNotFoundException, UserInitException, NotFoundException, org.nrg.framework.exceptions.NotFoundException {
+        UserI user = getUserManagementService().getUser(username);
+
+        final String eventTrackingId = jupyterHubUserOptionsService.retrieveUserOptions(user, "").orElseThrow(() -> new NotFoundException("Cannot find event tracking ID")).getEventTrackingId();
+        EventTrackingData eventTrackingData = eventTrackingDataHibernateService.findByKey(eventTrackingId, user.getID());
+
+        Map<String, String> response = new HashMap<>();
+        response.put("lastUpdated", eventTrackingData.getTimestamp().toString());
+        response.put("eventTrackingId", eventTrackingId);
+        response.put("payload", eventTrackingData.getPayload());
+        response.put("succeeded", String.valueOf(eventTrackingData.getSucceeded()));
+        response.put("finalMessage", eventTrackingData.getFinalMessage());
+
+        return response;
     }
 
     @ApiOperation(value = "Stops a users Jupyter server", notes = "Use the Event Tracking API to track progress.")

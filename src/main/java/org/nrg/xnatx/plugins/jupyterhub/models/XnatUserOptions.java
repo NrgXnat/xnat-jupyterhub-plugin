@@ -30,5 +30,7 @@ public class XnatUserOptions implements UserOptions {
     @JsonProperty("mounts") private List<BindMount> bindMounts;
 
     @JsonProperty("container-spec") private ContainerSpec containerSpec;
+    @JsonProperty("placement-spec") private PlacementSpec placementSpec;
+    @JsonProperty("resource-spec") private ResourceSpec resourceSpec;
 
 }
