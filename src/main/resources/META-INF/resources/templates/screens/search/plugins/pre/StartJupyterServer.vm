@@ -42,13 +42,13 @@
         jupyterHandler = jupyterHandlerForProjectBundleSearch;
     }
 
-    if (jupyterHandler) {
-        let jupyterMenuOption = {
-            'label' : 'Start Jupyter',
-            'handler': jupyterHandler
-        }
-
-        addSearchMenuOption(jupyterMenuOption)
-    }
+    // if (jupyterHandler) {
+    //     let jupyterMenuOption = {
+    //         'label' : 'Start Jupyter',
+    //         'handler': jupyterHandler
+    //     }
+    //
+    //     addSearchMenuOption(jupyterMenuOption)
+    // }
 </script>
 <!-- END screens/plugins/pre/StartJupyterServer.vm -->
