@@ -3,6 +3,7 @@ package org.nrg.xnatx.plugins.jupyterhub.config;
 import org.mockito.Mockito;
 import org.nrg.framework.configuration.ConfigPaths;
 import org.nrg.framework.services.NrgEventServiceI;
+import org.nrg.framework.services.SerializerService;
 import org.nrg.framework.utilities.OrderedProperties;
 import org.nrg.prefs.services.NrgPreferenceService;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
@@ -130,5 +131,10 @@ public class MockConfig {
     @Bean
     public EventTrackingDataHibernateService mockEventTrackingDataHibernateService() {
         return Mockito.mock(EventTrackingDataHibernateService.class);
+    }
+
+    @Bean
+    public SerializerService serializerService() {
+        return Mockito.mock(SerializerService.class);
     }
 }
