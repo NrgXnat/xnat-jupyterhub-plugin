@@ -4,10 +4,7 @@ import io.swagger.annotations.*;
 import lombok.extern.slf4j.Slf4j;
 import org.nrg.framework.annotations.XapiRestController;
 import org.nrg.xapi.exceptions.NotFoundException;
-import org.nrg.xapi.rest.AbstractXapiRestController;
-import org.nrg.xapi.rest.AuthorizedRoles;
-import org.nrg.xapi.rest.Username;
-import org.nrg.xapi.rest.XapiRequestMapping;
+import org.nrg.xapi.rest.*;
 import org.nrg.xdat.security.helpers.AccessLevel;
 import org.nrg.xdat.security.services.RoleHolder;
 import org.nrg.xdat.security.services.UserManagementServiceI;
@@ -16,6 +13,7 @@ import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.tracking.entities.EventTrackingData;
 import org.nrg.xnat.tracking.services.EventTrackingDataHibernateService;
+import org.nrg.xnatx.plugins.jupyterhub.authorization.JupyterUserAuthorization;
 import org.nrg.xnatx.plugins.jupyterhub.client.models.Hub;
 import org.nrg.xnatx.plugins.jupyterhub.client.models.Server;
 import org.nrg.xnatx.plugins.jupyterhub.client.models.Token;
@@ -32,6 +30,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.nrg.xdat.security.helpers.AccessLevel.Authorizer;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 import static org.springframework.web.bind.annotation.RequestMethod.*;
 
@@ -137,7 +136,8 @@ public class JupyterHubApi extends AbstractXapiRestController {
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Not authorized."),
                    @ApiResponse(code = 500, message = "Unexpected error")})
-    @XapiRequestMapping(value = "/users/{username}/server", method = POST, restrictTo = AccessLevel.User)
+    @XapiRequestMapping(value = "/users/{username}/server", method = POST, restrictTo = Authorizer)
+    @AuthDelegate(JupyterUserAuthorization.class)
     public void startServer(@ApiParam(value = "username", required = true) @PathVariable("username") @Username final String username,
                             @ApiParam(value = "xsiType", required = true) @RequestParam("xsiType") final String xsiType,
                             @ApiParam(value = "itemId", required = true) @RequestParam("itemId") final String itemId,
@@ -155,7 +155,8 @@ public class JupyterHubApi extends AbstractXapiRestController {
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Not authorized."),
                    @ApiResponse(code = 500, message = "Unexpected error")})
-    @XapiRequestMapping(value = "/users/{username}/server/{servername}", method = POST, restrictTo = AccessLevel.User)
+    @XapiRequestMapping(value = "/users/{username}/server/{servername}", method = POST, restrictTo = Authorizer)
+    @AuthDelegate(JupyterUserAuthorization.class)
     public void startNamedServer(@ApiParam(value = "username", required = true) @PathVariable("username") @Username final String username,
                                  @ApiParam(value = "servername", required = true) @PathVariable("servername") final String servername,
                                  @ApiParam(value = "xsiType", required = true) @RequestParam("xsiType") final String xsiType,

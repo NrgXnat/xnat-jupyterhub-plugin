@@ -32,6 +32,7 @@ import java.util.concurrent.TimeUnit;
                 "org.nrg.xnatx.plugins.jupyterhub.listeners",
                 "org.nrg.xnatx.plugins.jupyterhub.repositories",
                 "org.nrg.xnatx.plugins.jupyterhub.utils",
+                "org.nrg.xnatx.plugins.jupyterhub.authorization",
                 "org.nrg.xnatx.plugins.jupyterhub.initialize"})
 @Slf4j
 public class JupyterHubPlugin {

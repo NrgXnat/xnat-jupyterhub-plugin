@@ -1,5 +1,11 @@
 <li class="yuimenuitem">
-    <a class="yuimenuitemlabel" id="start-jupyter-server" onclick="XNAT.plugin.jupyterhub.servers.startServerForExperiment()">
+    <a class="yuimenuitemlabel" id="start-jupyter-server" style="display: none" onclick="XNAT.plugin.jupyterhub.servers.startServerForExperiment()">
         Start Jupyter
     </a>
 </li>
+
+<script type="text/javascript">
+    XNAT.plugin.jupyterhub.users.authorization.isAuthorized().then(authorized => {
+        document.getElementById("start-jupyter-server").style.display = authorized ? '' : 'none';
+    })
+</script>

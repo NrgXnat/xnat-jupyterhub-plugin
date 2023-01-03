@@ -152,6 +152,41 @@ jupyterHubSetup:
       content: >
         XNAT.plugin.jupyterhub.hub.initSetupTable('jupyterhub-setup-table');
 
+userAuthorization:
+  kind: panel
+  name: userAuthorization
+  label: User Authorization
+  contents:
+    description:
+      tag: div.warning
+      element:
+        style:
+          marginBottom: 24px
+        html:
+          Users with access to Jupyter will be able to run arbitrary code from within their Jupyter notebook container. 
+          Individual users may be authorized to start Jupyter containers or all users (excluding guest users) can be 
+          authorized to start Jupyter containers.
+    allowAllToggle:
+      kind: panel.input.switchbox
+      label: "All Users Can Start Jupyter"
+      name: allowAll
+      id: allowAll
+      onText: false
+      offText: false
+    hr:
+      tag: hr#jupyter-user-auth-hr
+      element:
+        style:
+          display: none
+    jupyterUserAuthorizationPanel:
+      tag: "div#jupyterhub-user-auth-container"
+    jupyterUserAuthorizationScript:
+      tag: script|src="~/scripts/xnat/plugin/jupyterhub/jupyterhub-user-auth.js"
+    renderJupyterUserAuthorizationPanel:
+      tag: script
+      content: >
+        XNAT.plugin.jupyterhub.users.authorization.initTable('jupyterhub-user-auth-container')
+
 imagePreferences:
   kind: panel
   name: imagePreferences
@@ -232,6 +267,7 @@ siteSettings:
       active: true
       contents:
         ${jupyterHubSetup}
+        ${userAuthorization}
         ${imagePreferences}
     jupyterhubUserActivityTab:
       kind: tab

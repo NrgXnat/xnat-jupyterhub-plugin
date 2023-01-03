@@ -22,6 +22,7 @@ import java.util.Map;
 public class JupyterHubPreferences extends AbstractPreferenceBean {
 
     public static final String TOOL_ID = "jupyterhub";
+    public static final String ALL_USERS_JUPYTER = "allUsersCanStartJupyter";
     public static final String DOCKER_IMAGES_PREF_ID = "dockerImages";
     public static final String CONTAINER_SPEC_LABELS_PREF_ID = "containerSpecLabels";
     public static final String PLACEMENT_SPEC_CONSTRAINTS_PREF_ID = "placementSpecConstraints";
@@ -257,6 +258,19 @@ public class JupyterHubPreferences extends AbstractPreferenceBean {
             setLongValue(inactivityTimeout, INACTIVITY_TIMEOUT_PREF_ID);
         } catch (InvalidPreferenceName e) {
             log.error("Invalid preference name 'inactivityTimeout': something is very wrong here.", e);
+        }
+    }
+
+    @NrgPreference(defaultValue = "false")
+    public boolean getAllUsersCanStartJupyter() {
+        return getBooleanValue(ALL_USERS_JUPYTER);
+    }
+
+    public void setAllUsersCanStartJupyter(final boolean allUsersCanStartJupyter) {
+        try {
+            setBooleanValue(allUsersCanStartJupyter, ALL_USERS_JUPYTER);
+        } catch (InvalidPreferenceName e) {
+            log.error("Invalid preference name 'allUsersCanStartJupyter': something is very wrong here.", e);
         }
     }
 

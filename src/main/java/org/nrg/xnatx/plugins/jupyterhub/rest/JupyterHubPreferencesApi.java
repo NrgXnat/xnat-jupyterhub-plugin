@@ -143,6 +143,10 @@ public class JupyterHubPreferencesApi extends AbstractXapiRestController {
                 value = jupyterHubPreferences.getInactivityTimeout();
                 break;
             }
+            case (JupyterHubPreferences.ALL_USERS_JUPYTER): {
+                value = jupyterHubPreferences.getAllUsersCanStartJupyter();
+                break;
+            }
             default:
                 value = jupyterHubPreferences.get(preference);
         }
