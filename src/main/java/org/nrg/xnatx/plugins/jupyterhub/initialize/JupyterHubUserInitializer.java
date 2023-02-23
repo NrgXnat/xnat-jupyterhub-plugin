@@ -60,7 +60,7 @@ public class JupyterHubUserInitializer extends AbstractInitializingTask {
 
         final UserI jupyterhubUser = userManagementService.createUser();
         jupyterhubUser.setLogin("jupyterhub");
-        jupyterhubUser.setEmail("harmitage@miskatonic.edu");
+        jupyterhubUser.setEmail("jupyterhub@jupyterhub.jupyterhub");
         jupyterhubUser.setFirstname("jupyterhub");
         jupyterhubUser.setLastname("jupyterhub");
         jupyterhubUser.setPassword("jupyterhub");

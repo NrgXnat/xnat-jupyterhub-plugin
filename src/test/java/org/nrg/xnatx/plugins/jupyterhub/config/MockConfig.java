@@ -12,10 +12,7 @@ import org.nrg.xdat.services.AliasTokenService;
 import org.nrg.xnat.tracking.services.EventTrackingDataHibernateService;
 import org.nrg.xnatx.plugins.jupyterhub.client.JupyterHubClient;
 import org.nrg.xnatx.plugins.jupyterhub.preferences.JupyterHubPreferences;
-import org.nrg.xnatx.plugins.jupyterhub.services.JupyterHubService;
-import org.nrg.xnatx.plugins.jupyterhub.services.UserOptionsEntityService;
-import org.nrg.xnatx.plugins.jupyterhub.services.UserOptionsService;
-import org.nrg.xnatx.plugins.jupyterhub.services.UserWorkspaceService;
+import org.nrg.xnatx.plugins.jupyterhub.services.*;
 import org.nrg.xnatx.plugins.jupyterhub.utils.PermissionsHelper;
 import org.nrg.xnatx.plugins.jupyterhub.utils.XFTManagerHelper;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -72,6 +69,11 @@ public class MockConfig {
     }
 
     @Bean
+    public ProfileEntityService mockProfileEntityService() {
+        return Mockito.mock(ProfileEntityService.class);
+    }
+
+    @Bean
     public PermissionsServiceI mockPermissionsService() {
         return Mockito.mock(PermissionsServiceI.class);
     }
@@ -79,6 +81,11 @@ public class MockConfig {
     @Bean
     public UserOptionsService mockUserOptionsService() {
         return Mockito.mock(UserOptionsService.class);
+    }
+
+    @Bean
+    public ProfileService mockProfileService() {
+        return Mockito.mock(ProfileService.class);
     }
 
     @Bean
@@ -134,7 +141,7 @@ public class MockConfig {
     }
 
     @Bean
-    public SerializerService serializerService() {
+    public SerializerService mockSerializerService() {
         return Mockito.mock(SerializerService.class);
     }
 }

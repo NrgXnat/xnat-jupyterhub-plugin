@@ -144,8 +144,8 @@ public class JupyterHubApi extends AbstractXapiRestController {
                             @ApiParam(value = "itemLabel", required = true) @RequestParam("itemLabel") final String itemLabel,
                             @ApiParam(value = "projectId", required = false) @RequestParam(value = "projectId", required = false) final String projectId,
                             @ApiParam(value = "eventTrackingId", required = true) @RequestParam(value = "eventTrackingId") final String eventTrackingId,
-                            @ApiParam(value = "dockerImage", required = true) @RequestParam(value = "dockerImage") final String dockerImage) throws UserNotFoundException, UserInitException {
-        jupyterHubService.startServer(getUserI(username), xsiType, itemId, itemLabel, projectId, eventTrackingId, dockerImage);
+                            @ApiParam(value = "profileId", required = true) @RequestParam(value = "profileId") final Long profileId) throws UserNotFoundException, UserInitException {
+        jupyterHubService.startServer(getUserI(username), xsiType, itemId, itemLabel, projectId, eventTrackingId, profileId);
     }
 
     @ApiOperation(value = "Starts a Jupyter server for the user",
@@ -164,8 +164,8 @@ public class JupyterHubApi extends AbstractXapiRestController {
                                  @ApiParam(value = "itemLabel", required = true) @RequestParam("itemLabel") final String itemLabel,
                                  @ApiParam(value = "projectId", required = false) @RequestParam(value = "projectId", required = false) final String projectId,
                                  @ApiParam(value = "eventTrackingId", required = true) @RequestParam(value = "eventTrackingId") final String eventTrackingId,
-                                 @ApiParam(value = "dockerImage", required = true) @RequestParam(value = "dockerImage") final String dockerImage) throws UserNotFoundException, UserInitException {
-        jupyterHubService.startServer(getUserI(username), servername, xsiType, itemId, itemLabel, projectId, eventTrackingId, dockerImage);
+                                 @ApiParam(value = "profileId", required = true) @RequestParam(value = "profileId") final Long profileId) throws UserNotFoundException, UserInitException {
+        jupyterHubService.startServer(getUserI(username), servername, xsiType, itemId, itemLabel, projectId, eventTrackingId, profileId);
     }
 
     @ApiOperation(value = "Returns the last known user options for the default server", response = XnatUserOptions.class)

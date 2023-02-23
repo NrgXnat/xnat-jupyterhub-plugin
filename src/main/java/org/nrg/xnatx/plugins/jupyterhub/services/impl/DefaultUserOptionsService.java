@@ -17,7 +17,9 @@ import org.nrg.xft.security.UserI;
 import org.nrg.xnat.exceptions.InvalidArchiveStructure;
 import org.nrg.xnatx.plugins.jupyterhub.entities.UserOptionsEntity;
 import org.nrg.xnatx.plugins.jupyterhub.models.*;
+import org.nrg.xnatx.plugins.jupyterhub.models.docker.*;
 import org.nrg.xnatx.plugins.jupyterhub.preferences.JupyterHubPreferences;
+import org.nrg.xnatx.plugins.jupyterhub.services.ProfileService;
 import org.nrg.xnatx.plugins.jupyterhub.services.UserOptionsEntityService;
 import org.nrg.xnatx.plugins.jupyterhub.services.UserOptionsService;
 import org.nrg.xnatx.plugins.jupyterhub.services.UserWorkspaceService;
@@ -43,7 +45,7 @@ public class DefaultUserOptionsService implements UserOptionsService {
     private final SiteConfigPreferences siteConfigPreferences;
     private final UserOptionsEntityService userOptionsEntityService;
     private final PermissionsHelper permissionsHelper;
-
+    private final ProfileService profileService;
 
     @Autowired
     public DefaultUserOptionsService(final JupyterHubPreferences jupyterHubPreferences,
@@ -52,7 +54,8 @@ public class DefaultUserOptionsService implements UserOptionsService {
                                      final AliasTokenService aliasTokenService,
                                      final SiteConfigPreferences siteConfigPreferences,
                                      final UserOptionsEntityService userOptionsEntityService,
-                                     final PermissionsHelper permissionsHelper) {
+                                     final PermissionsHelper permissionsHelper,
+                                     final ProfileService profileService) {
         this.jupyterHubPreferences = jupyterHubPreferences;
         this.userWorkspaceService = userWorkspaceService;
         this.searchHelperService = searchHelperService;
@@ -60,6 +63,7 @@ public class DefaultUserOptionsService implements UserOptionsService {
         this.siteConfigPreferences = siteConfigPreferences;
         this.userOptionsEntityService = userOptionsEntityService;
         this.permissionsHelper = permissionsHelper;
+        this.profileService = profileService;
     }
 
     @Override
@@ -266,13 +270,20 @@ public class DefaultUserOptionsService implements UserOptionsService {
 
     @Override
     public void storeUserOptions(UserI user, String servername, String xsiType, String id, String projectId,
-                                 String dockerImage, String eventTrackingId) {
+                                 Long profileId, String eventTrackingId) {
         log.debug("Storing user options for user '{}' server '{}' xsiType '{}' id '{}' projectId '{}'",
                   user.getUsername(), servername, xsiType, id, projectId);
 
         if (!permissionsHelper.canRead(user, projectId, id, xsiType)) {
             return;
         }
+
+        Optional<Profile> profileOpt = profileService.get(profileId);
+        if (!profileOpt.isPresent()) {
+            return;
+        }
+
+        Profile profile = profileOpt.get();
 
         // specific xsi type -> general xsi type
         if (instanceOf(xsiType, XnatExperimentdata.SCHEMA_ELEMENT_NAME)) {
@@ -308,51 +319,37 @@ public class DefaultUserOptionsService implements UserOptionsService {
 
         // Gather mounts
         final Path workspacePath = userWorkspaceService.getUserWorkspace(user);
-        final BindMount workspaceMount = BindMount.builder()
-                .name("user-workspace")
-                .writable(true)
-                .xnatHostPath(workspacePath.toString())
-                .containerHostPath(translatePath(workspacePath.toString()))
-                .jupyterHostPath(Paths.get("/workspace", user.getUsername()).toString())
+
+        // Add user workspace mount
+        final Mount userNotebookDirectoryMount = Mount.builder()
+                .source(translatePath(workspacePath.toString()))
+                .target(Paths.get("/workspace", user.getUsername()).toString())
+                .type("bind")
+                .readOnly(false)
                 .build();
 
-        final List<BindMount> xnatDataMounts = paths.entrySet().stream()
-                .map((entry) -> BindMount.builder()
-                        .name(entry.getKey())
-                        .writable(false)
-                        .xnatHostPath(entry.getValue())
-                        .containerHostPath(translatePath(entry.getValue()))
-                        .jupyterHostPath(Paths.get(entry.getKey()).toString())
+        // Add xnat data mounts
+        final List<Mount> xnatDataMounts = paths.entrySet().stream()
+                .map((entry) -> Mount.builder()
+                        .source(translatePath(entry.getValue()))
+                        .target(Paths.get(entry.getKey()).toString())
+                        .type("bind")
+                        .readOnly(true)
                         .build())
                 .collect(Collectors.toList());
 
-        final List<BindMount> mounts = new ArrayList<>(Collections.emptyList());
-        mounts.add(workspaceMount);
+        // Collect mounts
+        final List<Mount> mounts = new ArrayList<>(Collections.emptyList());
+        mounts.add(userNotebookDirectoryMount);
         mounts.addAll(xnatDataMounts);
 
-        // Get env variables
+        // Add mounts
+        TaskTemplate taskTemplate = profile.getTaskTemplate();
+        taskTemplate.getContainerSpec().getMounts().addAll(mounts);
+
+        // Get and add env variables
         Map<String, String> environmentVariables = getDefaultEnvironmentVariables(user, xsiType, id);
-
-        // ContainerSpec
-        Map<String,String> containerSpecLabels = jupyterHubPreferences.getContainerSpecLabels();
-        ContainerSpec containerSpec = ContainerSpec.builder()
-                .labels(containerSpecLabels)
-                .image(dockerImage)
-                .build();
-
-        // PlacementSpec
-        List<String> placementSpecConstraints = jupyterHubPreferences.getPlacementSpecConstraints();
-        PlacementSpec placementSpec = PlacementSpec.builder()
-                .constraints(placementSpecConstraints)
-                .build();
-
-        // ResourceSpec
-        ResourceSpec resourceSpec = ResourceSpec.builder()
-                .cpuLimit(jupyterHubPreferences.getResourceSpecCpuLimit())
-                .cpuReservation(jupyterHubPreferences.getResourceSpecCpuReservation())
-                .memLimit(jupyterHubPreferences.getResourceSpecMemLimit())
-                .memReservation(jupyterHubPreferences.getResourceSpecMemReservation())
-                .build();
+        taskTemplate.getContainerSpec().getEnv().putAll(environmentVariables);
 
         // Store the user options
         UserOptionsEntity userOptionsEntity = UserOptionsEntity.builder()
@@ -362,11 +359,7 @@ public class DefaultUserOptionsService implements UserOptionsService {
                 .itemId(id)
                 .projectId(projectId)
                 .eventTrackingId(eventTrackingId)
-                .environmentVariables(environmentVariables)
-                .bindMountsJson(UserOptionsEntity.bindMountPojo(mounts))
-                .containerSpecJson(UserOptionsEntity.containerSpecPojo(containerSpec))
-                .placementSpecJson(UserOptionsEntity.placementSpecPojo(placementSpec))
-                .resourceSpecJson(UserOptionsEntity.resourceSpecPojo(resourceSpec))
+                .taskTemplate(taskTemplate)
                 .build();
 
         userOptionsEntityService.createOrUpdate(userOptionsEntity);
@@ -395,6 +388,7 @@ public class DefaultUserOptionsService implements UserOptionsService {
         defaultEnvironmentVariables.put("XNAT_DATA", "/data");
         defaultEnvironmentVariables.put("XNAT_XSI_TYPE", xsiType);
         defaultEnvironmentVariables.put("XNAT_ITEM_ID", id);
+        defaultEnvironmentVariables.put("JUPYTERHUB_ROOT_DIR", Paths.get("/workspace", user.getUsername()).toString());
 
         return defaultEnvironmentVariables;
     }

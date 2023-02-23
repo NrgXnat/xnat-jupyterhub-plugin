@@ -28,14 +28,14 @@ XNAT.plugin.jupyterhub.servers.user_options = getObject(XNAT.plugin.jupyterhub.s
 
     let newServerUrl = XNAT.plugin.jupyterhub.servers.newServerUrl = function(username, servername, xsiType, itemId,
                                                                               itemLabel, projectId, eventTrackingId,
-                                                                              dockerImage) {
+                                                                              profileId) {
         let url = `/xapi/jupyterhub/users/${username}/server`;
 
         // if (servername !== '') {
         //     url = `${url}/${servername}`;
         // }
 
-        url = `${url}?xsiType=${xsiType}&itemId=${itemId}&itemLabel=${itemLabel}&eventTrackingId=${eventTrackingId}&dockerImage=${dockerImage}`;
+        url = `${url}?xsiType=${xsiType}&itemId=${itemId}&itemLabel=${itemLabel}&eventTrackingId=${eventTrackingId}&profileId=${profileId}`;
         if (projectId) url = `${url}&projectId=${projectId}`;
 
         return restUrl(url);
@@ -181,66 +181,130 @@ XNAT.plugin.jupyterhub.servers.user_options = getObject(XNAT.plugin.jupyterhub.s
         console.debug(`jupyterhub-servers.js: XNAT.plugin.jupyterhub.servers.startServer`);
         console.debug(`Launching jupyter server. User: ${username}, Server Name: ${servername}, XSI Type: ${xsiType}, ID: ${itemId}, Label: ${itemLabel}, Project ID: ${projectId}, eventTrackingId: ${eventTrackingId}`);
 
-        XNAT.plugin.jupyterhub.dockerImages.getImages().then(images => {
+        XNAT.plugin.jupyterhub.profiles.getAll().then(profiles => {
+            // filter out disabled configurations
+            profiles = profiles.filter(c => c['enabled'] === true);
+            
+            const cancelButton = {
+                label: 'Cancel',
+                isDefault: false,
+                close: true,
+            }
+            
+            const startButton = {
+                label: 'Start Jupyter',
+                isDefault: true,
+                close: true,
+                action: function(obj) {
+                    const profile = obj.$modal.find('#profile').val();
+                    const profileId = profiles.filter(c => c['name'] === profile)[0]['id'];
+        
+                    XNAT.xhr.ajax({
+                        url: newServerUrl(username, servername, xsiType, itemId, itemLabel,
+                            projectId, eventTrackingId, profileId),
+                        method: 'POST',
+                        contentType: 'application/json',
+                        beforeSend: function () {
+                            XNAT.app.activityTab.start('Start Jupyter Notebook Server', eventTrackingId,
+                                'XNAT.plugin.jupyterhub.servers.activityTabCallback', 1000);
+                        },
+                        fail: function (error) {
+                            console.error(`Failed to send Jupyter server request: ${error}`)
+                        }
+                    });
+                }
+            }
+            
+            const buttons = (profiles.length === 0) ? [cancelButton] : [cancelButton, startButton];
+            
             XNAT.dialog.open({
-                title: 'Jupyter Configuration',
+                title: 'Select Jupyter Profile',
                 content: spawn('form'),
                 maxBtn: true,
-                width: 600,
+                width: 750,
                 beforeShow: function(obj) {
-                    let imageOptions = images.filter(i => i['enabled'] )
-                                             .map(i => i['image'])
-                                             .sort()
-                                             .map(i => [{value: i}])
-                                             .flat();
-
+                    if (profiles.length === 0) {
+                        obj.$modal.find('.xnat-dialog-content').html('<div class="error">No Jupyter profiles are configured or enabled. Please contact your XNAT administrator.</div>');
+                        return;
+                    }
+                    
+                    let configOptions = profiles.map(c => c['name'])
+                                                      .map(c => [{value: c}])
+                                                      .flat();
+                    
                     // spawn new image form
                     const formContainer$ = obj.$modal.find('.xnat-dialog-content');
                     formContainer$.addClass('panel');
+                    
+                    let initialProfile = {
+                        name: profiles[0]['name'],
+                        description: profiles[0]['description'],
+                        image: profiles[0]['task_template']['container_spec']['image'],
+                        cpuLimit: profiles[0]['task_template']['resources']['cpu_limit'] ? profiles[0]['task_template']['resources']['cpu_limit'] : 'No Limit',
+                        cpuReservation: profiles[0]['task_template']['resources']['cpu_reservation'] ? profiles[0]['task_template']['resources']['cpu_reservation'] : 'No Reservation',
+                        get cpu() {
+                            return `${this.cpuReservation} / ${this.cpuLimit}`;
+                        },
+                        memoryLimit: profiles[0]['task_template']['resources']['mem_limit'] ? profiles[0]['task_template']['resources']['mem_limit'] : 'No Limit',
+                        memoryReservation: profiles[0]['task_template']['resources']['mem_reservation'] ? profiles[0]['task_template']['resources']['mem_reservation'] : 'No Reservation',
+                        get memory() {
+                            return `${this.memoryReservation} / ${this.memoryLimit}`;
+                        }
+                    }
+    
                     obj.$modal.find('form').append(
                         spawn('!', [
                             XNAT.ui.panel.select.single({
-                                name: 'dockerImage',
-                                id: 'dockerImage',
-                                options: imageOptions,
-                                label: 'Docker image',
-                                validation: 'required not-empty',
-                                description: 'Select a Docker image to use for your Jupyter notebook server.'
-                            }).element
+                                name: 'profile',
+                                id: 'profile',
+                                options: configOptions,
+                                label: 'Profile',
+                                required: true,
+                                description: "Select the Jupyter profile to use. This will determine the Docker image, computing resources, and other configuration options used for your Jupyter notebook server."
+                            }).element,
+                            XNAT.ui.panel.element({
+                                label: 'Description',
+                                html: `<p class="profile-description">${initialProfile.description}</p>`,
+                            }).element,
+                            XNAT.ui.panel.element({
+                                label: 'Image',
+                                html: `<p class="profile-image">${initialProfile.image}</p><div class="description">The Docker image that will be used to launch your Jupyter notebook server.</div>`,
+                            }).element,
+                            XNAT.ui.panel.element({
+                                label: 'CPU Reservation / Limit',
+                                html: `<p class="profile-cpu">${initialProfile.cpu}</p><div class="description">The reservation is the minimum amount of CPU resources that will be guaranteed to your server. The limit is the maximum amount of CPU resources that will be allocated to your server.</div>`,
+                            }).element,
+                            XNAT.ui.panel.element({
+                                label: 'Memory Reservation / Limit',
+                                html: `<p class="profile-memory">${initialProfile.memory}</p><div class="description">The reservation is the minimum amount of memory resources that will be guaranteed to your server. The limit is the maximum amount of memory resources that will be allocated to your server.</div>`,
+                            }).element,
                         ])
                     );
+                    
+                    let profileSelector = document.getElementById('profile');
+                    profileSelector.addEventListener('change', () => {
+                        let description = document.querySelector('.profile-description');
+                        let profile = profiles.filter(c => c['name'] === profileSelector.value)[0];
+                        description.innerHTML = profile['description'];
+                        
+                        let image = document.querySelector('.profile-image');
+                        image.innerHTML = profile['task_template']['container_spec']['image'];
+                        
+                        let cpu = document.querySelector('.profile-cpu');
+                        let cpuLimit = profile['task_template']['resources']['cpu_limit'] ? profile['task_template']['resources']['cpu_limit'] : 'No Limit';
+                        let cpuReservation = profile['task_template']['resources']['cpu_reservation'] ? profile['task_template']['resources']['cpu_reservation'] : 'No Reservation';
+                        cpu.innerHTML = `${cpuReservation} / ${cpuLimit}`;
+                        
+                        let memory = document.querySelector('.profile-memory');
+                        let memoryLimit = profile['task_template']['resources']['mem_limit'] ? profile['task_template']['resources']['mem_limit'] : 'No Limit';
+                        let memoryReservation = profile['task_template']['resources']['mem_reservation'] ? profile['task_template']['resources']['mem_reservation'] : 'No Reservation';
+                        memory.innerHTML = `${memoryReservation} / ${memoryLimit}`;
+                    });
+                    
                 },
-                buttons: [
-                    {
-                        label: 'Start Jupyter',
-                        isDefault: true,
-                        close: true,
-                        action: function() {
-                            const dockerImageEl = document.getElementById("dockerImage");
-
-                            XNAT.xhr.ajax({
-                                url: newServerUrl(username, servername, xsiType, itemId, itemLabel,
-                                                  projectId, eventTrackingId, dockerImageEl.value),
-                                method: 'POST',
-                                contentType: 'application/json',
-                                beforeSend: function () {
-                                    XNAT.app.activityTab.start('Start Jupyter Notebook Server', eventTrackingId,
-                                                               'XNAT.plugin.jupyterhub.servers.activityTabCallback', 1000);
-                                },
-                                fail: function (error) {
-                                    console.error(`Failed to send Jupyter server request: ${error}`)
-                                }
-                            });
-
-                        }
-                    },
-                    {
-                        label: 'Cancel',
-                        close: true
-                    }
-                ]
+                buttons: buttons
             });
-        })
+        });
     }
 
     let activityTabCallback = XNAT.plugin.jupyterhub.servers.activityTabCallback = function(itemDivId, detailsTag, jsonobj, lastProgressIdx) {

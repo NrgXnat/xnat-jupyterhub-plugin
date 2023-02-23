@@ -17,6 +17,7 @@ import org.nrg.xnatx.plugins.jupyterhub.events.JupyterServerEventI;
 import org.nrg.xnatx.plugins.jupyterhub.models.XnatUserOptions;
 import org.nrg.xnatx.plugins.jupyterhub.preferences.JupyterHubPreferences;
 import org.nrg.xnatx.plugins.jupyterhub.services.JupyterHubService;
+import org.nrg.xnatx.plugins.jupyterhub.services.ProfileService;
 import org.nrg.xnatx.plugins.jupyterhub.services.UserOptionsService;
 import org.nrg.xnatx.plugins.jupyterhub.utils.PermissionsHelper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -43,6 +44,7 @@ public class DefaultJupyterHubService implements JupyterHubService {
     private final UserOptionsService userOptionsService;
     private final JupyterHubPreferences jupyterHubPreferences;
     private final UserManagementServiceI userManagementService;
+    private final ProfileService profileService;
 
     @Autowired
     public DefaultJupyterHubService(final JupyterHubClient jupyterHubClient,
@@ -50,13 +52,15 @@ public class DefaultJupyterHubService implements JupyterHubService {
                                     final PermissionsHelper permissionsHelper,
                                     final UserOptionsService userOptionsService,
                                     final JupyterHubPreferences jupyterHubPreferences,
-                                    final UserManagementServiceI userManagementService) {
+                                    final UserManagementServiceI userManagementService,
+                                    final ProfileService profileService) {
         this.jupyterHubClient = jupyterHubClient;
         this.eventService = eventService;
         this.permissionsHelper = permissionsHelper;
         this.userOptionsService = userOptionsService;
         this.jupyterHubPreferences = jupyterHubPreferences;
         this.userManagementService = userManagementService;
+        this.profileService = profileService;
     }
 
     /**
@@ -139,20 +143,20 @@ public class DefaultJupyterHubService implements JupyterHubService {
      * mounted to the Jupyter notebook server container. The progress of the server launch is tracked with the event
      * tracking api.
      *
-     * @param user            User to start the server for.
-     * @param xsiType         Accepts xnat:projectData, xnat:subjectData, xnat:experimentData and its children, and
-     *                        xdat:stored_search
-     * @param itemId          The provided id's resources will be mounted to the Jupyter notebook server container
-     * @param itemLabel       The label of the provided item (e.g. the subject label or experiment label).
-     * @param projectId       Can be null for xdat:stored_search
-     * @param eventTrackingId Use with the event tracking api to track progress.
-     * @param dockerImage     The docker image to use for the single-user notebook server container
+     * @param user                   User to start the server for.
+     * @param xsiType                Accepts xnat:projectData, xnat:subjectData, xnat:experimentData and its children, and
+     *                               xdat:stored_search
+     * @param itemId                 The provided id's resources will be mounted to the Jupyter notebook server container
+     * @param itemLabel              The label of the provided item (e.g. the subject label or experiment label).
+     * @param projectId              Can be null for xdat:stored_search
+     * @param eventTrackingId        Use with the event tracking api to track progress.
+     * @param profileId              The id of the profile to use for this server.
      */
     @Override
     public void startServer(final UserI user, final String xsiType, final String itemId,
                             final String itemLabel, @Nullable final String projectId, final String eventTrackingId,
-                            final String dockerImage) {
-        startServer(user, "", xsiType, itemId, itemLabel, projectId, eventTrackingId, dockerImage);
+                            final Long profileId) {
+        startServer(user, "", xsiType, itemId, itemLabel, projectId, eventTrackingId, profileId);
     }
 
     /**
@@ -160,20 +164,20 @@ public class DefaultJupyterHubService implements JupyterHubService {
      * mounted to the Jupyter notebook server container. The progress of the server launch is tracked with the event
      * tracking api.
      *
-     * @param user              User to start the server for.
-     * @param servername        The name of the server that will be started
-     * @param xsiType           Accepts xnat:projectData, xnat:subjectData, xnat:experimentData and its children, and
-     *                          xdat:stored_search
-     * @param itemId            The provided id's resources will be mounted to the Jupyter notebook server container
-     * @param itemLabel         The label of the provided item (e.g. the subject label or experiment label).
-     * @param projectId         Can be null for xdat:stored_search
-     * @param eventTrackingId   Use with the event tracking api to track progress.
-     * @param dockerImage       The docker image to use for the single-user notebook server container
+     * @param user            User to start the server for.
+     * @param servername      The name of the server that will be started
+     * @param xsiType         Accepts xnat:projectData, xnat:subjectData, xnat:experimentData and its children, and
+     *                        xdat:stored_search
+     * @param itemId          The provided id's resources will be mounted to the Jupyter notebook server container
+     * @param itemLabel       The label of the provided item (e.g. the subject label or experiment label).
+     * @param projectId       Can be null for xdat:stored_search
+     * @param eventTrackingId Use with the event tracking api to track progress.
+     * @param profileId       The id of the profile to use for this server.
      */
     @Override
     public void startServer(final UserI user, String servername, final String xsiType, final String itemId,
                             final String itemLabel, @Nullable  final String projectId, final String eventTrackingId,
-                            final String dockerImage) {
+                            final Long profileId) {
         eventService.triggerEvent(JupyterServerEvent.progress(eventTrackingId, user.getID(), xsiType, itemId,
                                                               JupyterServerEventI.Operation.Start, 0,
                                                               "Starting Jupyter notebook server for user " + user.getUsername()));
@@ -182,6 +186,13 @@ public class DefaultJupyterHubService implements JupyterHubService {
             eventService.triggerEvent(JupyterServerEvent.failed(eventTrackingId, user.getID(), xsiType, itemId,
                                                                 JupyterServerEventI.Operation.Start,
                                                                 "Failed to launch Jupyter notebook server. Permission denied."));
+            return;
+        }
+
+        if (!profileService.exists(profileId)) {
+            eventService.triggerEvent(JupyterServerEvent.failed(eventTrackingId, user.getID(), xsiType, itemId,
+                                                                JupyterServerEventI.Operation.Start,
+                                                                "Failed to launch Jupyter notebook server. Profile does not exist."));
             return;
         }
 
@@ -219,7 +230,7 @@ public class DefaultJupyterHubService implements JupyterHubService {
                                                                       JupyterServerEventI.Operation.Start, 20,
                                                                       "Building notebook server container configuration."));
 
-                userOptionsService.storeUserOptions(user, servername, xsiType, itemId, projectId, dockerImage, eventTrackingId);
+                userOptionsService.storeUserOptions(user, servername, xsiType, itemId, projectId, profileId, eventTrackingId);
 
                 eventService.triggerEvent(JupyterServerEvent.progress(eventTrackingId, user.getID(), xsiType, itemId,
                                                                       JupyterServerEventI.Operation.Start, 30,

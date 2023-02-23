@@ -18,8 +18,8 @@ public interface JupyterHubService {
     List<User> getUsers();
     Optional<Server> getServer(UserI user);
     Optional<Server> getServer(UserI user, String servername);
-    void startServer(UserI user, String xsiType, String itemId, String itemLabel, String projectId, String eventTrackingId, String dockerImage);
-    void startServer(UserI user, String servername, String xsiType, String itemId, String itemLabel, String projectId, String eventTrackingId, String dockerImage);
+    void startServer(UserI user, String xsiType, String itemId, String itemLabel, String projectId, String eventTrackingId, Long profileId);
+    void startServer(UserI user, String servername, String xsiType, String itemId, String itemLabel, String projectId, String eventTrackingId, Long profileId);
     void stopServer(UserI user, String eventTrackingId);
     void stopServer(UserI user, String servername, String eventTrackingId);
     Token createToken(UserI user, String note, Integer expiresIn);

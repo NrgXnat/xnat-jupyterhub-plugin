@@ -4,6 +4,7 @@ import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.services.SearchHelperServiceI;
 import org.nrg.xdat.services.AliasTokenService;
 import org.nrg.xnatx.plugins.jupyterhub.preferences.JupyterHubPreferences;
+import org.nrg.xnatx.plugins.jupyterhub.services.ProfileService;
 import org.nrg.xnatx.plugins.jupyterhub.services.UserOptionsEntityService;
 import org.nrg.xnatx.plugins.jupyterhub.services.UserWorkspaceService;
 import org.nrg.xnatx.plugins.jupyterhub.services.impl.DefaultUserOptionsService;
@@ -23,14 +24,16 @@ public class DefaultUserOptionsServiceConfig {
                                                                final AliasTokenService mockAliasTokenService,
                                                                final SiteConfigPreferences mockSiteConfigPreferences,
                                                                final UserOptionsEntityService mockUserOptionsEntityService,
-                                                               final PermissionsHelper mockPermissionsHelper) {
+                                                               final PermissionsHelper mockPermissionsHelper,
+                                                               final ProfileService profileService) {
         return new DefaultUserOptionsService(mockJupyterHubPreferences,
                                              mockUserWorkspaceService,
                                              mockSearchHelperService,
                                              mockAliasTokenService,
                                              mockSiteConfigPreferences,
                                              mockUserOptionsEntityService,
-                                             mockPermissionsHelper);
+                                             mockPermissionsHelper,
+                                             profileService);
     }
 
 }

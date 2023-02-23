@@ -9,6 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = false)
 @Slf4j
+@Deprecated
 public class DockerImage {
 
     private String image;

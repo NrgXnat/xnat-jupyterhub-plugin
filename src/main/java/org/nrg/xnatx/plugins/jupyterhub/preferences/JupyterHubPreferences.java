@@ -63,6 +63,7 @@ public class JupyterHubPreferences extends AbstractPreferenceBean {
         }
     }
 
+    @Deprecated
     @NrgPreference(defaultValue = "[\n   " +
             "{\"image\": \"jupyter/scipy-notebook:hub-3.0.0\", \"enabled\": \"true\"}\n   " +
             "]",
@@ -71,6 +72,7 @@ public class JupyterHubPreferences extends AbstractPreferenceBean {
         return getListValue(DOCKER_IMAGES_PREF_ID);
     }
 
+    @Deprecated
     public void setDockerImages(final List<DockerImage> dockerImages) {
         try {
             setListValue(DOCKER_IMAGES_PREF_ID, dockerImages);
@@ -170,11 +172,13 @@ public class JupyterHubPreferences extends AbstractPreferenceBean {
         }
     }
 
+    @Deprecated
     @NrgPreference(defaultValue = "")
     public Map<String, String> getContainerSpecLabels() {
         return getMapValue(CONTAINER_SPEC_LABELS_PREF_ID);
     }
 
+    @Deprecated
     public void setContainerSpecLabels(final Map<String, String> containerSpecLabels) {
         try {
             setMapValue(CONTAINER_SPEC_LABELS_PREF_ID, containerSpecLabels);
@@ -183,11 +187,13 @@ public class JupyterHubPreferences extends AbstractPreferenceBean {
         }
     }
 
+    @Deprecated
     @NrgPreference(defaultValue = "[]")
     public List<String> getPlacementSpecConstraints() {
         return getListValue(PLACEMENT_SPEC_CONSTRAINTS_PREF_ID);
     }
 
+    @Deprecated
     public void setPlacementSpecConstraints(List<String> placementSpecConstraints) {
         try {
             setListValue(PLACEMENT_SPEC_CONSTRAINTS_PREF_ID, placementSpecConstraints);
@@ -196,11 +202,13 @@ public class JupyterHubPreferences extends AbstractPreferenceBean {
         }
     }
 
+    @Deprecated
     @NrgPreference(defaultValue = "0")
     public Double getResourceSpecCpuLimit() {
         return getDoubleValue(RESOURCE_SPEC_CPU_LIMIT_PREF_ID);
     }
 
+    @Deprecated
     public void setResourceSpecCpuLimit(final Double resourceSpecCpuLimit) {
         try {
             setDoubleValue(resourceSpecCpuLimit, RESOURCE_SPEC_CPU_LIMIT_PREF_ID);
@@ -209,11 +217,13 @@ public class JupyterHubPreferences extends AbstractPreferenceBean {
         }
     }
 
+    @Deprecated
     @NrgPreference(defaultValue = "0")
     public Double getResourceSpecCpuReservation() {
         return getDoubleValue(RESOURCE_SPEC_CPU_RESERVATION_PREF_ID);
     }
 
+    @Deprecated
     public void setResourceSpecCpuReservation(final Double resourceSpecCpuReservation) {
         try {
             setDoubleValue(resourceSpecCpuReservation, RESOURCE_SPEC_CPU_RESERVATION_PREF_ID);
@@ -222,11 +232,13 @@ public class JupyterHubPreferences extends AbstractPreferenceBean {
         }
     }
 
+    @Deprecated
     @NrgPreference(defaultValue = "")
     public String getResourceSpecMemLimit() {
         return getValue(RESOURCE_SPEC_MEM_LIMIT_PREF_ID);
     }
 
+    @Deprecated
     public void setResourceSpecMemLimit(final String resourceSpecMemLimit) {
         try {
             set(resourceSpecMemLimit, RESOURCE_SPEC_MEM_LIMIT_PREF_ID);
@@ -235,11 +247,13 @@ public class JupyterHubPreferences extends AbstractPreferenceBean {
         }
     }
 
+    @Deprecated
     @NrgPreference(defaultValue = "")
     public String getResourceSpecMemReservation() {
         return getValue(RESOURCE_SPEC_MEM_RESERVATION_PREF_ID);
     }
 
+    @Deprecated
     public void setResourceSpecMemReservation(final String resourceSpecMemReservation) {
         try {
             set(resourceSpecMemReservation, RESOURCE_SPEC_MEM_RESERVATION_PREF_ID);

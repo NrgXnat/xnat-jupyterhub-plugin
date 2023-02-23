@@ -84,60 +84,6 @@ inactivityTimeout:
   description: >
     Automatically shut down idle Jupyter notebook servers if they've been inactive for some time. Set the timeout to 0 to not cull any inactive servers.
 
-resourceSpecCpuLimit:
-  kind: panel.input.number
-  id: resourceSpecCpuLimit
-  name: resourceSpecCpuLimit
-  label: CPU Limit
-  validation: decimal gte:0.0 onblur
-  element:
-    step: 0.1
-  description: >
-    (Optional) Maximum number of cpu-cores a single-user notebook server is allowed to use. If this value is set to 0.5,
-    allows use of 50% of one CPU. If this value is set to 2, allows use of up to 2 CPUs. Set to 0 for this preference 
-    to be ignored.
-
-resourceSpecCpuReservation:
-  kind: panel.input.number
-  id: resourceSpecCpuReservation
-  name: resourceSpecCpuReservation
-  label: CPU Reservation
-  validation: decimal gte:0.0 onblur
-  element:
-    step: 0.1
-  description: >
-    (Optional) Minimum number of cpu-cores a single-user notebook server is guaranteed to have available. If this value 
-    is set to 0.5, allows use of 50% of one CPU. If this value is set to 2, allows use of up to 2 CPUs. Set to 0 for 
-    this preference to be ignored.
-
-resourceSpecMemLimit:
-  kind: panel.input.text
-  id: resourceSpecMemLimit
-  name: resourceSpecMemLimit
-  label: Memory Limit
-  description: >
-    (Optional) Maximum number of bytes a single-user notebook server is allowed to use. Leave this input empty for this
-    preference to be ignored.
-    Allows the following suffixes: 
-      K -> Kilobytes
-      M -> Megabytes
-      G -> Gigabytes
-      T -> Terabytes
-
-resourceSpecMemReservation:
-  kind: panel.input.text
-  id: resourceSpecMemReservation
-  name: resourceSpecMemReservation
-  label: Memory Reservation
-  description: >
-    (Optional) Minimum number of bytes a single-user notebook server is guaranteed to have available. Leave this input 
-    empty for this preference to be ignored.
-    Allows the following suffixes: 
-      K -> Kilobytes
-      M -> Megabytes
-      G -> Gigabytes
-      T -> Terabytes
-
 jupyterHubSetup:
   kind: panel
   name: jupyterHubSetup
@@ -163,8 +109,8 @@ userAuthorization:
         style:
           marginBottom: 24px
         html:
-          Users with access to Jupyter will be able to run arbitrary code from within their Jupyter notebook container. 
-          Individual users may be authorized to start Jupyter containers or all users (excluding guest users) can be 
+          Users with access to Jupyter will be able to run arbitrary code from within their Jupyter notebook container.
+          Individual users may be authorized to start Jupyter containers or all users (excluding guest users) can be
           authorized to start Jupyter containers.
     allowAllToggle:
       kind: panel.input.switchbox
@@ -187,23 +133,26 @@ userAuthorization:
       content: >
         XNAT.plugin.jupyterhub.users.authorization.initTable('jupyterhub-user-auth-container')
 
-imagePreferences:
+jupyterHubProfiles:
   kind: panel
-  name: imagePreferences
-  label: Images
+  name: jupyterHubProfiles
+  label: JupyterHub Profiles
   contents:
-    imageDescription:
+    description:
       tag: div.message
       contents:
-        "This panel lists the containers which JupyterHub can use to launch single-user Jupyter notebook servers. JupyterHub supports any of the existing Jupyter docker stacks provided the version of JupyterHub in the image matches. Please see the documentation for building your own images. Pull each image on every swarm node."
-    imagesTable:
-      tag: "div#jupyterhub-image-preferences"
-    imagePreferencesScript:
-      tag: script|src="~/scripts/xnat/plugin/jupyterhub/jupyterhub-docker-images.js"
-    renderImagePreferencesTable:
+        "You can create configurations for multiple user environments and let users select from them when they launch a 
+        Jupyter notebook server. This is done by creating multiple profiles, each of which is attached to a set of 
+        configuration options that will be applied to the single-user server when it is launched. This can be used to 
+        let users choose among Docker images or to select the hardware resources they want to use."
+    profilesTable:
+      tag: "div#jupyterhub-profiles-table"
+    profilesScript:
+      tag: script|src="~/scripts/xnat/plugin/jupyterhub/jupyterhub-profiles.js"
+    renderProfilesTable:
       tag: script
       content: >
-        XNAT.plugin.jupyterhub.dockerImages.init('#jupyterhub-image-preferences');
+        XNAT.plugin.jupyterhub.profiles.manager('jupyterhub-profiles-table');
 
 jupyterhubPreferences:
   kind: panel.form
@@ -223,10 +172,6 @@ jupyterhubPreferences:
     ${pathTranslationXnatPrefix}
     ${pathTranslationDockerPrefix}
     ${workspacePath}
-    ${resourceSpecCpuLimit}
-    ${resourceSpecCpuReservation}
-    ${resourceSpecMemLimit}
-    ${resourceSpecMemReservation}
 
 jupyterHubUserActivity:
   kind: panel
@@ -268,7 +213,7 @@ siteSettings:
       contents:
         ${jupyterHubSetup}
         ${userAuthorization}
-        ${imagePreferences}
+        ${jupyterHubProfiles}
     jupyterhubUserActivityTab:
       kind: tab
       name: jupyterhubUserActivityTab
