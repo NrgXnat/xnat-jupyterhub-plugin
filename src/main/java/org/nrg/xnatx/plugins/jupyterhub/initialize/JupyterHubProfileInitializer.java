@@ -61,7 +61,7 @@ public class JupyterHubProfileInitializer extends AbstractInitializingTask {
 
     private Profile buildDefaultProfile() {
         ContainerSpec containerSpec = ContainerSpec.builder()
-                .image("jupyterhub/datascience-notebook:hub-3.0.0")
+                .image("jupyter/datascience-notebook:hub-3.0.0")
                 .mounts(Collections.emptyList())
                 .env(Collections.emptyMap())
                 .labels(Collections.emptyMap())
