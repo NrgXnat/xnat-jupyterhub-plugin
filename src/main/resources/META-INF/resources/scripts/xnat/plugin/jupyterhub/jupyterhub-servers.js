@@ -205,7 +205,10 @@ XNAT.plugin.jupyterhub.servers.user_options = getObject(XNAT.plugin.jupyterhub.s
                         method: 'POST',
                         contentType: 'application/json',
                         beforeSend: function () {
-                            XNAT.app.activityTab.start('Start Jupyter Notebook Server', eventTrackingId,
+                            XNAT.app.activityTab.start(
+                                'Start Jupyter Notebook Server' +
+                                `<div class="actions"><a id="open-nb-${eventTrackingId}" class="icn open" style="display: none;"><i class="fa fa-book"></i></a>`,
+                                eventTrackingId,
                                 'XNAT.plugin.jupyterhub.servers.activityTabCallback', 1000);
                         },
                         fail: function (error) {
@@ -346,6 +349,25 @@ XNAT.plugin.jupyterhub.servers.user_options = getObject(XNAT.plugin.jupyterhub.s
         if (messages) {
             $(detailsTag).append(messages);
         }
+        
+        if (succeeded) {
+            XNAT.plugin.jupyterhub.users.getUser(window.username).then(user => {
+                let servers = user['servers'] || {};
+                let eventTrackingId = jsonobj['key'];
+                
+                Object.entries(servers).forEach(([severName, server]) => {
+                    let user_options = server['user_options'] || {};
+                    let serverEventTrackingId = user_options['eventTrackingId'] || "";
+                    
+                    if (serverEventTrackingId && serverEventTrackingId === eventTrackingId) {
+                        let openNbLink = document.getElementById(`open-nb-${eventTrackingId}`);
+                        openNbLink.style.display = 'inline';
+                        openNbLink.addEventListener('click', () => XNAT.plugin.jupyterhub.servers.goTo(server['url']));
+                    }
+                });
+            })
+        }
+        
         return {succeeded: succeeded, lastProgressIdx: lastProgressIdx};
     }
 
