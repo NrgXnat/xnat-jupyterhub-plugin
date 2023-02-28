@@ -28,9 +28,10 @@ startTimeout:
   id: startTimeout
   name: startTimeout
   label: Start Timeout
+  afterElement: <span class="after">seconds</span>
   validation: integer gte:1 onblur
   description: >
-    Timeout (in seconds) before giving up on starting of single-user server. XNAT will assume that startup has failed if it takes longer than this.
+    Amount of time (in seconds) before giving up on starting a single-user server. XNAT will assume that startup has failed if it takes longer than this.
 
 startPollingInterval:
   kind: panel.input.number
@@ -46,9 +47,10 @@ stopTimeout:
   id: stopTimeout
   name: stopTimeout
   label: Stop Timeout
+  afterElement: <span class="after">seconds</span>
   validation: integer gte:1 onblur
   description: >
-    Timeout (in seconds) before giving up on stopping a single-user server. XNAT will assume that stopping has failed if it takes longer than this.
+    Amount of time (in seconds) before giving up on stopping a single-user server. XNAT will assume that stopping has failed if it takes longer than this.
 
 stopPollingInterval:
   kind: panel.input.number
@@ -168,7 +170,6 @@ jupyterHubProfiles:
 jupyterhubPreferences:
   kind: panel.form
   name: jupyterhubPreferences
-  label: JupyterHub Setup
   method: POST
   contentType: json
   url: /xapi/jupyterhub/preferences
@@ -176,9 +177,7 @@ jupyterhubPreferences:
     ${jupyterhubApiUrl}
     ${jupyterHubToken}
     ${startTimeout}
-    ${startPollingInterval}
     ${stopTimeout}
-    ${stopPollingInterval}
     ${inactivityTimeout}
     ${maxServerLifetime}
     ${pathTranslationXnatPrefix}
