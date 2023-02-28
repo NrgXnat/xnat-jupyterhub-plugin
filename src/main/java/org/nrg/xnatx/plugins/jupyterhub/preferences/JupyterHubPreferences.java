@@ -31,6 +31,7 @@ public class JupyterHubPreferences extends AbstractPreferenceBean {
     public static final String RESOURCE_SPEC_MEM_LIMIT_PREF_ID = "resourceSpecMemLimit";
     public static final String RESOURCE_SPEC_MEM_RESERVATION_PREF_ID = "resourceSpecMemReservation";
     public static final String INACTIVITY_TIMEOUT_PREF_ID = "inactivityTimeout";
+    public static final String MAX_SERVER_LIFETIME_PREF_ID = "maxServerLifetime";
 
     @Autowired
     protected JupyterHubPreferences(NrgPreferenceService preferenceService, ConfigPaths configFolderPaths, OrderedProperties initPrefs) {
@@ -262,6 +263,7 @@ public class JupyterHubPreferences extends AbstractPreferenceBean {
         }
     }
 
+    // Inactivity timeout in minutes
     @NrgPreference(defaultValue = "60")
     public long getInactivityTimeout() {
         return getLongValue(INACTIVITY_TIMEOUT_PREF_ID);
@@ -272,6 +274,20 @@ public class JupyterHubPreferences extends AbstractPreferenceBean {
             setLongValue(inactivityTimeout, INACTIVITY_TIMEOUT_PREF_ID);
         } catch (InvalidPreferenceName e) {
             log.error("Invalid preference name 'inactivityTimeout': something is very wrong here.", e);
+        }
+    }
+
+    // Max server lifetime in hours
+    @NrgPreference(defaultValue = "48")
+    public long getMaxServerLifetime() {
+        return getLongValue(MAX_SERVER_LIFETIME_PREF_ID);
+    }
+
+    public void setMaxServerLifetime(final long maxServerLifetime) {
+        try {
+            setLongValue(maxServerLifetime, MAX_SERVER_LIFETIME_PREF_ID);
+        } catch (InvalidPreferenceName e) {
+            log.error("Invalid preference name 'maxServerLifetime': something is very wrong here.", e);
         }
     }
 

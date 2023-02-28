@@ -115,6 +115,10 @@ public class JupyterHubPreferencesApi extends AbstractXapiRestController {
                 value = jupyterHubPreferences.getInactivityTimeout();
                 break;
             }
+            case (JupyterHubPreferences.MAX_SERVER_LIFETIME_PREF_ID): {
+                value = jupyterHubPreferences.getMaxServerLifetime();
+                break;
+            }
             case (JupyterHubPreferences.ALL_USERS_JUPYTER): {
                 value = jupyterHubPreferences.getAllUsersCanStartJupyter();
                 break;

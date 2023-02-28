@@ -24,5 +24,6 @@ public interface JupyterHubService {
     void stopServer(UserI user, String servername, String eventTrackingId);
     Token createToken(UserI user, String note, Integer expiresIn);
     void cullInactiveServers();
+    void cullLongRunningServers();
 
 }

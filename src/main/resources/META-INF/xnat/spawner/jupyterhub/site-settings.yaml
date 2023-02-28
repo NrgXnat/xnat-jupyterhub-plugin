@@ -79,10 +79,21 @@ inactivityTimeout:
   kind: panel.input.number
   id: inactivityTimeout
   name: inactivityTimeout
-  label: Inactivity Timeout (minutes)
+  label: Inactivity Timeout
+  afterElement: <span class="after">minutes</span>
   validation: integer gte:0 onblur
   description: >
-    Automatically shut down idle Jupyter notebook servers if they've been inactive for some time. Set the timeout to 0 to not cull any inactive servers.
+    Automatically shut down idle Jupyter notebook servers if they've been inactive for some time. Set to 0 to not shut down any inactive servers.
+
+maxServerLifetime:
+    kind: panel.input.number
+    id: maxServerLifetime
+    name: maxServerLifetime
+    label: Max Server Lifetime
+    afterElement: <span class="after">hours</span>
+    validation: integer gte:0 onblur
+    description: >
+        Automatically shut down Jupyter notebook servers after a certain amount of time regardless of activity. Set to 0 to not shut down any long running servers.
 
 jupyterHubSetup:
   kind: panel
@@ -169,6 +180,7 @@ jupyterhubPreferences:
     ${stopTimeout}
     ${stopPollingInterval}
     ${inactivityTimeout}
+    ${maxServerLifetime}
     ${pathTranslationXnatPrefix}
     ${pathTranslationDockerPrefix}
     ${workspacePath}

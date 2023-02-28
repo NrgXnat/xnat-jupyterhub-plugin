@@ -392,29 +392,72 @@ public class DefaultJupyterHubService implements JupyterHubService {
      */
     @Override
     public void cullInactiveServers() {
-        if (jupyterHubPreferences.getInactivityTimeout() > 0) {
-            log.debug("Culling idle Jupyter notebook servers");
+        try {
+            if (jupyterHubPreferences.getInactivityTimeout() > 0) {
+                log.debug("Culling idle Jupyter notebook servers");
 
-            final List<User> users = getUsers();
-            final ZonedDateTime now = ZonedDateTime.now(ZoneId.of("UTC"));
+                final List<User> users = getUsers();
+                final ZonedDateTime now = ZonedDateTime.now(ZoneId.of("UTC"));
 
-            users.forEach(user -> {
-                Map<String, Server> servers = user.getServers();
-                servers.forEach((servername, server) -> {
-                    final ZonedDateTime lastActivity = server.getLast_activity();
-                    long inactiveTime = ChronoUnit.MINUTES.between(lastActivity, now);
+                users.forEach(user -> {
+                    Map<String, Server> servers = user.getServers();
+                    servers.forEach((servername, server) -> {
+                        final ZonedDateTime lastActivity = server.getLast_activity();
+                        long inactiveTime = ChronoUnit.MINUTES.between(lastActivity, now);
 
-                    if (inactiveTime > jupyterHubPreferences.getInactivityTimeout()) {
-                        try {
-                            UserI userI = userManagementService.getUser(user.getName());
-                            log.info("Removing Jupyter server {} for user {} due to inactivity.", servername, user.getName());
-                            stopServer(userI, servername, now + "_cullIdleServers");
-                        } catch (UserInitException | org.nrg.xdat.security.user.exceptions.UserNotFoundException e) {
-                            log.error("Unable to delete long running Jupyter server for user " + user.getName(), e);
+                        if (inactiveTime > jupyterHubPreferences.getInactivityTimeout()) {
+                            try {
+                                UserI userI = userManagementService.getUser(user.getName());
+                                log.info("Removing Jupyter server {} for user {} due to inactivity.", servername, user.getName());
+                                stopServer(userI, servername, now + "_cullIdleServers");
+                            } catch (UserInitException | org.nrg.xdat.security.user.exceptions.UserNotFoundException e) {
+                                log.error("Unable to delete long running Jupyter server for user " + user.getName(), e);
+                            }
                         }
-                    }
+                    });
                 });
-            });
+            } else {
+                log.debug("Not culling idle Jupyter notebook servers");
+            }
+        } catch (Exception e) {
+            log.error("Failed to cull idle Jupyter notebook servers");
+        }
+    }
+
+    /**
+     * Stop servers that have been running for some period of time
+     */
+    @Override
+    public void cullLongRunningServers() {
+        try {
+            if (jupyterHubPreferences.getMaxServerLifetime() > 0) {
+                log.debug("Culling long running Jupyter notebook servers");
+
+                final List<User> users = getUsers();
+                final ZonedDateTime now = ZonedDateTime.now(ZoneId.of("UTC"));
+
+                users.forEach(user -> {
+                    Map<String, Server> servers = user.getServers();
+                    servers.forEach((servername, server) -> {
+                        final ZonedDateTime started = server.getStarted();
+                        long runningTime = ChronoUnit.HOURS.between(started, now);
+
+                        if (runningTime >= jupyterHubPreferences.getMaxServerLifetime()) {
+                            try {
+                                UserI userI = userManagementService.getUser(user.getName());
+                                log.info("Removing Jupyter server {} for user {} due to long running time.", servername, user.getName());
+                                stopServer(userI, servername, now + "_cullLongRunningServers");
+                            } catch (UserInitException | org.nrg.xdat.security.user.exceptions.UserNotFoundException e) {
+                                log.error("Unable to delete long running Jupyter server for user " + user.getName(), e);
+                            }
+                        }
+                    });
+                });
+            } else {
+                log.debug("Not culling long running Jupyter notebook servers");
+            }
+        } catch (Exception e) {
+            log.error("Failed to cull long running Jupyter notebook servers");
         }
     }
 

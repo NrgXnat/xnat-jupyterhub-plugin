@@ -58,7 +58,12 @@ public class JupyterHubPlugin {
 
     @Bean
     public TriggerTask cullIdleServers(final JupyterHubService jupyterHubService) {
-        return new TriggerTask(jupyterHubService::cullInactiveServers, new PeriodicTrigger(15, TimeUnit.MINUTES));
+        return new TriggerTask(jupyterHubService::cullInactiveServers, new PeriodicTrigger(5, TimeUnit.MINUTES));
+    }
+
+    @Bean
+    public TriggerTask cullLongRunningServers(final JupyterHubService jupyterHubService) {
+        return new TriggerTask(jupyterHubService::cullLongRunningServers, new PeriodicTrigger(5, TimeUnit.MINUTES));
     }
 
 }

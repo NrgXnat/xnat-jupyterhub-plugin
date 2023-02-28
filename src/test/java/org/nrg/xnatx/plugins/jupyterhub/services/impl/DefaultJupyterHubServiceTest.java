@@ -539,24 +539,51 @@ public class DefaultJupyterHubServiceTest {
         verify(mockJupyterHubClient, times(1)).stopServer(eq(username), eq(server_inactive.getName()));
     }
 
-    @Test
+    @Test(timeout = 3000)
     public void testCullIdleServers_NoCull() throws InterruptedException {
         // Setup -> timeout set to zero
         when(mockJupyterHubPreferences.getInactivityTimeout()).thenReturn(0L);
 
+        // Test
+        jupyterHubService.cullInactiveServers();
+        Thread.sleep(2000); // Stop server is async call, need to wait.
+
+        // Verify no servers stopped
+        verify(mockJupyterHubClient, never()).stopServer(any(), any());
+    }
+
+    @Test(timeout = 3000)
+    public void testCullIdleServers_Exception() throws InterruptedException {
+        // Setup
+        when(mockJupyterHubPreferences.getInactivityTimeout()).thenReturn(90L);
+        when(mockJupyterHubClient.getUsers()).thenThrow(new RuntimeException("Unable to connect to JupyterHub"));
+
+        // Test
+        jupyterHubService.cullInactiveServers();
+        Thread.sleep(2000); // Stop server is async call, need to wait.
+
+        // Verify no servers stopped
+        verify(mockJupyterHubClient, never()).stopServer(any(), any());
+    }
+
+    @Test(timeout = 3000)
+    public void testCullLongRunningServers_Cull() throws InterruptedException {
+        // Setup
+        when(mockJupyterHubPreferences.getMaxServerLifetime()).thenReturn(48L);
+
         Server server_active = Server.builder()
                 .name("server_active")
-                .last_activity(ZonedDateTime.now(ZoneId.of("UTC")))
+                .started(ZonedDateTime.now(ZoneId.of("UTC")))
                 .build();
 
-        Server server_inactive = Server.builder()
-                .name("server_inactive")
-                .last_activity(ZonedDateTime.now(ZoneId.of("UTC")).minusHours(2L))
+        Server server_long_running = Server.builder()
+                .name("server_long_running")
+                .started(ZonedDateTime.now(ZoneId.of("UTC")).minusHours(48L).minusMinutes(1L))
                 .build();
 
         Map<String, Server> servers = new HashMap<>();
-        servers.put("server_active", server_active);
-        servers.put("server_inactive", server_inactive);
+        servers.put(server_active.getName(), server_active);
+        servers.put(server_long_running.getName(), server_long_running);
 
         User user = User.builder()
                 .name(username)
@@ -566,14 +593,79 @@ public class DefaultJupyterHubServiceTest {
         when(mockJupyterHubClient.getUsers()).thenReturn(Collections.singletonList(user));
 
         // Test
-        jupyterHubService.cullInactiveServers();
+        jupyterHubService.cullLongRunningServers();
+        Thread.sleep(2000); // Stop server is async call, need to wait.
+
+        // Verify active server not stopped
+        verify(mockJupyterHubClient, never()).stopServer(eq(username), eq(server_active.getName()));
+
+        // Verify inactive server stopped
+        verify(mockJupyterHubClient, times(1)).stopServer(eq(username), eq(server_long_running.getName()));
+    }
+
+    @Test(timeout = 3000)
+    public void testCullLongRunningServers_NoCull_Disabled() throws InterruptedException {
+        // Setup -> timeout set to zero
+        when(mockJupyterHubPreferences.getMaxServerLifetime()).thenReturn(0L);
+
+        // Test
+        jupyterHubService.cullLongRunningServers();
+        Thread.sleep(2000); // Stop server is async call, need to wait.
+
+        // Verify servers not stopped
+        verify(mockJupyterHubClient, never()).stopServer(any(), any());
+    }
+
+    @Test(timeout = 3000)
+    public void testCullLongRunningServers_NoCull() throws InterruptedException {
+        // Setup
+        when(mockJupyterHubPreferences.getMaxServerLifetime()).thenReturn(48L);
+
+        Server server_active = Server.builder()
+                .name("server_active")
+                .started(ZonedDateTime.now(ZoneId.of("UTC")))
+                .build();
+
+        // Server started less than 48 hours ago
+        Server server_long_running = Server.builder()
+                .name("server_long_running")
+                .started(ZonedDateTime.now(ZoneId.of("UTC")).minusHours(47L).minusMinutes(59L))
+                .build();
+
+        Map<String, Server> servers = new HashMap<>();
+        servers.put(server_active.getName(), server_active);
+        servers.put(server_long_running.getName(), server_long_running);
+
+        User user = User.builder()
+                .name(username)
+                .servers(servers)
+                .build();
+
+        when(mockJupyterHubClient.getUsers()).thenReturn(Collections.singletonList(user));
+
+        // Test
+        jupyterHubService.cullLongRunningServers();
         Thread.sleep(2000); // Stop server is async call, need to wait.
 
         // Verify active server not stopped
         verify(mockJupyterHubClient, never()).stopServer(eq(username), eq(server_active.getName()));
 
         // Verify inactive server not stopped. Timeout is set to zero
-        verify(mockJupyterHubClient, never()).stopServer(eq(username), eq(server_inactive.getName()));
+        verify(mockJupyterHubClient, never()).stopServer(eq(username), eq(server_long_running.getName()));
     }
 
+    @Test(timeout = 3000)
+    public void testCullLongRunningServers_Exception() throws InterruptedException {
+        // Setup
+        when(mockJupyterHubPreferences.getMaxServerLifetime()).thenReturn(48L);
+        when(mockJupyterHubClient.getUsers()).thenThrow(new RuntimeException("Unable to connect to JupyterHub"));
+
+        // Test
+        jupyterHubService.cullLongRunningServers();
+        Thread.sleep(2000); // Stop server is async call, need to wait.
+
+        // Verify no server stopped
+        verify(mockJupyterHubClient, never()).stopServer(any(), any());
+
+    }
 }
