@@ -389,6 +389,7 @@ public class DefaultUserOptionsService implements UserOptionsService {
         defaultEnvironmentVariables.put("XNAT_XSI_TYPE", xsiType);
         defaultEnvironmentVariables.put("XNAT_ITEM_ID", id);
         defaultEnvironmentVariables.put("JUPYTERHUB_ROOT_DIR", Paths.get("/workspace", user.getUsername()).toString());
+        defaultEnvironmentVariables.put("XDG_CONFIG_HOME", Paths.get("/workspace", user.getUsername()).toString());
 
         return defaultEnvironmentVariables;
     }
