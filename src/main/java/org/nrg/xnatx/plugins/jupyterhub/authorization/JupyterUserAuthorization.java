@@ -38,9 +38,7 @@ public class JupyterUserAuthorization extends UserXapiAuthorization {
     }
 
     protected boolean checkJupyter(UserI user) {
-        return jupyterHubPreferences.getAllUsersCanStartJupyter()
-                || roleHolder.checkRole(user, JUPYTER_ROLE)
-                || roleHolder.isSiteAdmin(user);
+        return jupyterHubPreferences.getAllUsersCanStartJupyter() || roleHolder.checkRole(user, JUPYTER_ROLE);
     }
 
 }

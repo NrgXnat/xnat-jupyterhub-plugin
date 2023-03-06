@@ -9,6 +9,7 @@ XNAT.plugin = getObject(XNAT.plugin || {});
 XNAT.plugin.jupyterhub = getObject(XNAT.plugin.jupyterhub || {});
 XNAT.plugin.jupyterhub.users = getObject(XNAT.plugin.jupyterhub.users || {});
 XNAT.plugin.jupyterhub.users.authorization = getObject(XNAT.plugin.jupyterhub.users.authorization || {});
+XNAT.plugin.jupyterhub.users.authorization.roles = getObject(XNAT.plugin.jupyterhub.users.authorization.roles || {});
 
 (function (factory) {
     if (typeof define === 'function' && define.amd) {
@@ -19,9 +20,10 @@ XNAT.plugin.jupyterhub.users.authorization = getObject(XNAT.plugin.jupyterhub.us
         return factory();
     }
 }(function () {
+    
+    XNAT.plugin.jupyterhub.users.authorization.roles.jupyter = 'Jupyter';
 
-    XNAT.plugin.jupyterhub.users.authorization.isAuthorized = async function (username = window.username,
-                                                                              timeout = 1000) {
+    XNAT.plugin.jupyterhub.users.authorization.isAuthorized = async function (username = window.username) {
         console.debug(`XNAT.plugin.jupyterhub.users.authorization.isAuthorized`);
 
         if (username === 'guest') {
@@ -31,7 +33,6 @@ XNAT.plugin.jupyterhub.users.authorization = getObject(XNAT.plugin.jupyterhub.us
         const response = await XNAT.plugin.jupyterhub.utils.fetchWithTimeout(`/xapi/users/${username}/roles`, {
             method: 'GET',
             headers: {'Content-Type': 'application/json'},
-            timeout: timeout,
         })
 
         if (!response.ok) {
@@ -39,9 +40,8 @@ XNAT.plugin.jupyterhub.users.authorization = getObject(XNAT.plugin.jupyterhub.us
         }
 
         let roles = await response.json();
-        roles = roles.map(role => role.toLowerCase());
 
-        if (roles.contains('administrator') || roles.contains('jupyter')) {
+        if (roles.contains(XNAT.plugin.jupyterhub.users.authorization.roles.jupyter)) {
             return true;
         }
 
@@ -49,13 +49,12 @@ XNAT.plugin.jupyterhub.users.authorization = getObject(XNAT.plugin.jupyterhub.us
         return preferences['allUsersCanStartJupyter'];
     }
 
-    XNAT.plugin.jupyterhub.users.authorization.getAuthorized = async function (timeout = 1000) {
+    XNAT.plugin.jupyterhub.users.authorization.getAuthorized = async function () {
         console.debug(`XNAT.plugin.jupyterhub.users.authorization.getAuthorized`);
 
-        const response = await XNAT.plugin.jupyterhub.utils.fetchWithTimeout(`/xapi/users/roles/Jupyter`, {
+        const response = await XNAT.plugin.jupyterhub.utils.fetchWithTimeout(`/xapi/users/roles/${XNAT.plugin.jupyterhub.users.authorization.roles.jupyter}`, {
             method: 'GET',
             headers: {'Content-Type': 'application/json'},
-            timeout: timeout,
         })
 
         if (!response.ok) {
@@ -65,7 +64,7 @@ XNAT.plugin.jupyterhub.users.authorization = getObject(XNAT.plugin.jupyterhub.us
         return await response.json();
     }
 
-    XNAT.plugin.jupyterhub.users.authorization.getUnauthorized = async function (timeout = 1000) {
+    XNAT.plugin.jupyterhub.users.authorization.getUnauthorized = async function () {
         console.debug(`XNAT.plugin.jupyterhub.users.authorization.getUnauthorized`);
 
         let authorizedUsers = await XNAT.plugin.jupyterhub.users.authorization.getAuthorized();
@@ -73,7 +72,6 @@ XNAT.plugin.jupyterhub.users.authorization = getObject(XNAT.plugin.jupyterhub.us
         const response = await XNAT.plugin.jupyterhub.utils.fetchWithTimeout(`/xapi/users`, {
             method: 'GET',
             headers: {'Content-Type': 'application/json'},
-            timeout: timeout,
         })
 
         if (!response.ok) {
@@ -85,14 +83,13 @@ XNAT.plugin.jupyterhub.users.authorization = getObject(XNAT.plugin.jupyterhub.us
         return allUsers.filter(user => !authorizedUsers.contains(user) && user !== 'jupyterhub' && user !== 'guest');
     }
 
-    XNAT.plugin.jupyterhub.users.authorization.add = async function (username, timeout = 1000) {
+    XNAT.plugin.jupyterhub.users.authorization.add = async function (username) {
         console.debug(`XNAT.plugin.jupyterhub.users.authorization.add`);
 
         const response = await XNAT.plugin.jupyterhub.utils.fetchWithTimeout(`/xapi/users/${username}/roles`, {
             method: 'PUT',
             headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify(['Jupyter']),
-            timeout: timeout,
+            body: JSON.stringify([XNAT.plugin.jupyterhub.users.authorization.roles.jupyter]),
         })
 
         if (!response.ok) {
@@ -100,14 +97,13 @@ XNAT.plugin.jupyterhub.users.authorization = getObject(XNAT.plugin.jupyterhub.us
         }
     }
 
-    XNAT.plugin.jupyterhub.users.authorization.remove = async function (username, timeout = 1000) {
+    XNAT.plugin.jupyterhub.users.authorization.remove = async function (username) {
         console.debug(`XNAT.plugin.jupyterhub.users.authorization.remove`);
 
         const response = await XNAT.plugin.jupyterhub.utils.fetchWithTimeout(`/xapi/users/${username}/roles`, {
             method: 'DELETE',
             headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify(['Jupyter']),
-            timeout: timeout,
+            body: JSON.stringify([XNAT.plugin.jupyterhub.users.authorization.roles.jupyter]),
         })
 
         if (!response.ok) {
@@ -245,9 +241,10 @@ XNAT.plugin.jupyterhub.users.authorization = getObject(XNAT.plugin.jupyterhub.us
                                     xmodal.closeAll();
                                     XNAT.ui.dialog.closeAll();
                                 }).then(() => {
+                                    // Table refresh is delayed to allow time for the user authorization to be added
                                     setTimeout(() => {
                                         XNAT.plugin.jupyterhub.users.authorization.refreshTable(containerId);
-                                    }, 300);
+                                    }, 500);
                                 })
                             }
                         },

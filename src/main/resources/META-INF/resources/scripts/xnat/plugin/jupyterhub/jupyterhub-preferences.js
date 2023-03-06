@@ -23,14 +23,13 @@ XNAT.plugin.jupyterhub.preferences = getObject(XNAT.plugin.jupyterhub.preference
     }
 }(function() {
 
-    XNAT.plugin.jupyterhub.preferences.getAll = async function(timeout = 1000) {
+    XNAT.plugin.jupyterhub.preferences.getAll = async function() {
         console.debug(`jupyterhub-preferences.js: XNAT.plugin.jupyterhub.preferences.getAll`);
 
         let url = XNAT.url.restUrl('/xapi/jupyterhub/preferences');
         const response = await XNAT.plugin.jupyterhub.utils.fetchWithTimeout(url, {
             method: 'GET',
             headers: {'Content-Type': 'application/json'},
-            timeout: timeout,
         })
 
         if (!response.ok) {
@@ -40,14 +39,14 @@ XNAT.plugin.jupyterhub.preferences = getObject(XNAT.plugin.jupyterhub.preference
         return await response.json();
     }
 
-    XNAT.plugin.jupyterhub.preferences.get = async function(preference, timeout = 1000) {
+    XNAT.plugin.jupyterhub.preferences.get = async function(preference) {
         console.debug(`jupyterhub-preferences.js: XNAT.plugin.jupyterhub.preferences.get`);
 
-        let preferences = await XNAT.plugin.jupyterhub.preferences.getAll(timeout);
+        let preferences = await XNAT.plugin.jupyterhub.preferences.getAll();
         return preferences[preference];
     }
 
-    XNAT.plugin.jupyterhub.preferences.set = async function(preference, value, timeout = 1000) {
+    XNAT.plugin.jupyterhub.preferences.set = async function(preference, value) {
         console.debug(`jupyterhub-preferences.js: XNAT.plugin.jupyterhub.preferences.set`);
 
         let url = XNAT.url.restUrl(`/xapi/jupyterhub/preferences/${preference}`);
@@ -55,7 +54,6 @@ XNAT.plugin.jupyterhub.preferences = getObject(XNAT.plugin.jupyterhub.preference
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify(value),
-            timeout: timeout,
         })
 
         if (!response.ok) {

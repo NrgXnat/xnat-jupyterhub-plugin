@@ -245,7 +245,8 @@ public class JupyterHubApi extends AbstractXapiRestController {
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Not authorized."),
                    @ApiResponse(code = 500, message = "Unexpected error")})
-    @XapiRequestMapping(value = "/users/{username}/tokens", method = POST, restrictTo = AccessLevel.User)
+    @AuthDelegate(JupyterUserAuthorization.class)
+    @XapiRequestMapping(value = "/users/{username}/tokens", method = POST, restrictTo = Authorizer)
     public Token createToken(@ApiParam(value = "username", required = true) @PathVariable("username") @Username final String username,
                              @ApiParam(value = "note", required = true) @RequestParam("note") final String note,
                              @ApiParam(value = "expiresIn", required = true) @RequestParam(value = "expiresIn") final Integer expiresIn) throws UserNotFoundException, UserInitException {

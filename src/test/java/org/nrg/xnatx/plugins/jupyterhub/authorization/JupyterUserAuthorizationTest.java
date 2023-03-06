@@ -30,13 +30,12 @@ public class JupyterUserAuthorizationTest {
     @Autowired private JupyterHubPreferences mockJupyterHubPreferences;
 
     private UserI user;
-    private String username;
 
     @Before
     public void before() {
         // Mock the user
         user = mock(UserI.class);
-        username = "user";
+        String username = "user";
         when(user.getUsername()).thenReturn(username);
     }
 
@@ -78,7 +77,7 @@ public class JupyterUserAuthorizationTest {
         boolean check = jupyterUserAuthorization.checkJupyter(user);
 
         // Verify
-        assertTrue("Jupyter All User preference is enabled. This should allow all.", check);
+        assertTrue("Jupyter role is enabled for the user. This should allow access.", check);
     }
 
     @Test
@@ -92,7 +91,7 @@ public class JupyterUserAuthorizationTest {
         boolean check = jupyterUserAuthorization.checkJupyter(user);
 
         // Verify
-        assertTrue("Jupyter All User preference is enabled. This should allow all.", check);
+        assertFalse("Admin users are not allowed to start Jupyter. They should have the juptyer role.", check);
     }
 
     @Test
