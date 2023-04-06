@@ -10,6 +10,7 @@ import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.initialization.tasks.AbstractInitializingTask;
 import org.nrg.xnat.initialization.tasks.InitializingTaskException;
+import org.nrg.xnat.services.XnatAppInfo;
 import org.nrg.xnatx.plugins.jupyterhub.utils.XFTManagerHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -24,14 +25,17 @@ public class JupyterHubUserInitializer extends AbstractInitializingTask {
     private final UserManagementServiceI userManagementService;
     private final RoleHolder roleHolder;
     private final XFTManagerHelper xftManagerHelper;
+    private final XnatAppInfo appInfo;
 
     @Autowired
     public JupyterHubUserInitializer(final UserManagementServiceI userManagementService,
                                      final RoleHolder roleHolder,
-                                     final XFTManagerHelper xftManagerHelper) {
+                                     final XFTManagerHelper xftManagerHelper,
+                                     final XnatAppInfo appInfo) {
         this.userManagementService = userManagementService;
         this.roleHolder = roleHolder;
         this.xftManagerHelper = xftManagerHelper;
+        this.appInfo = appInfo;
     }
 
     @Override
@@ -50,6 +54,11 @@ public class JupyterHubUserInitializer extends AbstractInitializingTask {
 
         if (!xftManagerHelper.isInitialized()) {
             log.debug("XFT not initialized, deferring execution.");
+            throw new InitializingTaskException(InitializingTaskException.Level.RequiresInitialization);
+        }
+
+        if (!appInfo.isInitialized()) {
+            log.debug("XNAT not initialized, deferring execution.");
             throw new InitializingTaskException(InitializingTaskException.Level.RequiresInitialization);
         }
 

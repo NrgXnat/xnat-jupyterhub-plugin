@@ -9,6 +9,7 @@ import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.nrg.xft.event.EventDetails;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.initialization.tasks.InitializingTaskException;
+import org.nrg.xnat.services.XnatAppInfo;
 import org.nrg.xnatx.plugins.jupyterhub.config.JupyterHubUserInitializerConfig;
 import org.nrg.xnatx.plugins.jupyterhub.utils.XFTManagerHelper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,6 +26,7 @@ public class JupyterHubUserInitializerTest {
     @Autowired private JupyterHubUserInitializer jupyterHubUserInitializer;
     @Autowired private UserManagementServiceI mockUserManagementService;
     @Autowired private XFTManagerHelper mockXFTManagerHelper;
+    @Autowired private XnatAppInfo mockXnatAppInfo;
     @Autowired private RoleServiceI mockRoleService;
 
     private final String username = "jupyterhub";
@@ -45,11 +47,22 @@ public class JupyterHubUserInitializerTest {
         jupyterHubUserInitializer.callImpl();
     }
 
+    @Test(expected = InitializingTaskException.class)
+    public void test_AppNotInitialized() throws Exception {
+        // XFT initialized but app not initialized
+        when(mockXFTManagerHelper.isInitialized()).thenReturn(true);
+        when(mockXnatAppInfo.isInitialized()).thenReturn(false);
+
+        // Should throw InitializingTaskException
+        jupyterHubUserInitializer.callImpl();
+    }
+
     @Test
     public void test_JHUserAlreadyExists() throws Exception {
         // Setup
         // XFT initialized and user already exists
         when(mockXFTManagerHelper.isInitialized()).thenReturn(true);
+        when(mockXnatAppInfo.isInitialized()).thenReturn(true);
         when(mockUserManagementService.exists(username)).thenReturn(true);
 
         // Test
@@ -121,6 +134,7 @@ public class JupyterHubUserInitializerTest {
     public void test_UserCreated() throws Exception {
         // Setup
         when(mockXFTManagerHelper.isInitialized()).thenReturn(true);
+        when(mockXnatAppInfo.isInitialized()).thenReturn(true);
         when(mockUserManagementService.exists(username)).thenReturn(false);
         UserI mockUser = mock(UserI.class);
         when(mockUserManagementService.createUser()).thenReturn(mockUser);

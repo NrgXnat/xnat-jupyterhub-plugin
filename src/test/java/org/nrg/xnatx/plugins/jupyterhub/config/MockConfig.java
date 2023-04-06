@@ -9,6 +9,7 @@ import org.nrg.prefs.services.NrgPreferenceService;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.services.*;
 import org.nrg.xdat.services.AliasTokenService;
+import org.nrg.xnat.services.XnatAppInfo;
 import org.nrg.xnat.tracking.services.EventTrackingDataHibernateService;
 import org.nrg.xnatx.plugins.jupyterhub.client.JupyterHubClient;
 import org.nrg.xnatx.plugins.jupyterhub.preferences.JupyterHubPreferences;
@@ -143,5 +144,10 @@ public class MockConfig {
     @Bean
     public SerializerService mockSerializerService() {
         return Mockito.mock(SerializerService.class);
+    }
+
+    @Bean
+    public XnatAppInfo mockXnatAppInfo() {
+        return Mockito.mock(XnatAppInfo.class);
     }
 }
