@@ -63,6 +63,7 @@ public class JupyterHubApiTest {
     private User  nonAdmin_jh;
 
     private XnatUserOptions userOptions;
+    private ServerStartRequest serverStartRequest;
     private Long profileId;
     private Server dummyServer;
     private String servername;
@@ -149,6 +150,18 @@ public class JupyterHubApiTest {
                 .projectId("TestProject")
                 .eventTrackingId("20220822T201541799Z")
                 .taskTemplate(taskTemplate)
+                .build();
+
+        serverStartRequest = ServerStartRequest.builder()
+                .username(NON_ADMIN_USERNAME)
+                .servername("")
+                .xsiType(XnatProjectdata.SCHEMA_ELEMENT_NAME)
+                .itemId("TestProject")
+                .itemLabel("TestProject")
+                .projectId("TestProject")
+                .eventTrackingId("20220822T201541799Z")
+                .computeSpecConfigId(1L)
+                .hardwareConfigId(1L)
                 .build();
 
         dummyServer = Server.builder()
@@ -419,74 +432,16 @@ public class JupyterHubApiTest {
     public void testStartServer() throws Exception {
         final MockHttpServletRequestBuilder request = MockMvcRequestBuilders
                 .post("/jupyterhub/users/" + NON_ADMIN_USERNAME + "/server")
-                .param("username", NON_ADMIN_USERNAME)
-                .param("xsiType", userOptions.getXsiType())
-                .param("itemId", userOptions.getItemId())
-                .param("itemLabel", userOptions.getItemLabel())
-                .param("projectId", userOptions.getProjectId())
-                .param("eventTrackingId", userOptions.getEventTrackingId())
-                .param("profileId", profileId.toString())
+                .accept(JSON)
+                .contentType(JSON)
+                .content(mapper.writeValueAsString(serverStartRequest))
                 .with(authentication(NONADMIN_AUTH))
                 .with(csrf())
                 .with(testSecurityContext());
 
         mockMvc.perform(request).andExpect(status().isOk());
 
-        // Unnamed server
-        verify(mockJupyterHubService, times(1)).startServer(eq(nonAdmin),
-                                                            eq(userOptions.getXsiType()),
-                                                            eq(userOptions.getItemId()),
-                                                            eq(userOptions.getItemLabel()),
-                                                            eq(userOptions.getProjectId()),
-                                                            eq(userOptions.getEventTrackingId()),
-                                                            eq(profileId));
-        // Named Server
-        verify(mockJupyterHubService, never()).startServer(any(UserI.class),
-                                                           anyString(),
-                                                           anyString(),
-                                                           anyString(),
-                                                           anyString(),
-                                                           anyString(),
-                                                           anyString(),
-                                                           anyLong());
-    }
-
-    @Test
-    public void testStartNamedServer() throws Exception {
-        final MockHttpServletRequestBuilder request = MockMvcRequestBuilders
-                .post("/jupyterhub/users/" + NON_ADMIN_USERNAME + "/server/" + servername)
-                .param("username", NON_ADMIN_USERNAME)
-                .param("xsiType", userOptions.getXsiType())
-                .param("itemId", userOptions.getItemId())
-                .param("itemLabel", userOptions.getItemLabel())
-                .param("projectId", userOptions.getProjectId())
-                .param("eventTrackingId", userOptions.getEventTrackingId())
-                .param("profileId", profileId.toString())
-                .with(authentication(NONADMIN_AUTH))
-                .with(csrf())
-                .with(testSecurityContext());
-
-        mockMvc.perform(request).andExpect(status().isOk());
-
-        // Unnamed server
-        verify(mockJupyterHubService, never()).startServer(any(UserI.class),
-                                                           anyString(),
-                                                           anyString(),
-                                                           anyString(),
-                                                           anyString(),
-                                                           anyString(),
-                                                           anyLong());
-
-        // Named Server
-        verify(mockJupyterHubService, times(1)).startServer(eq(nonAdmin),
-                                                            eq(servername),
-                                                            eq(userOptions.getXsiType()),
-                                                            eq(userOptions.getItemId()),
-                                                            eq(userOptions.getItemLabel()),
-                                                            eq(userOptions.getProjectId()),
-                                                            eq(userOptions.getEventTrackingId()),
-                                                            eq(profileId));
-
+        verify(mockJupyterHubService, times(1)).startServer(eq(nonAdmin), eq(serverStartRequest));
     }
 
     @Test

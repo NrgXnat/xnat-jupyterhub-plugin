@@ -41,10 +41,15 @@ dependencies {
     implementation 'org.projectlombok:lombok:1.18.24'
     testImplementation "com.fasterxml.jackson.datatype:jackson-datatype-guava"
     testImplementation "junit:junit"
+    testImplementation "com.h2database:h2"
+    testImplementation "org.hamcrest:hamcrest-library"
     testImplementation 'org.mockito:mockito-core:4.8.0'
     testImplementation "org.springframework:spring-test"
     testImplementation "org.springframework.security:spring-security-test"
     testImplementation "org.springframework.security:spring-security-config"
+    testImplementation "org.springframework:spring-jdbc"
+    testImplementation "org.springframework:spring-orm"
+    testImplementation "org.apache.commons:commons-dbcp2"
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
 }
 

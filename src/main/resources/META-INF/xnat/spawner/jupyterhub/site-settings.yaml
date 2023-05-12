@@ -146,26 +146,75 @@ userAuthorization:
       content: >
         XNAT.plugin.jupyterhub.users.authorization.initTable('jupyterhub-user-auth-container')
 
-jupyterHubProfiles:
+jupyterEnvironments:
   kind: panel
-  name: jupyterHubProfiles
-  label: JupyterHub Profiles
+  name: jupyterEnvironments
+  label: Jupyter Environments
   contents:
     description:
       tag: div.message
+      element:
+        style: "margin-bottom: 20px;"
       contents:
-        "You can create configurations for multiple user environments and let users select from them when they launch a 
-        Jupyter notebook server. This is done by creating multiple profiles, each of which is attached to a set of 
-        configuration options that will be applied to the single-user server when it is launched. This can be used to 
-        let users choose among Docker images or to select the hardware resources they want to use."
-    profilesTable:
-      tag: "div#jupyterhub-profiles-table"
-    profilesScript:
-      tag: script|src="~/scripts/xnat/plugin/jupyterhub/jupyterhub-profiles.js"
-    renderProfilesTable:
+        "You can configure Jupyter environments in which users Jupyter notebook servers will run. These environments
+        are associated with a specific Docker image and additional configuration options (such as environment variables
+        and mounts) can be specified. An environment can also be associated with a Hardware configuration that
+        defines the hardware resources that will be allocated to the single-user server when it is launched."
+    computeSpecsTable:
+      tag: "div#jupyterhub-compute-spec-configs-table"
+    computeSpecsScript:
+      tag: script|src="~/scripts/xnat/plugin/jobTemplates/compute-spec-configs.js"
+    hardwareConfigsScript:
+      tag: script|src="~/scripts/xnat/plugin/jobTemplates/hardware-configs.js"
+    renderComputeSpecsTable:
       tag: script
       content: >
-        XNAT.plugin.jupyterhub.profiles.manager('jupyterhub-profiles-table');
+        XNAT.plugin.jobTemplates.computeSpecConfigs.manager('jupyterhub-compute-spec-configs-table', 'JUPYTERHUB');
+
+hardwareConfigs:
+    kind: panel
+    name: hardwareConfigs
+    label: Hardware
+    contents:
+      description:
+        tag: div.message
+        element:
+          style: "margin-bottom: 20px;"
+        contents:
+          "You can create Hardware configurations that define the hardware resources that will be allocated to the
+           single-user server when it is launched. Additional configuration options (such as cpu and memory limits) 
+           can be specified."
+      hardwareConfigsTable:
+        tag: "div#jupyterhub-hardware-configs-table"
+      hardwareConfigsScript:
+        tag: script|src="~/scripts/xnat/plugin/jobTemplates/hardware-configs.js"
+      renderHardwareConfigsTable:
+        tag: script
+        content: >
+          XNAT.plugin.jobTemplates.hardwareConfigs.manager('jupyterhub-hardware-configs-table');
+
+constraints:
+  kind: panel
+  name: constraints
+  label: Constraints
+  contents:
+    description:
+      tag: div.message
+      element:
+        style: "margin-bottom: 20px;"
+      contents:
+        "Constraints let you configure containers to run only on nodes with specific (arbitrary) metadata set, and 
+        cause the deployment to fail if appropriate nodes do not exist. For instance, you can specify that your service 
+        should only run on worker nodes."
+    constraintsTable:
+      tag: "div#jupyterhub-constraints-table"
+    constraintsScript:
+      tag: script|src="~/scripts/xnat/plugin/jobTemplates/constraint-configs.js"
+    renderConstraintsTable:
+      tag: script
+      content: >
+        console.log('rendering constraints table');
+        XNAT.plugin.jobTemplates.constraintConfigs.manager('jupyterhub-constraints-table');
 
 jupyterhubPreferences:
   kind: panel.form
@@ -192,7 +241,7 @@ jupyterHubUserActivity:
     jupyterHubActivityDescription:
       tag: div.message
       contents:
-        "This panel lists all JupyterHub users and any Jupyter notebook servers they may be running."
+        "This panel lists any active Jupyter users and the status of their Jupyter notebook servers."
     jupyterHubActivityTable:
       tag: "div#jupyterhub-user-activity-table"
     imagePreferencesScript:
@@ -224,7 +273,9 @@ siteSettings:
       contents:
         ${jupyterHubSetup}
         ${userAuthorization}
-        ${jupyterHubProfiles}
+        ${jupyterEnvironments}
+        ${hardwareConfigs}
+        ${constraints}
     jupyterhubUserActivityTab:
       kind: tab
       name: jupyterhubUserActivityTab

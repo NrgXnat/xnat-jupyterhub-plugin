@@ -2,6 +2,7 @@ package org.nrg.xnatx.plugins.jupyterhub.rest;
 
 import io.swagger.annotations.*;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.annotations.XapiRestController;
 import org.nrg.xapi.exceptions.NotFoundException;
 import org.nrg.xapi.rest.*;
@@ -18,11 +19,13 @@ import org.nrg.xnatx.plugins.jupyterhub.client.models.Hub;
 import org.nrg.xnatx.plugins.jupyterhub.client.models.Server;
 import org.nrg.xnatx.plugins.jupyterhub.client.models.Token;
 import org.nrg.xnatx.plugins.jupyterhub.client.models.User;
+import org.nrg.xnatx.plugins.jupyterhub.models.ServerStartRequest;
 import org.nrg.xnatx.plugins.jupyterhub.models.XnatUserOptions;
 import org.nrg.xnatx.plugins.jupyterhub.services.JupyterHubService;
 import org.nrg.xnatx.plugins.jupyterhub.services.UserOptionsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
@@ -138,15 +141,11 @@ public class JupyterHubApi extends AbstractXapiRestController {
                    @ApiResponse(code = 500, message = "Unexpected error")})
     @XapiRequestMapping(value = "/users/{username}/server", method = POST, restrictTo = Authorizer)
     @AuthDelegate(JupyterUserAuthorization.class)
-    public void startServer(@ApiParam(value = "username", required = true) @PathVariable("username") @Username final String username,
-                            @ApiParam(value = "xsiType", required = true) @RequestParam("xsiType") final String xsiType,
-                            @ApiParam(value = "itemId", required = true) @RequestParam("itemId") final String itemId,
-                            @ApiParam(value = "itemLabel", required = true) @RequestParam("itemLabel") final String itemLabel,
-                            @ApiParam(value = "projectId", required = false) @RequestParam(value = "projectId", required = false) final String projectId,
-                            @ApiParam(value = "eventTrackingId", required = true) @RequestParam(value = "eventTrackingId") final String eventTrackingId,
-                            @ApiParam(value = "profileId", required = true) @RequestParam(value = "profileId") final Long profileId) throws UserNotFoundException, UserInitException {
-        jupyterHubService.startServer(getUserI(username), xsiType, itemId, itemLabel, projectId, eventTrackingId, profileId);
+    public void startServer(@ApiParam(value = "username", required = true) @PathVariable("username") @Username final String username, // Unused, but required for auth
+                            @RequestBody final ServerStartRequest serverStartRequest) {
+        jupyterHubService.startServer(getSessionUser(), serverStartRequest);
     }
+
 
     @ApiOperation(value = "Starts a Jupyter server for the user",
                   notes = "Use the Event Tracking API to track progress.",
@@ -157,15 +156,14 @@ public class JupyterHubApi extends AbstractXapiRestController {
                    @ApiResponse(code = 500, message = "Unexpected error")})
     @XapiRequestMapping(value = "/users/{username}/server/{servername}", method = POST, restrictTo = Authorizer)
     @AuthDelegate(JupyterUserAuthorization.class)
-    public void startNamedServer(@ApiParam(value = "username", required = true) @PathVariable("username") @Username final String username,
+    public void startNamedServer(@ApiParam(value = "username", required = true) @PathVariable("username") @Username final String username, // Unused, but required for auth
                                  @ApiParam(value = "servername", required = true) @PathVariable("servername") final String servername,
-                                 @ApiParam(value = "xsiType", required = true) @RequestParam("xsiType") final String xsiType,
-                                 @ApiParam(value = "itemId", required = true) @RequestParam("itemId") final String itemId,
-                                 @ApiParam(value = "itemLabel", required = true) @RequestParam("itemLabel") final String itemLabel,
-                                 @ApiParam(value = "projectId", required = false) @RequestParam(value = "projectId", required = false) final String projectId,
-                                 @ApiParam(value = "eventTrackingId", required = true) @RequestParam(value = "eventTrackingId") final String eventTrackingId,
-                                 @ApiParam(value = "profileId", required = true) @RequestParam(value = "profileId") final Long profileId) throws UserNotFoundException, UserInitException {
-        jupyterHubService.startServer(getUserI(username), servername, xsiType, itemId, itemLabel, projectId, eventTrackingId, profileId);
+                                 @RequestBody final ServerStartRequest serverStartRequest) {
+        if (!StringUtils.equals(servername, serverStartRequest.getServername())) {
+            throw new IllegalArgumentException("Server name in path does not match server name in request body.");
+        }
+
+        jupyterHubService.startServer(getSessionUser(), serverStartRequest);
     }
 
     @ApiOperation(value = "Returns the last known user options for the default server", response = XnatUserOptions.class)

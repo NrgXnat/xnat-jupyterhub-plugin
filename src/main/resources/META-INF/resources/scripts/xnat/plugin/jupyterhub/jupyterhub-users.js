@@ -100,7 +100,6 @@ XNAT.plugin.jupyterhub.users.tokens = getObject(XNAT.plugin.jupyterhub.users.tok
         // add table header row
         usersTable.tr()
             .th({addClass: 'left', html: '<b>User</b>'})
-            .th('<b>Admin</b>')
             .th('<b>Server</b>')
             .th('<b>Ready</b>')
             .th('<b>Started</b>')
@@ -185,31 +184,44 @@ XNAT.plugin.jupyterhub.users.tokens = getObject(XNAT.plugin.jupyterhub.users.tok
         }
 
         XNAT.plugin.jupyterhub.users.getUsers().then(users => {
+            let noRunningServers = true;
+            
             users.forEach(user => {
                 let name = user['name'];
                 let admin = user['admin'] ? 'admin' : '';
                 let servers = user['servers'];
-                let hasServer = '' in servers;
+                let hasServer = '' in servers; // TODO: handle multiple servers, '' is the default server name
                 let url = hasServer ? servers['']['url'] : '';
                 let ready = hasServer ? servers['']['ready'] : '';
                 let started = hasServer ? new Date(servers['']['started']) : '';
                 let lastActivity = hasServer ? new Date(servers['']['last_activity']) : '';
 
-                usersTable.tr()
-                    .td([spawn('div.left', [name])])
-                    .td([spawn('div.center', [admin])])
-                    .td([spawn('div.center', [hasServer ? serverDialog(user['name'], servers['']) : ''])])
-                    .td([spawn('div.center', [ready])])
-                    .td([spawn('div.center', [started.toLocaleString()])])
-                    .td([spawn('div.center', [lastActivity.toLocaleString()])])
-                    .td([spawn('div.center', [hasServer ? stopServerButton(name, '') : ''])]);
+                if (hasServer) {
+                    noRunningServers = false;
+                    usersTable.tr()
+                              .td([spawn('div.left', [name])])
+                              .td([spawn('div.center', [hasServer ? serverDialog(user['name'], servers['']) : ''])])
+                              .td([spawn('div.center', [ready])])
+                              .td([spawn('div.center', [started.toLocaleString()])])
+                              .td([spawn('div.center', [lastActivity.toLocaleString()])])
+                              .td([spawn('div.center', [hasServer ? stopServerButton(name, '') : ''])]);
+                }
             })
+            
+            if (noRunningServers) {
+                usersTable.tr()
+                          .td([spawn('div.left', ["No users currently running a Jupyter server."])])
+                          .td([spawn('div.center', [])])
+                          .td([spawn('div.center', [])])
+                          .td([spawn('div.center', [])])
+                          .td([spawn('div.center', [])])
+                          .td([spawn('div.center', [])]);
+            }
         }).catch(e => {
             console.error("Unable to fetch user activity.", e);
 
             usersTable.tr()
                 .td([spawn('div.left', ["Unable to connect to JupyterHub"])])
-                .td([spawn('div.center', [])])
                 .td([spawn('div.center', [])])
                 .td([spawn('div.center', [])])
                 .td([spawn('div.center', [])])

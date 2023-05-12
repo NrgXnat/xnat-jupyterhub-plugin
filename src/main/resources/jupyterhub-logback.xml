@@ -10,8 +10,21 @@
             <fileNamePattern>${xnat.home}/logs/xnat-jupyterhub-plugin.log.%d{yyyy-MM-dd}</fileNamePattern>
         </rollingPolicy>
     </appender>
+    <appender name="jobTemplates" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <append>true</append>
+        <file>${xnat.home}/logs/job-templates.log</file>
+        <encoder>
+            <pattern>%d [%t] %-5p %c - %m%n</pattern>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${xnat.home}/logs/job-templates.log.%d{yyyy-MM-dd}</fileNamePattern>
+        </rollingPolicy>
+    </appender>
     <!--    TODO: Dont release with Logger on DEBUG-->
     <logger name="org.nrg.xnatx.plugins.jupyterhub" additivity="false" level="DEBUG">
         <appender-ref ref="jupyterhub"/>
+    </logger>
+    <logger name="org.nrg.jobtemplates" additivity="false" level="DEBUG">
+        <appender-ref ref="jobTemplates"/>
     </logger>
 </configuration>

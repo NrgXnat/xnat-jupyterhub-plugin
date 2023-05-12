@@ -2,6 +2,9 @@ package org.nrg.xnatx.plugins.jupyterhub.services.impl;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import lombok.NonNull;
+import org.nrg.jobtemplates.models.*;
+import org.nrg.jobtemplates.services.JobTemplateService;
 import org.nrg.xdat.entities.AliasToken;
 import org.nrg.xdat.model.XnatSubjectassessordataI;
 import org.nrg.xdat.om.*;
@@ -16,10 +19,10 @@ import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.exceptions.InvalidArchiveStructure;
 import org.nrg.xnatx.plugins.jupyterhub.entities.UserOptionsEntity;
-import org.nrg.xnatx.plugins.jupyterhub.models.*;
+import org.nrg.xnatx.plugins.jupyterhub.models.XnatUserOptions;
+import org.nrg.xnatx.plugins.jupyterhub.models.docker.Mount;
 import org.nrg.xnatx.plugins.jupyterhub.models.docker.*;
 import org.nrg.xnatx.plugins.jupyterhub.preferences.JupyterHubPreferences;
-import org.nrg.xnatx.plugins.jupyterhub.services.ProfileService;
 import org.nrg.xnatx.plugins.jupyterhub.services.UserOptionsEntityService;
 import org.nrg.xnatx.plugins.jupyterhub.services.UserOptionsService;
 import org.nrg.xnatx.plugins.jupyterhub.services.UserWorkspaceService;
@@ -45,7 +48,7 @@ public class DefaultUserOptionsService implements UserOptionsService {
     private final SiteConfigPreferences siteConfigPreferences;
     private final UserOptionsEntityService userOptionsEntityService;
     private final PermissionsHelper permissionsHelper;
-    private final ProfileService profileService;
+    private final JobTemplateService jobTemplateService;
 
     @Autowired
     public DefaultUserOptionsService(final JupyterHubPreferences jupyterHubPreferences,
@@ -55,7 +58,7 @@ public class DefaultUserOptionsService implements UserOptionsService {
                                      final SiteConfigPreferences siteConfigPreferences,
                                      final UserOptionsEntityService userOptionsEntityService,
                                      final PermissionsHelper permissionsHelper,
-                                     final ProfileService profileService) {
+                                     final JobTemplateService jobTemplateService) {
         this.jupyterHubPreferences = jupyterHubPreferences;
         this.userWorkspaceService = userWorkspaceService;
         this.searchHelperService = searchHelperService;
@@ -63,7 +66,7 @@ public class DefaultUserOptionsService implements UserOptionsService {
         this.siteConfigPreferences = siteConfigPreferences;
         this.userOptionsEntityService = userOptionsEntityService;
         this.permissionsHelper = permissionsHelper;
-        this.profileService = profileService;
+        this.jobTemplateService = jobTemplateService;
     }
 
     @Override
@@ -270,7 +273,7 @@ public class DefaultUserOptionsService implements UserOptionsService {
 
     @Override
     public void storeUserOptions(UserI user, String servername, String xsiType, String id, String projectId,
-                                 Long profileId, String eventTrackingId) {
+                                 Long computeSpecConfigId, Long hardwareConfigId, String eventTrackingId) {
         log.debug("Storing user options for user '{}' server '{}' xsiType '{}' id '{}' projectId '{}'",
                   user.getUsername(), servername, xsiType, id, projectId);
 
@@ -278,12 +281,8 @@ public class DefaultUserOptionsService implements UserOptionsService {
             return;
         }
 
-        Optional<Profile> profileOpt = profileService.get(profileId);
-        if (!profileOpt.isPresent()) {
-            return;
-        }
-
-        Profile profile = profileOpt.get();
+        // Resolve the job template before resolving the paths
+        JobTemplate jobTemplate = jobTemplateService.resolve(user.getUsername(), projectId, computeSpecConfigId, hardwareConfigId);
 
         // specific xsi type -> general xsi type
         if (instanceOf(xsiType, XnatExperimentdata.SCHEMA_ELEMENT_NAME)) {
@@ -344,7 +343,7 @@ public class DefaultUserOptionsService implements UserOptionsService {
         mounts.addAll(xnatDataMounts);
 
         // Add mounts
-        TaskTemplate taskTemplate = profile.getTaskTemplate();
+        TaskTemplate taskTemplate = toTaskTemplate(jobTemplate);
         taskTemplate.getContainerSpec().getMounts().addAll(mounts);
 
         // Get and add env variables
@@ -406,4 +405,87 @@ public class DefaultUserOptionsService implements UserOptionsService {
         }
     }
 
+    protected TaskTemplate toTaskTemplate(@NonNull JobTemplate jobTemplate) {
+        // Setup the TaskTemplate
+        ContainerSpec containerSpec = ContainerSpec
+                .builder()
+                .image("")
+                .env(new HashMap<>())
+                .labels(new HashMap<>())
+                .mounts(new ArrayList<>())
+                .build();
+
+        Resources resources = Resources.builder()
+                .genericResources(new HashMap<>())
+                .build();
+
+        Placement placement = new Placement(new ArrayList<>());
+
+        TaskTemplate taskTemplate = TaskTemplate.builder()
+                .containerSpec(containerSpec)
+                .resources(resources)
+                .placement(placement)
+                .build();
+
+        // Get the compute spec, hardware, and constraints from the job template
+        ComputeSpec computeSpec = jobTemplate.getComputeSpec();
+        Hardware hardware = jobTemplate.getHardware();
+        List<Constraint> constraints = jobTemplate.getConstraints();
+
+        // Build container spec for the task template
+        containerSpec.setImage(computeSpec.getImage());
+
+        // Add environment variables from compute spec and hardware
+        Map<String, String> environmentVariables = new HashMap<>();
+        Map<String, String> computeSpecEnvVars = computeSpec.getEnvironmentVariables().stream().collect(Collectors.toMap(EnvironmentVariable::getKey, EnvironmentVariable::getValue));
+        Map<String, String> hardwareEnvVars = hardware.getEnvironmentVariables().stream().collect(Collectors.toMap(EnvironmentVariable::getKey, EnvironmentVariable::getValue));
+
+        // check for empty otherwise putAll will throw an exception
+        if (!computeSpecEnvVars.isEmpty()) {
+            environmentVariables.putAll(computeSpecEnvVars);
+        }
+
+        // check for empty otherwise putAll will throw an exception
+        if (!hardwareEnvVars.isEmpty()) {
+            environmentVariables.putAll(hardwareEnvVars);
+        }
+
+        containerSpec.setEnv(environmentVariables);
+
+        // Add mounts from compute spec and hardware
+        // check for empty otherwise addAll will throw an exception
+        List<Mount> mounts = new ArrayList<>();
+        if (!computeSpec.getMounts().isEmpty()) {
+            mounts.addAll(computeSpec.getMounts().stream().map(mount -> {
+                return Mount.builder()
+                        .source(mount.getLocalPath())
+                        .target(mount.getContainerPath())
+                        .type(StringUtils.isEmpty(mount.getVolumeName()) ? "bind" : "volume")
+                        .readOnly(mount.isReadOnly())
+                        .build();
+            }).collect(Collectors.toList()));
+        }
+
+        containerSpec.setMounts(mounts);
+
+        // Build resources
+        resources.setCpuReservation(hardware.getCpuReservation());
+        resources.setCpuLimit(hardware.getCpuLimit());
+        resources.setMemReservation(hardware.getMemoryReservation());
+        resources.setMemLimit(hardware.getMemoryLimit());
+
+        if (!hardware.getGenericResources().isEmpty()) {
+            resources.setGenericResources((hardware.getGenericResources().stream().collect(Collectors.toMap(GenericResource::getName, GenericResource::getValue))));
+        }
+        // Build placement
+        if (!hardware.getConstraints().isEmpty()) {
+            placement.getConstraints().addAll(hardware.getConstraints().stream().flatMap(constraint -> constraint.toList().stream()).collect(Collectors.toList()));
+        }
+
+        if (constraints != null && !constraints.isEmpty()) {
+            placement.getConstraints().addAll(constraints.stream().flatMap(constraint -> constraint.toList().stream()).collect(Collectors.toList()));
+        }
+
+        return taskTemplate;
+    }
 }

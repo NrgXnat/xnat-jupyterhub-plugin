@@ -1,10 +1,10 @@
 package org.nrg.xnatx.plugins.jupyterhub.config;
 
+import org.nrg.jobtemplates.services.JobTemplateService;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.services.SearchHelperServiceI;
 import org.nrg.xdat.services.AliasTokenService;
 import org.nrg.xnatx.plugins.jupyterhub.preferences.JupyterHubPreferences;
-import org.nrg.xnatx.plugins.jupyterhub.services.ProfileService;
 import org.nrg.xnatx.plugins.jupyterhub.services.UserOptionsEntityService;
 import org.nrg.xnatx.plugins.jupyterhub.services.UserWorkspaceService;
 import org.nrg.xnatx.plugins.jupyterhub.services.impl.DefaultUserOptionsService;
@@ -25,7 +25,7 @@ public class DefaultUserOptionsServiceConfig {
                                                                final SiteConfigPreferences mockSiteConfigPreferences,
                                                                final UserOptionsEntityService mockUserOptionsEntityService,
                                                                final PermissionsHelper mockPermissionsHelper,
-                                                               final ProfileService profileService) {
+                                                               final JobTemplateService mockJobTemplateService) {
         return new DefaultUserOptionsService(mockJupyterHubPreferences,
                                              mockUserWorkspaceService,
                                              mockSearchHelperService,
@@ -33,7 +33,7 @@ public class DefaultUserOptionsServiceConfig {
                                              mockSiteConfigPreferences,
                                              mockUserOptionsEntityService,
                                              mockPermissionsHelper,
-                                             profileService);
+                                             mockJobTemplateService);
     }
 
 }

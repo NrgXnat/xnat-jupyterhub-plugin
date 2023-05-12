@@ -26,18 +26,13 @@ XNAT.plugin.jupyterhub.servers.user_options = getObject(XNAT.plugin.jupyterhub.s
 
     let restUrl = XNAT.url.restUrl;
 
-    let newServerUrl = XNAT.plugin.jupyterhub.servers.newServerUrl = function(username, servername, xsiType, itemId,
-                                                                              itemLabel, projectId, eventTrackingId,
-                                                                              profileId) {
+    let newServerUrl = XNAT.plugin.jupyterhub.servers.newServerUrl = function (username, servername) {
         let url = `/xapi/jupyterhub/users/${username}/server`;
 
-        // if (servername !== '') {
+        // if (servername && servername !== "") {
         //     url = `${url}/${servername}`;
         // }
-
-        url = `${url}?xsiType=${xsiType}&itemId=${itemId}&itemLabel=${itemLabel}&eventTrackingId=${eventTrackingId}&profileId=${profileId}`;
-        if (projectId) url = `${url}&projectId=${projectId}`;
-
+        
         return restUrl(url);
     }
 
@@ -181,10 +176,7 @@ XNAT.plugin.jupyterhub.servers.user_options = getObject(XNAT.plugin.jupyterhub.s
         console.debug(`jupyterhub-servers.js: XNAT.plugin.jupyterhub.servers.startServer`);
         console.debug(`Launching jupyter server. User: ${username}, Server Name: ${servername}, XSI Type: ${xsiType}, ID: ${itemId}, Label: ${itemLabel}, Project ID: ${projectId}, eventTrackingId: ${eventTrackingId}`);
 
-        XNAT.plugin.jupyterhub.profiles.getAll().then(profiles => {
-            // filter out disabled configurations
-            profiles = profiles.filter(c => c['enabled'] === true);
-            
+        XNAT.plugin.jobTemplates.computeSpecConfigs.available("JUPYTERHUB", username, projectId).then(computeSpecConfigs => {
             const cancelButton = {
                 label: 'Cancel',
                 isDefault: false,
@@ -194,16 +186,62 @@ XNAT.plugin.jupyterhub.servers.user_options = getObject(XNAT.plugin.jupyterhub.s
             const startButton = {
                 label: 'Start Jupyter',
                 isDefault: true,
-                close: true,
+                close: false,
                 action: function(obj) {
-                    const profile = obj.$modal.find('#profile').val();
-                    const profileId = profiles.filter(c => c['name'] === profile)[0]['id'];
+                    const computeSpecConfigId = document.querySelector('select#compute-spec-config').value;
+                    const hardwareConfigId = document.querySelector('select#hardware-config').value;
+                    
+                    if (!computeSpecConfigId) {
+                        XNAT.dialog.open({
+                            width: 450,
+                            title: "Error",
+                            content: "Please select a Jupyter environment.",
+                            buttons: [
+                                {
+                                    label: 'OK',
+                                    isDefault: true,
+                                    close: true,
+                                }
+                            ]
+                        });
+                        
+                        return;
+                    }
+                    
+                    if (!hardwareConfigId) {
+                        XNAT.dialog.open({
+                            width: 450,
+                            title: "Error",
+                            content: "Please select a hardware configuration.",
+                            buttons: [
+                                {
+                                    label: 'OK',
+                                    isDefault: true,
+                                    close: true,
+                                }
+                            ]
+                        });
+                        
+                        return;
+                    }
+                    
+                    const serverStartRequest = {
+                        'username': username,
+                        'servername': '', // Not supported yet
+                        'xsiType': xsiType,
+                        'itemId': itemId,
+                        'itemLabel': itemLabel,
+                        'projectId': projectId,
+                        'eventTrackingId': eventTrackingId,
+                        'computeSpecConfigId': computeSpecConfigId,
+                        'hardwareConfigId': hardwareConfigId,
+                    }
         
                     XNAT.xhr.ajax({
-                        url: newServerUrl(username, servername, xsiType, itemId, itemLabel,
-                            projectId, eventTrackingId, profileId),
+                        url: newServerUrl(username, servername),
                         method: 'POST',
                         contentType: 'application/json',
+                        data: JSON.stringify(serverStartRequest),
                         beforeSend: function () {
                             XNAT.app.activityTab.start(
                                 'Start Jupyter Notebook Server' +
@@ -215,95 +253,115 @@ XNAT.plugin.jupyterhub.servers.user_options = getObject(XNAT.plugin.jupyterhub.s
                             console.error(`Failed to send Jupyter server request: ${error}`)
                         }
                     });
+                    
+                    xmodal.closeAll();
+                    XNAT.ui.dialog.closeAll();
                 }
             }
             
-            const buttons = (profiles.length === 0) ? [cancelButton] : [cancelButton, startButton];
+            const buttons = (computeSpecConfigs.length === 0) ? [cancelButton] : [cancelButton, startButton];
             
             XNAT.dialog.open({
-                title: 'Select Jupyter Profile',
-                content: spawn('form'),
+                title: 'Start Jupyter',
+                content: spawn('form#server-start-request-form'),
                 maxBtn: true,
-                width: 750,
+                width: 500,
                 beforeShow: function(obj) {
-                    if (profiles.length === 0) {
-                        obj.$modal.find('.xnat-dialog-content').html('<div class="error">No Jupyter profiles are configured or enabled. Please contact your XNAT administrator.</div>');
+                    const form = document.getElementById('server-start-request-form');
+                    form.classList.add('panel');
+                    
+                    if (computeSpecConfigs.length === 0) {
+                        obj.$modal.find('.xnat-dialog-content').html('<div class="error">No compute specs are available for Jupyter. Please contact your administrator.</div>');
                         return;
                     }
                     
-                    let configOptions = profiles.map(c => c['name'])
-                                                      .map(c => [{value: c}])
-                                                      .flat();
-                    
-                    // spawn new image form
-                    const formContainer$ = obj.$modal.find('.xnat-dialog-content');
-                    formContainer$.addClass('panel');
-                    
-                    let initialProfile = {
-                        name: profiles[0]['name'],
-                        description: profiles[0]['description'],
-                        image: profiles[0]['task_template']['container_spec']['image'],
-                        cpuLimit: profiles[0]['task_template']['resources']['cpu_limit'] ? profiles[0]['task_template']['resources']['cpu_limit'] : 'No Limit',
-                        cpuReservation: profiles[0]['task_template']['resources']['cpu_reservation'] ? profiles[0]['task_template']['resources']['cpu_reservation'] : 'No Reservation',
-                        get cpu() {
-                            return `${this.cpuReservation} / ${this.cpuLimit}`;
-                        },
-                        memoryLimit: profiles[0]['task_template']['resources']['mem_limit'] ? profiles[0]['task_template']['resources']['mem_limit'] : 'No Limit',
-                        memoryReservation: profiles[0]['task_template']['resources']['mem_reservation'] ? profiles[0]['task_template']['resources']['mem_reservation'] : 'No Reservation',
-                        get memory() {
-                            return `${this.memoryReservation} / ${this.memoryLimit}`;
+                    let xnatData = spawn('div.xnat-data', {
+                        style: {
+                            marginTop: '10px',
+                            marginBottom: '40px',
                         }
-                    }
-    
-                    obj.$modal.find('form').append(
-                        spawn('!', [
-                            XNAT.ui.panel.select.single({
-                                name: 'profile',
-                                id: 'profile',
-                                options: configOptions,
-                                label: 'Profile',
-                                required: true,
-                                description: "Select the Jupyter profile to use. This will determine the Docker image, computing resources, and other configuration options used for your Jupyter notebook server."
-                            }).element,
-                            XNAT.ui.panel.element({
-                                label: 'Description',
-                                html: `<p class="profile-description">${initialProfile.description}</p>`,
-                            }).element,
-                            XNAT.ui.panel.element({
-                                label: 'Image',
-                                html: `<p class="profile-image">${initialProfile.image}</p><div class="description">The Docker image that will be used to launch your Jupyter notebook server.</div>`,
-                            }).element,
-                            XNAT.ui.panel.element({
-                                label: 'CPU Reservation / Limit',
-                                html: `<p class="profile-cpu">${initialProfile.cpu}</p><div class="description">The reservation is the minimum amount of CPU resources that will be guaranteed to your server. The limit is the maximum amount of CPU resources that will be allocated to your server.</div>`,
-                            }).element,
-                            XNAT.ui.panel.element({
-                                label: 'Memory Reservation / Limit',
-                                html: `<p class="profile-memory">${initialProfile.memory}</p><div class="description">The reservation is the minimum amount of memory resources that will be guaranteed to your server. The limit is the maximum amount of memory resources that will be allocated to your server.</div>`,
-                            }).element,
-                        ])
-                    );
+                    }, [
+                        spawn('h2', 'XNAT Data'),
+                        spawn('p.xnat-data-row.description', 'The following data will be available to your Jupyter Notebook Server'),
+                        spawn('p.xnat-data-row.project', [
+                            spawn('strong', 'Project '), projectId,
+                        ]),
+                        spawn('p.xnat-data-row.subject', [
+                            spawn('strong', 'Subject '), itemLabel,
+                        ]),
+                        spawn('p.xnat-data-row.experiment', [
+                            spawn('strong', 'Experiment '), itemLabel,
+                        ]),
+                    ]);
                     
-                    let profileSelector = document.getElementById('profile');
-                    profileSelector.addEventListener('change', () => {
-                        let description = document.querySelector('.profile-description');
-                        let profile = profiles.filter(c => c['name'] === profileSelector.value)[0];
-                        description.innerHTML = profile['description'];
-                        
-                        let image = document.querySelector('.profile-image');
-                        image.innerHTML = profile['task_template']['container_spec']['image'];
-                        
-                        let cpu = document.querySelector('.profile-cpu');
-                        let cpuLimit = profile['task_template']['resources']['cpu_limit'] ? profile['task_template']['resources']['cpu_limit'] : 'No Limit';
-                        let cpuReservation = profile['task_template']['resources']['cpu_reservation'] ? profile['task_template']['resources']['cpu_reservation'] : 'No Reservation';
-                        cpu.innerHTML = `${cpuReservation} / ${cpuLimit}`;
-                        
-                        let memory = document.querySelector('.profile-memory');
-                        let memoryLimit = profile['task_template']['resources']['mem_limit'] ? profile['task_template']['resources']['mem_limit'] : 'No Limit';
-                        let memoryReservation = profile['task_template']['resources']['mem_reservation'] ? profile['task_template']['resources']['mem_reservation'] : 'No Reservation';
-                        memory.innerHTML = `${memoryReservation} / ${memoryLimit}`;
+                    xnatData.querySelectorAll('strong').forEach(s => {
+                        s.style.display = 'inline-block';
+                        s.style.width = '90px';
                     });
                     
+                    if (xsiType === 'xnat:experimentData') {
+                        xnatData.querySelector('p.project').remove();
+                        xnatData.querySelector('p.subject').remove();
+                    } else if (xsiType === 'xnat:subjectData') {
+                        xnatData.querySelector('p.project').remove();
+                        xnatData.querySelector('p.experiment').remove();
+                    } else if (xsiType === 'xnat:projectData') {
+                        xnatData.querySelector('p.subject').remove();
+                        xnatData.querySelector('p.experiment').remove();
+                    }
+                    
+                    let computeSpecConfigSelect = spawn('div', { style : { marginTop: '20px', marginBottom: '40px', } }, [
+                        spawn('h2', 'Jupyter Environment'),
+                        spawn('p.description', 'Select from the list of Jupyter environments available to you. This determines the software available to your Jupyter notebook server.'),
+                        spawn('select#compute-spec-config', [
+                            spawn('option', {value: ''}, 'Select a Jupyter environment'),
+                            ...computeSpecConfigs.map(c => spawn('option', {value: c['id']}, c['computeSpec']['name'])),
+                        ])]
+                    );
+
+                    let hardwareConfigSelect = spawn('div', { style : { marginTop: '20px', marginBottom: '40px', } }, [
+                        spawn('h2', 'Hardware'),
+                        spawn('p.description', 'Select from the list of available Hardware. This determines the memory, CPU and other hardware resources available to your Jupyter notebook server.'),
+                        spawn('select#hardware-config', [
+                            spawn('option', {value: ''}, 'Select Hardware'),
+                        ])]
+                    );
+                    
+                    form.appendChild(spawn('!', [
+                        xnatData,
+                        computeSpecConfigSelect,
+                        hardwareConfigSelect
+                    ]));
+                    
+                    computeSpecConfigSelect.querySelector('select').addEventListener('change', () => {
+                        let hardwareSelect = document.getElementById('hardware-config');
+                        hardwareSelect.innerHTML = '';
+                        hardwareSelect.appendChild(spawn('option', {value: ''}, 'Select Hardware'));
+                        let computeSpecConfig = computeSpecConfigs.filter(c => c['id'].toString() === computeSpecConfigSelect.querySelector('select').value)[0];
+                        let hardwareConfigs = computeSpecConfig['hardwareOptions']['hardwareConfigs'];
+                        hardwareConfigs.forEach(h => {
+                            hardwareSelect.appendChild(spawn('option', {value: h['id']}, h['hardware']['name']));
+                        });
+                    });
+                    
+                    form.style.marginLeft = '30px';
+                    form.style.marginRight = '30px';
+                    
+                    form.querySelectorAll('p.description').forEach(p => {
+                        p.style.marginTop = '0';
+                        p.style.marginBottom = '15px';
+                        p.style.color = '#777';
+                    });
+                    
+                    form.querySelectorAll('h2').forEach(h => {
+                        h.style.marginTop = '0';
+                        h.style.marginBottom = '5px';
+                        h.style.color = '#222';
+                    });
+                    
+                    form.querySelectorAll('select').forEach(s => {
+                        s.style.width = '100%';
+                    });
                 },
                 buttons: buttons
             });

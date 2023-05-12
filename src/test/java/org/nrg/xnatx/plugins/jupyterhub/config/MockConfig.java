@@ -5,6 +5,9 @@ import org.nrg.framework.configuration.ConfigPaths;
 import org.nrg.framework.services.NrgEventServiceI;
 import org.nrg.framework.services.SerializerService;
 import org.nrg.framework.utilities.OrderedProperties;
+import org.nrg.jobtemplates.services.ComputeSpecConfigService;
+import org.nrg.jobtemplates.services.HardwareConfigService;
+import org.nrg.jobtemplates.services.JobTemplateService;
 import org.nrg.prefs.services.NrgPreferenceService;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.services.*;
@@ -70,11 +73,6 @@ public class MockConfig {
     }
 
     @Bean
-    public ProfileEntityService mockProfileEntityService() {
-        return Mockito.mock(ProfileEntityService.class);
-    }
-
-    @Bean
     public PermissionsServiceI mockPermissionsService() {
         return Mockito.mock(PermissionsServiceI.class);
     }
@@ -82,11 +80,6 @@ public class MockConfig {
     @Bean
     public UserOptionsService mockUserOptionsService() {
         return Mockito.mock(UserOptionsService.class);
-    }
-
-    @Bean
-    public ProfileService mockProfileService() {
-        return Mockito.mock(ProfileService.class);
     }
 
     @Bean
@@ -149,5 +142,20 @@ public class MockConfig {
     @Bean
     public XnatAppInfo mockXnatAppInfo() {
         return Mockito.mock(XnatAppInfo.class);
+    }
+
+    @Bean
+    public ComputeSpecConfigService mockComputeSpecConfigService() {
+        return Mockito.mock(ComputeSpecConfigService.class);
+    }
+
+    @Bean
+    public HardwareConfigService mockHardwareConfigService() {
+        return Mockito.mock(HardwareConfigService.class);
+    }
+
+    @Bean
+    public JobTemplateService mockJobTemplateService() {
+        return Mockito.mock(JobTemplateService.class);
     }
 }
