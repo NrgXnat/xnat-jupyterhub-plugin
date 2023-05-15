@@ -50,7 +50,7 @@ public class DefaultJupyterHubClient implements JupyterHubClient {
             log.trace("JupyterHub version received.");
             return response.getBody();
         } catch (Exception e) {
-            log.error("", e);
+            log.debug("Unable to get JupyterHub version", e);
             throw new RuntimeException(e);
         }
     }
@@ -101,7 +101,7 @@ public class DefaultJupyterHubClient implements JupyterHubClient {
 
             return response.getBody();
         } catch (RestClientException e) {
-            log.error("Unable to create user on JupyterHub", e);
+            log.debug("Unable to create user on JupyterHub", e);
             throw new RuntimeException(e);
         }
     }
@@ -127,7 +127,7 @@ public class DefaultJupyterHubClient implements JupyterHubClient {
 
             return Arrays.asList(response.getBody());
         } catch (RestClientException e) {
-            log.error("Unable to get users from JupyterHub", e);
+            log.debug("Unable to get users from JupyterHub", e);
             throw new RuntimeException(e);
         }
     }
@@ -154,11 +154,11 @@ public class DefaultJupyterHubClient implements JupyterHubClient {
                 log.debug("User {} does not exist on JupyterHub", username);
                 return Optional.empty();
             } else {
-                log.error("Unable to get user " + username + " from JupyterHub", e);
+                log.debug("Unable to get user " + username + " from JupyterHub", e);
                 throw new RuntimeException(e);
             }
         } catch (Exception e) {
-            log.error("Unable to get user " + username + " from JupyterHub", e);
+            log.debug("Unable to get user " + username + " from JupyterHub", e);
             throw new RuntimeException(e);
         }
     }
@@ -230,7 +230,7 @@ public class DefaultJupyterHubClient implements JupyterHubClient {
                 throw new RuntimeException(msg);
             }
         } catch (RestClientException e) {
-            log.error("Failed to start Jupyter Server " + servername + " for user " + username, e);
+            log.debug("Failed to start Jupyter Server " + servername + " for user " + username, e);
             throw new RuntimeException(e);
         }
     }
@@ -261,7 +261,7 @@ public class DefaultJupyterHubClient implements JupyterHubClient {
             if (e.getStatusCode() == HttpStatus.NOT_FOUND) {
                 log.debug("User {} / Server {} not found.", username, servername);
             } else {
-                log.error("Failed to stop Jupyter server", e);
+                log.debug("Failed to stop Jupyter server", e);
                 throw e;
             }
         }
@@ -295,7 +295,7 @@ public class DefaultJupyterHubClient implements JupyterHubClient {
             log.debug("Token created for user {}", username);
             return response.getBody();
         } catch (Exception e) {
-            log.error("Unable to create token for user " + username, e);
+            log.debug("Unable to create token for user " + username, e);
             throw new RuntimeException(e);
         }
     }

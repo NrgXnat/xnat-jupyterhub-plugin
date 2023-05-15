@@ -20,11 +20,10 @@
             <fileNamePattern>${xnat.home}/logs/job-templates.log.%d{yyyy-MM-dd}</fileNamePattern>
         </rollingPolicy>
     </appender>
-    <!--    TODO: Dont release with Logger on DEBUG-->
-    <logger name="org.nrg.xnatx.plugins.jupyterhub" additivity="false" level="DEBUG">
+    <logger name="org.nrg.xnatx.plugins.jupyterhub" additivity="false" level="INFO">
         <appender-ref ref="jupyterhub"/>
     </logger>
-    <logger name="org.nrg.jobtemplates" additivity="false" level="DEBUG">
+    <logger name="org.nrg.jobtemplates" additivity="false" level="INFO">
         <appender-ref ref="jobTemplates"/>
     </logger>
 </configuration>
