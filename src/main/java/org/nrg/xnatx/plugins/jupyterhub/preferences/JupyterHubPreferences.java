@@ -135,34 +135,60 @@ public class JupyterHubPreferences extends AbstractPreferenceBean {
     }
 
     @NrgPreference(defaultValue = "")
-    public String getPathTranslationXnatPrefix() {
-        return getValue("pathTranslationXnatPrefix");
+    public String getPathTranslationArchivePrefix() {
+        return getValue("pathTranslationArchivePrefix");
     }
 
-    public void setPathTranslationXnatPrefix(final String pathTranslationXnatPrefix) {
+    public void setPathTranslationArchivePrefix(final String pathTranslationArchivePrefix) {
         try {
-            set(pathTranslationXnatPrefix, "pathTranslationXnatPrefix");
+            set(pathTranslationArchivePrefix, "pathTranslationArchivePrefix");
         } catch (InvalidPreferenceName e) {
-            log.error("Invalid preference name 'pathTranslationXnatPrefix': something is very wrong here.", e);
+            log.error("Invalid preference name 'pathTranslationArchivePrefix': something is very wrong here.", e);
         }
     }
 
     @NrgPreference(defaultValue = "")
-    public String getPathTranslationDockerPrefix() {
-        return getValue("pathTranslationDockerPrefix");
+    public String getPathTranslationArchiveDockerPrefix() {
+        return getValue("pathTranslationArchiveDockerPrefix");
     }
 
-    public void setPathTranslationDockerPrefix(final String pathTranslationDockerPrefix) {
+    public void setPathTranslationArchiveDockerPrefix(final String pathTranslationArchiveDockerPrefix) {
         try {
-            set(pathTranslationDockerPrefix, "pathTranslationDockerPrefix");
+            set(pathTranslationArchiveDockerPrefix, "pathTranslationArchiveDockerPrefix");
         } catch (InvalidPreferenceName e) {
-            log.error("Invalid preference name 'pathTranslationDockerPrefix': something is very wrong here.", e);
+            log.error("Invalid preference name 'pathTranslationArchiveDockerPrefix': something is very wrong here.", e);
         }
     }
 
     @NrgPreference(defaultValue = "/data/xnat/workspaces")
     public String getWorkspacePath() {
         return getValue("workspacePath");
+    }
+
+    @NrgPreference(defaultValue = "")
+    public String getPathTranslationWorkspacePrefix() {
+        return getValue("pathTranslationWorkspacePrefix");
+    }
+
+    public void setPathTranslationWorkspacePrefix(final String pathTranslationWorkspacePrefix) {
+        try {
+            set(pathTranslationWorkspacePrefix, "pathTranslationWorkspacePrefix");
+        } catch (InvalidPreferenceName e) {
+            log.error("Invalid preference name 'pathTranslationWorkspacePrefix': something is very wrong here.", e);
+        }
+    }
+
+    @NrgPreference(defaultValue = "")
+    public String getPathTranslationWorkspaceDockerPrefix() {
+        return getValue("pathTranslationWorkspaceDockerPrefix");
+    }
+
+    public void setPathTranslationWorkspaceDockerPrefix(final String pathTranslationWorkspaceDockerPrefix) {
+        try {
+            set(pathTranslationWorkspaceDockerPrefix, "pathTranslationWorkspaceDockerPrefix");
+        } catch (InvalidPreferenceName e) {
+            log.error("Invalid preference name 'pathTranslationWorkspaceDockerPrefix': something is very wrong here.", e);
+        }
     }
 
     public void setWorkspacePath(final String workspacePath) {

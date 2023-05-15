@@ -1,25 +1,67 @@
 package org.nrg.xnatx.plugins.jupyterhub.services.impl;
 
 import org.apache.commons.lang3.StringUtils;
+import org.junit.After;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mockito;
 import org.nrg.jobtemplates.models.*;
 import org.nrg.xnatx.plugins.jupyterhub.config.DefaultUserOptionsServiceConfig;
 import org.nrg.xnatx.plugins.jupyterhub.models.docker.TaskTemplate;
+import org.nrg.xnatx.plugins.jupyterhub.preferences.JupyterHubPreferences;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.util.*;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.when;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = DefaultUserOptionsServiceConfig.class)
 public class DefaultUserOptionsServiceTest {
 
     @Autowired private DefaultUserOptionsService userOptionsService;
+    @Autowired private JupyterHubPreferences mockJupyterHubPreferences;
+
+    @After
+    public void after() {
+        Mockito.reset(
+                mockJupyterHubPreferences
+        );
+    }
+
+    @Test
+    public void testPathTranslationArchive() {
+        // Setup mocks
+        when(mockJupyterHubPreferences.getPathTranslationArchivePrefix()).thenReturn("/data/xnat/archive");
+        when(mockJupyterHubPreferences.getPathTranslationArchiveDockerPrefix()).thenReturn("/docker/data/xnat/archive");
+        when(mockJupyterHubPreferences.getPathTranslationWorkspacePrefix()).thenReturn("/data/xnat/workspaces");
+        when(mockJupyterHubPreferences.getPathTranslationWorkspaceDockerPrefix()).thenReturn("/docker/data/xnat/workspaces");
+
+        // Test archive path translation
+        String translated = userOptionsService.translateArchivePath("/data/xnat/archive/Project1");
+
+        // Verify archive path translation
+        assertThat(translated, is(("/docker/data/xnat/archive/Project1")));
+    }
+
+    @Test
+    public void testPathTranslationWorkspace() {
+        // Setup mocks
+        when(mockJupyterHubPreferences.getPathTranslationArchivePrefix()).thenReturn("/data/xnat/archive");
+        when(mockJupyterHubPreferences.getPathTranslationArchiveDockerPrefix()).thenReturn("/docker/data/xnat/archive");
+        when(mockJupyterHubPreferences.getPathTranslationWorkspacePrefix()).thenReturn("/data/xnat/workspaces");
+        when(mockJupyterHubPreferences.getPathTranslationWorkspaceDockerPrefix()).thenReturn("/docker/data/xnat/workspaces");
+
+        // Test workspace path translation
+        String translated = userOptionsService.translateWorkspacePath("/data/xnat/workspaces/users/andy");
+
+        // Verify workspace path translation
+        assertThat(translated, is(("/docker/data/xnat/workspaces/users/andy")));
+    }
 
     @Test
     public void testToTaskTemplate() {

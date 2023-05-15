@@ -321,7 +321,7 @@ public class DefaultUserOptionsService implements UserOptionsService {
 
         // Add user workspace mount
         final Mount userNotebookDirectoryMount = Mount.builder()
-                .source(translatePath(workspacePath.toString()))
+                .source(translateWorkspacePath(workspacePath.toString()))
                 .target(Paths.get("/workspace", user.getUsername()).toString())
                 .type("bind")
                 .readOnly(false)
@@ -330,7 +330,7 @@ public class DefaultUserOptionsService implements UserOptionsService {
         // Add xnat data mounts
         final List<Mount> xnatDataMounts = paths.entrySet().stream()
                 .map((entry) -> Mount.builder()
-                        .source(translatePath(entry.getValue()))
+                        .source(translateArchivePath(entry.getValue()))
                         .target(Paths.get(entry.getKey()).toString())
                         .type("bind")
                         .readOnly(true)
@@ -364,12 +364,35 @@ public class DefaultUserOptionsService implements UserOptionsService {
         userOptionsEntityService.createOrUpdate(userOptionsEntity);
     }
 
-    private String translatePath(String path) {
-        String pathTranslationXnatPrefix = jupyterHubPreferences.getPathTranslationXnatPrefix();
-        String pathTranslationDockerPrefix = jupyterHubPreferences.getPathTranslationDockerPrefix();
+    /**
+     * Translate paths within the archive to paths within the docker container
+     * @param path the path to translate, must be the archive path or a subdirectory of the archive path
+     * @return the translated path
+     */
+    protected String translateArchivePath(String path) {
+        String pathTranslationArchivePrefix = jupyterHubPreferences.getPathTranslationArchivePrefix();
+        String pathTranslationArchiveDockerPrefix = jupyterHubPreferences.getPathTranslationArchiveDockerPrefix();
 
-        if (!StringUtils.isEmpty(pathTranslationXnatPrefix) && !StringUtils.isEmpty(pathTranslationDockerPrefix)) {
-            return path.replace(pathTranslationXnatPrefix, pathTranslationDockerPrefix);
+        if (StringUtils.isNotBlank(pathTranslationArchivePrefix) &&
+            StringUtils.isNotBlank(pathTranslationArchiveDockerPrefix)) {
+            return path.replace(pathTranslationArchivePrefix, pathTranslationArchiveDockerPrefix);
+        } else {
+            return path;
+        }
+    }
+
+    /**
+     * Translate paths within the workspace to paths within the docker container
+     * @param path the path to translate, must be the workspace path or a subdirectory of the workspace path
+     * @return  the translated path
+     */
+    protected String translateWorkspacePath(String path) {
+        String pathTranslationWorkspacePrefix = jupyterHubPreferences.getPathTranslationWorkspacePrefix();
+        String pathTranslationWorkspaceDockerPrefix = jupyterHubPreferences.getPathTranslationWorkspaceDockerPrefix();
+
+        if (StringUtils.isNotBlank(pathTranslationWorkspacePrefix) &&
+            StringUtils.isNotBlank(pathTranslationWorkspaceDockerPrefix)) {
+            return path.replace(pathTranslationWorkspacePrefix, pathTranslationWorkspaceDockerPrefix);
         } else {
             return path;
         }

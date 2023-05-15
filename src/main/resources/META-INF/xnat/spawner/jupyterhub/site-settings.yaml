@@ -61,21 +61,37 @@ stopPollingInterval:
   description: >
     The rate (in seconds) at which to poll JupyterHub to check if the single-user server has stopped.
 
-pathTranslationXnatPrefix:
+pathTranslationArchivePrefix:
   kind: panel.input.text
-  id: pathTranslationXnatPrefix
-  name: pathTranslationXnatPrefix
-  label: Path Translation XNAT Prefix
+  id: pathTranslationArchivePrefix
+  name: pathTranslationArchivePrefix
+  label: Path Translation XNAT Archive Prefix
   description: >
-    (Optional) Enter the XNAT_HOME server path, i.e. "/data/xnat"
+    (Optional) Enter the XNAT archive path as seen by XNAT, i.e. "/data/xnat/archive"
 
-pathTranslationDockerPrefix:
+pathTranslationArchiveDockerPrefix:
+    kind: panel.input.text
+    id: pathTranslationArchiveDockerPrefix
+    name: pathTranslationArchiveDockerPrefix
+    label: Path Translation Docker Archive Prefix
+    description: >
+        (Optional) Enter the Docker Server path to the XNAT archive mount, i.e. "/docker/my-data/XNAT/archive"
+
+pathTranslationWorkspacePrefix:
   kind: panel.input.text
-  id: pathTranslationDockerPrefix
-  name: pathTranslationDockerPrefix
-  label: Path Translation Docker Prefix
+  id: pathTranslationWorkspacePrefix
+  name: pathTranslationWorkspacePrefix
+  label: Path Translation User Workspace Prefix
   description: >
-    (Optional) Enter the Docker Server path to the XNAT_HOME mount, i.e. "/docker/my-data/XNAT"
+    (Optional) Enter the user workspace path as seen by XNAT, i.e. "/data/xnat/workspaces"
+
+pathTranslationWorkspaceDockerPrefix:
+    kind: panel.input.text
+    id: pathTranslationWorkspaceDockerPrefix
+    name: pathTranslationWorkspaceDockerPrefix
+    label: Path Translation Docker User Workspace Prefix
+    description: >
+        (Optional) Enter the Docker Server path to the user workspace mount, i.e. "/docker/my-data/XNAT/workspaces"
 
 inactivityTimeout:
   kind: panel.input.number
@@ -229,9 +245,11 @@ jupyterhubPreferences:
     ${stopTimeout}
     ${inactivityTimeout}
     ${maxServerLifetime}
-    ${pathTranslationXnatPrefix}
-    ${pathTranslationDockerPrefix}
     ${workspacePath}
+    ${pathTranslationArchivePrefix}
+    ${pathTranslationArchiveDockerPrefix}
+    ${pathTranslationWorkspacePrefix}
+    ${pathTranslationWorkspaceDockerPrefix}
 
 jupyterHubUserActivity:
   kind: panel
