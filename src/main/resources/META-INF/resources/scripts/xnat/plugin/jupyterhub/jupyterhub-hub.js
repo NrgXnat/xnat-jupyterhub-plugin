@@ -88,7 +88,7 @@ XNAT.plugin.jupyterhub.hub = getObject(XNAT.plugin.jupyterhub.hub || {});
         hubTable.tr()
             .th({addClass: 'left', html: '<b>API Path</b>'})
             .th('<b>Status</b>')
-            .th('<b>Version</b>')
+            .th('<b>Hub Version</b>')
             .th('<b>Actions</b>')
 
         function editButton() {

@@ -114,8 +114,8 @@ public class JupyterHubEnvironmentsAndHardwareInitializer extends AbstractInitia
                 .build();
 
         // Set the ComputeSpec values
-        computeSpec.setName("Jupyter Datascience Notebook");
-        computeSpec.setImage("jupyter/datascience-notebook:hub-3.0.0");
+        computeSpec.setName("XNAT Datascience Notebook");
+        computeSpec.setImage("xnat/datascience-notebook:latest");
         computeSpec.setEnvironmentVariables(new ArrayList<>());
         computeSpec.setMounts(new ArrayList<>());
 
