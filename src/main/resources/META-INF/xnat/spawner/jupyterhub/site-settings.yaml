@@ -259,7 +259,8 @@ jupyterHubUserActivity:
     jupyterHubActivityDescription:
       tag: div.message
       contents:
-        "This panel lists any active Jupyter users and the status of their Jupyter notebook servers."
+        "This panel lists any active JupyterHub users and the status of their Jupyter notebook servers. You can
+         stop a user's Jupyter notebook server and view the settings for the user's Jupyter notebook server."
     jupyterHubActivityTable:
       tag: "div#jupyterhub-user-activity-table"
     imagePreferencesScript:

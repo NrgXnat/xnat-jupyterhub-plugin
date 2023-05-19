@@ -201,7 +201,7 @@ XNAT.plugin.jupyterhub.users.tokens = getObject(XNAT.plugin.jupyterhub.users.tok
                     usersTable.tr()
                               .td([spawn('div.left', [name])])
                               .td([spawn('div.center', [hasServer ? serverDialog(user['name'], servers['']) : ''])])
-                              .td([spawn('div.center', [ready])])
+                              .td([spawn('div.center', [ready ? spawn('i.fa.fa-check') : ''])])
                               .td([spawn('div.center', [started.toLocaleString()])])
                               .td([spawn('div.center', [lastActivity.toLocaleString()])])
                               .td([spawn('div.center', [hasServer ? stopServerButton(name, '') : ''])]);
