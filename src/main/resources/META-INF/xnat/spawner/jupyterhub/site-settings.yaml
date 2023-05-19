@@ -259,8 +259,10 @@ jupyterHubUserActivity:
     jupyterHubActivityDescription:
       tag: div.message
       contents:
-        "This panel lists any active JupyterHub users and the status of their Jupyter notebook servers. You can
-         stop a user's Jupyter notebook server and view the settings for the user's Jupyter notebook server."
+        "The User Activity panel displays all JupyterHub users and their active Jupyter notebook servers. You can stop 
+        a user's server and also view a server's configuration details. The Started column indicates the server's launch 
+        time, while the Last Activity column approximates the user's most recent interaction with the server. The Ready 
+        column indicates whether the server is up and running or is in the process of starting or stopping."
     jupyterHubActivityTable:
       tag: "div#jupyterhub-user-activity-table"
     imagePreferencesScript:
