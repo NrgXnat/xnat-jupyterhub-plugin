@@ -70,8 +70,8 @@ public class MigratePathTranslationPreference extends AbstractInitializingTask {
                             continue;
                         }
 
-                        jupyterHubPreferences.setPathTranslationArchivePrefix(properties.getProperty(key));
-                        jupyterHubPreferences.setPathTranslationWorkspacePrefix(properties.getProperty(key));
+                        jupyterHubPreferences.setPathTranslationArchivePrefix(properties.getProperty(key) + "/archive");
+                        jupyterHubPreferences.setPathTranslationWorkspacePrefix(properties.getProperty(key) + "/workspaces");
                         log.debug("Migrated pathTranslationXnatPrefix preference.");
 
                         nrgPreferenceService.deletePreference(JupyterHubPreferences.TOOL_ID, key);
@@ -83,8 +83,8 @@ public class MigratePathTranslationPreference extends AbstractInitializingTask {
                             continue;
                         }
 
-                        jupyterHubPreferences.setPathTranslationArchiveDockerPrefix(properties.getProperty(key));
-                        jupyterHubPreferences.setPathTranslationWorkspaceDockerPrefix(properties.getProperty(key));
+                        jupyterHubPreferences.setPathTranslationArchiveDockerPrefix(properties.getProperty(key) + "/archive");
+                        jupyterHubPreferences.setPathTranslationWorkspaceDockerPrefix(properties.getProperty(key) + "/workspaces");
                         log.debug("Migrated pathTranslationDockerPrefix preference.");
 
                         nrgPreferenceService.deletePreference(JupyterHubPreferences.TOOL_ID, key);

@@ -101,8 +101,8 @@ public class MigratePathTranslationPreferenceTest {
         when(mockXnatAppInfo.isInitialized()).thenReturn(true);
 
         Properties properties = new Properties();
-        properties.setProperty("pathTranslationXnatPrefix", "/data/pixi/archive");
-        properties.setProperty("pathTranslationDockerPrefix", "/data/xnat/archive");
+        properties.setProperty("pathTranslationXnatPrefix", "/data/pixi");
+        properties.setProperty("pathTranslationDockerPrefix", "/data/xnat");
 
         when(mockNrgPreferenceService.getToolProperties(any())).thenReturn(properties);
 
@@ -111,9 +111,9 @@ public class MigratePathTranslationPreferenceTest {
 
         // Verify migration
         verify(mockJupyterHubPreferences).setPathTranslationArchivePrefix("/data/pixi/archive");
-        verify(mockJupyterHubPreferences).setPathTranslationWorkspacePrefix("/data/pixi/archive");
+        verify(mockJupyterHubPreferences).setPathTranslationWorkspacePrefix("/data/pixi/workspaces");
         verify(mockJupyterHubPreferences).setPathTranslationArchiveDockerPrefix("/data/xnat/archive");
-        verify(mockJupyterHubPreferences).setPathTranslationWorkspaceDockerPrefix("/data/xnat/archive");
+        verify(mockJupyterHubPreferences).setPathTranslationWorkspaceDockerPrefix("/data/xnat/workspaces");
 
         // Verify deletion of old preferences
         verify(mockNrgPreferenceService).deletePreference(JupyterHubPreferences.TOOL_ID, "pathTranslationXnatPrefix");
