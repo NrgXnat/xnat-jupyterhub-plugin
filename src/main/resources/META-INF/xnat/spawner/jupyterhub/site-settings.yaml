@@ -138,12 +138,12 @@ userAuthorization:
         style:
           marginBottom: 24px
         html:
-          Users with access to Jupyter will be able to run arbitrary code from within their Jupyter notebook container.
-          Individual users may be authorized to start Jupyter containers or all users (excluding guest users) can be
-          authorized to start Jupyter containers.
+          Users with access to Jupyter will be able to run arbitrary code from within their Jupyter servers.
+          Individual users may be authorized to start Jupyter servers or all users (excluding guest users) can be
+          authorized to start Jupyter servers.
     allowAllToggle:
       kind: panel.input.switchbox
-      label: "All Users Can Start Jupyter"
+      label: "Enable Jupyter for all users"
       name: allowAll
       id: allowAll
       onText: false
