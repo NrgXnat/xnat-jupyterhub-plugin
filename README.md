@@ -1,29 +1,24 @@
-# README #
+# XNAT JupyterHub Plugin
 
-This README would normally document whatever steps are necessary to get your application up and running.
+[XNAT](https://www.xnat.org) plugin for integrating with [JupyterHub](https://jupyter.org/hub).
 
-### What is this repository for? ###
+See the [XNAT JupyterHub Plugin Wiki](https://wiki.xnat.org/jupyter-integration) for the latest documentation on this 
+plugin.
 
-* Quick summary
-* Version
-* [Learn Markdown](https://bitbucket.org/tutorials/markdowndemo)
+## Building the JAR
 
-### How do I get set up? ###
+To build the JAR, run the following command from the root of the project:
 
-* Summary of set up
-* Configuration
-* Dependencies
-* Database configuration
-* How to run tests
-* Deployment instructions
+```bash
+./gradlew clean jar
+```
 
-### Contribution guidelines ###
+The JAR will be built in the `build/libs` directory.
 
-* Writing tests
-* Code review
-* Other guidelines
+## Running the tests
 
-### Who do I talk to? ###
+To run the tests, run the following command from the root of the project:
 
-* Repo owner or admin
-* Other community or team contact
+```bash
+./gradlew clean test
+```
