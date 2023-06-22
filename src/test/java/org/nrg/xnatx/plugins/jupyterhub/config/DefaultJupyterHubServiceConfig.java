@@ -1,7 +1,7 @@
 package org.nrg.xnatx.plugins.jupyterhub.config;
 
 import org.nrg.framework.services.NrgEventServiceI;
-import org.nrg.jobtemplates.services.JobTemplateService;
+import org.nrg.xnat.compute.services.JobTemplateService;
 import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.nrg.xnatx.plugins.jupyterhub.client.JupyterHubClient;
 import org.nrg.xnatx.plugins.jupyterhub.preferences.JupyterHubPreferences;

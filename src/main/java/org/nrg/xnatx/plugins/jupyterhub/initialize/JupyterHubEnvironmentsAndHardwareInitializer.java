@@ -2,9 +2,9 @@ package org.nrg.xnatx.plugins.jupyterhub.initialize;
 
 import lombok.extern.slf4j.Slf4j;
 import org.nrg.framework.constants.Scope;
-import org.nrg.jobtemplates.models.*;
-import org.nrg.jobtemplates.services.ComputeSpecConfigService;
-import org.nrg.jobtemplates.services.HardwareConfigService;
+import org.nrg.xnat.compute.models.*;
+import org.nrg.xnat.compute.services.ComputeSpecConfigService;
+import org.nrg.xnat.compute.services.HardwareConfigService;
 import org.nrg.xnat.initialization.tasks.AbstractInitializingTask;
 import org.nrg.xnat.initialization.tasks.InitializingTaskException;
 import org.nrg.xnat.services.XnatAppInfo;

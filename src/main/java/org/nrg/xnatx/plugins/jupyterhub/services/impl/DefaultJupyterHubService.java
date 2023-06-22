@@ -3,7 +3,7 @@ package org.nrg.xnatx.plugins.jupyterhub.services.impl;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.services.NrgEventServiceI;
-import org.nrg.jobtemplates.services.JobTemplateService;
+import org.nrg.xnat.compute.services.JobTemplateService;
 import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.nrg.xdat.security.user.exceptions.UserInitException;
 import org.nrg.xft.security.UserI;

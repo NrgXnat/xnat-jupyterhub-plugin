@@ -179,13 +179,13 @@ jupyterEnvironments:
     computeSpecsTable:
       tag: "div#jupyterhub-compute-spec-configs-table"
     computeSpecsScript:
-      tag: script|src="~/scripts/xnat/plugin/jobTemplates/compute-spec-configs.js"
+      tag: script|src="~/scripts/xnat/plugin/compute/compute-spec-configs.js"
     hardwareConfigsScript:
-      tag: script|src="~/scripts/xnat/plugin/jobTemplates/hardware-configs.js"
+      tag: script|src="~/scripts/xnat/plugin/compute/hardware-configs.js"
     renderComputeSpecsTable:
       tag: script
       content: >
-        XNAT.plugin.jobTemplates.computeSpecConfigs.manager('jupyterhub-compute-spec-configs-table', 'JUPYTERHUB');
+        XNAT.compute.computeSpecConfigs.manager('jupyterhub-compute-spec-configs-table', 'JUPYTERHUB');
 
 hardwareConfigs:
     kind: panel
@@ -203,11 +203,11 @@ hardwareConfigs:
       hardwareConfigsTable:
         tag: "div#jupyterhub-hardware-configs-table"
       hardwareConfigsScript:
-        tag: script|src="~/scripts/xnat/plugin/jobTemplates/hardware-configs.js"
+        tag: script|src="~/scripts/xnat/plugin/compute/hardware-configs.js"
       renderHardwareConfigsTable:
         tag: script
         content: >
-          XNAT.plugin.jobTemplates.hardwareConfigs.manager('jupyterhub-hardware-configs-table');
+          XNAT.compute.hardwareConfigs.manager('jupyterhub-hardware-configs-table');
 
 constraints:
   kind: panel
@@ -225,12 +225,12 @@ constraints:
     constraintsTable:
       tag: "div#jupyterhub-constraints-table"
     constraintsScript:
-      tag: script|src="~/scripts/xnat/plugin/jobTemplates/constraint-configs.js"
+      tag: script|src="~/scripts/xnat/plugin/compute/constraint-configs.js"
     renderConstraintsTable:
       tag: script
       content: >
         console.log('rendering constraints table');
-        XNAT.plugin.jobTemplates.constraintConfigs.manager('jupyterhub-constraints-table');
+        XNAT.compute.constraintConfigs.manager('jupyterhub-constraints-table');
 
 jupyterhubPreferences:
   kind: panel.form

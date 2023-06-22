@@ -8,7 +8,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mockito;
 import org.nrg.framework.services.NrgEventServiceI;
-import org.nrg.jobtemplates.services.JobTemplateService;
+import org.nrg.xnat.compute.services.JobTemplateService;
 import org.nrg.xdat.om.XnatExperimentdata;
 import org.nrg.xdat.om.XnatImagescandata;
 import org.nrg.xdat.om.XnatProjectdata;

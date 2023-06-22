@@ -1,6 +1,6 @@
 package org.nrg.xnatx.plugins.jupyterhub.config;
 
-import org.nrg.jobtemplates.services.JobTemplateService;
+import org.nrg.xnat.compute.services.JobTemplateService;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.services.SearchHelperServiceI;
 import org.nrg.xdat.services.AliasTokenService;

@@ -1,7 +1,7 @@
 package org.nrg.xnatx.plugins.jupyterhub.config;
 
-import org.nrg.jobtemplates.services.ComputeSpecConfigService;
-import org.nrg.jobtemplates.services.HardwareConfigService;
+import org.nrg.xnat.compute.services.ComputeSpecConfigService;
+import org.nrg.xnat.compute.services.HardwareConfigService;
 import org.nrg.xnat.services.XnatAppInfo;
 import org.nrg.xnatx.plugins.jupyterhub.initialize.JupyterHubEnvironmentsAndHardwareInitializer;
 import org.nrg.xnatx.plugins.jupyterhub.utils.XFTManagerHelper;

@@ -5,7 +5,7 @@ import org.junit.After;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
-import org.nrg.jobtemplates.models.*;
+import org.nrg.xnat.compute.models.*;
 import org.nrg.xnatx.plugins.jupyterhub.config.DefaultUserOptionsServiceConfig;
 import org.nrg.xnatx.plugins.jupyterhub.models.docker.TaskTemplate;
 import org.nrg.xnatx.plugins.jupyterhub.preferences.JupyterHubPreferences;

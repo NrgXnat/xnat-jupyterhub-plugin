@@ -1,10 +1,8 @@
 package org.nrg.xnatx.plugins.jupyterhub.services.impl;
 
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import lombok.NonNull;
-import org.nrg.jobtemplates.models.*;
-import org.nrg.jobtemplates.services.JobTemplateService;
 import org.nrg.xdat.entities.AliasToken;
 import org.nrg.xdat.model.XnatSubjectassessordataI;
 import org.nrg.xdat.om.*;
@@ -17,6 +15,8 @@ import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.security.UserI;
+import org.nrg.xnat.compute.models.*;
+import org.nrg.xnat.compute.services.JobTemplateService;
 import org.nrg.xnat.exceptions.InvalidArchiveStructure;
 import org.nrg.xnatx.plugins.jupyterhub.entities.UserOptionsEntity;
 import org.nrg.xnatx.plugins.jupyterhub.models.XnatUserOptions;

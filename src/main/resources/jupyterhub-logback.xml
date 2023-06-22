@@ -10,20 +10,20 @@
             <fileNamePattern>${xnat.home}/logs/xnat-jupyterhub-plugin.log.%d{yyyy-MM-dd}</fileNamePattern>
         </rollingPolicy>
     </appender>
-    <appender name="jobTemplates" class="ch.qos.logback.core.rolling.RollingFileAppender">
+    <appender name="compute" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <append>true</append>
-        <file>${xnat.home}/logs/job-templates.log</file>
+        <file>${xnat.home}/logs/compute.log</file>
         <encoder>
             <pattern>%d [%t] %-5p %c - %m%n</pattern>
         </encoder>
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-            <fileNamePattern>${xnat.home}/logs/job-templates.log.%d{yyyy-MM-dd}</fileNamePattern>
+            <fileNamePattern>${xnat.home}/logs/compute.log.%d{yyyy-MM-dd}</fileNamePattern>
         </rollingPolicy>
     </appender>
     <logger name="org.nrg.xnatx.plugins.jupyterhub" additivity="false" level="INFO">
         <appender-ref ref="jupyterhub"/>
     </logger>
-    <logger name="org.nrg.jobtemplates" additivity="false" level="INFO">
-        <appender-ref ref="jobTemplates"/>
+    <logger name="org.nrg.xnat.compute" additivity="false" level="INFO">
+        <appender-ref ref="compute"/>
     </logger>
 </configuration>
