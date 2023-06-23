@@ -20,6 +20,6 @@ public interface UserOptionsService {
 
     Optional<XnatUserOptions> retrieveUserOptions(UserI user);
     Optional<XnatUserOptions> retrieveUserOptions(UserI user, String servername);
-    void storeUserOptions(UserI user, String servername, String xsiType, String id, String projectId, Long computeSpecConfigId, Long hardwareConfigId, String eventTrackingId);
+    void storeUserOptions(UserI user, String servername, String xsiType, String id, String projectId, Long computeEnvironmentConfigId, Long hardwareConfigId, String eventTrackingId);
 
 }

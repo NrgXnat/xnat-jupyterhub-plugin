@@ -3,7 +3,7 @@ package org.nrg.xnat.compute.entities;
 import lombok.*;
 import org.nrg.framework.constants.Scope;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
-import org.nrg.xnat.compute.models.ComputeSpecConfig;
+import org.nrg.xnat.compute.models.ComputeEnvironmentConfig;
 
 import javax.persistence.*;
 import java.util.HashSet;
@@ -17,13 +17,13 @@ import java.util.stream.Collectors;
 @NoArgsConstructor
 @ToString
 @EqualsAndHashCode(callSuper = true)
-public class ComputeSpecConfigEntity extends AbstractHibernateEntity {
+public class ComputeEnvironmentConfigEntity extends AbstractHibernateEntity {
 
     private Set<String> configTypes;
 
-    private ComputeSpecEntity computeSpec;
-    private Map<Scope, ComputeSpecScopeEntity> scopes;
-    private ComputeSpecHardwareOptionsEntity hardwareOptions;
+    private ComputeEnvironmentEntity computeEnvironment;
+    private Map<Scope, ComputeEnvironmentScopeEntity> scopes;
+    private ComputeEnvironmentHardwareOptionsEntity hardwareOptions;
 
     @ElementCollection
     public Set<String> getConfigTypes() {
@@ -38,31 +38,31 @@ public class ComputeSpecConfigEntity extends AbstractHibernateEntity {
         this.configTypes = configTypes;
     }
 
-    @OneToOne(mappedBy = "computeSpecConfig", cascade = CascadeType.ALL, orphanRemoval = true)
-    public ComputeSpecEntity getComputeSpec() {
-        return computeSpec;
+    @OneToOne(mappedBy = "computeEnvironmentConfig", cascade = CascadeType.ALL, orphanRemoval = true)
+    public ComputeEnvironmentEntity getComputeEnvironment() {
+        return computeEnvironment;
     }
 
-    public void setComputeSpec(ComputeSpecEntity computeSpec) {
-        computeSpec.setComputeSpecConfig(this);
-        this.computeSpec = computeSpec;
+    public void setComputeEnvironment(ComputeEnvironmentEntity computeEnvironment) {
+        computeEnvironment.setComputeEnvironmentConfig(this);
+        this.computeEnvironment = computeEnvironment;
     }
 
-    @OneToMany(mappedBy = "computeSpecConfig", cascade = CascadeType.ALL, orphanRemoval = true)
-    public Map<Scope, ComputeSpecScopeEntity> getScopes() {
+    @OneToMany(mappedBy = "computeEnvironmentConfig", cascade = CascadeType.ALL, orphanRemoval = true)
+    public Map<Scope, ComputeEnvironmentScopeEntity> getScopes() {
         return scopes;
     }
 
-    public void setScopes(Map<Scope, ComputeSpecScopeEntity> scopes) {
+    public void setScopes(Map<Scope, ComputeEnvironmentScopeEntity> scopes) {
         this.scopes = scopes;
     }
 
-    @OneToOne(mappedBy = "computeSpecConfig", cascade = CascadeType.ALL, orphanRemoval = true)
-    public ComputeSpecHardwareOptionsEntity getHardwareOptions() {
+    @OneToOne(mappedBy = "computeEnvironmentConfig", cascade = CascadeType.ALL, orphanRemoval = true)
+    public ComputeEnvironmentHardwareOptionsEntity getHardwareOptions() {
         return hardwareOptions;
     }
 
-    public void setHardwareOptions(ComputeSpecHardwareOptionsEntity hardwareOptions) {
+    public void setHardwareOptions(ComputeEnvironmentHardwareOptionsEntity hardwareOptions) {
         this.hardwareOptions = hardwareOptions;
     }
 
@@ -71,8 +71,8 @@ public class ComputeSpecConfigEntity extends AbstractHibernateEntity {
      * @param pojo The pojo to create the entity from
      * @return The newly created entity
      */
-    public static ComputeSpecConfigEntity fromPojo(final ComputeSpecConfig pojo) {
-        final ComputeSpecConfigEntity entity = new ComputeSpecConfigEntity();
+    public static ComputeEnvironmentConfigEntity fromPojo(final ComputeEnvironmentConfig pojo) {
+        final ComputeEnvironmentConfigEntity entity = new ComputeEnvironmentConfigEntity();
         entity.update(pojo);
         return entity;
     }
@@ -81,14 +81,14 @@ public class ComputeSpecConfigEntity extends AbstractHibernateEntity {
      * Creates a new pojo from the entity.
      * @return The pojo created from the entity
      */
-    public ComputeSpecConfig toPojo() {
-        return ComputeSpecConfig.builder()
+    public ComputeEnvironmentConfig toPojo() {
+        return ComputeEnvironmentConfig.builder()
                 .id(getId())
                 .configTypes(getConfigTypes()
                                      .stream()
-                                     .map(ComputeSpecConfig.ConfigType::valueOf)
+                                     .map(ComputeEnvironmentConfig.ConfigType::valueOf)
                                      .collect(Collectors.toSet()))
-                .computeSpec(getComputeSpec().toPojo())
+                .computeEnvironment(getComputeEnvironment().toPojo())
                 .scopes(getScopes()
                                 .entrySet()
                                 .stream()
@@ -102,18 +102,18 @@ public class ComputeSpecConfigEntity extends AbstractHibernateEntity {
      * many-to-many relationship and needs to be handled separately.
      * @param pojo The pojo to update the entity with
      */
-    public void update(final ComputeSpecConfig pojo) {
+    public void update(final ComputeEnvironmentConfig pojo) {
         setConfigTypes(pojo.getConfigTypes()
                               .stream()
                               .map(Enum::name)
                               .collect(Collectors.toSet()));
 
-        if (getComputeSpec() == null) {
-            // This is a new entity, so we need to create the computeSpec entity
-            setComputeSpec(ComputeSpecEntity.fromPojo(pojo.getComputeSpec()));
+        if (getComputeEnvironment() == null) {
+            // This is a new entity, so we need to create the computeEnvironment entity
+            setComputeEnvironment(ComputeEnvironmentEntity.fromPojo(pojo.getComputeEnvironment()));
         } else {
-            // This is an existing entity, so we need to update the computeSpec entity
-            getComputeSpec().update(pojo.getComputeSpec());
+            // This is an existing entity, so we need to update the computeEnvironment entity
+            getComputeEnvironment().update(pojo.getComputeEnvironment());
         }
 
         if (getScopes() == null) {
@@ -121,20 +121,20 @@ public class ComputeSpecConfigEntity extends AbstractHibernateEntity {
             setScopes(pojo.getScopes()
                               .entrySet()
                               .stream()
-                              .collect(Collectors.toMap(Map.Entry::getKey, e -> ComputeSpecScopeEntity.fromPojo(e.getValue()))));
+                              .collect(Collectors.toMap(Map.Entry::getKey, e -> ComputeEnvironmentScopeEntity.fromPojo(e.getValue()))));
         } else {
             // This is an existing entity, so we need to update the scopes entities
             getScopes().forEach((key, value) -> value.update(pojo.getScopes().get(key)));
         }
 
-        // Set the computeSpecConfig on the scopes
-        getScopes().values().forEach(s -> s.setComputeSpecConfig(this));
+        // Set the computeEnvironmentConfig on the scopes
+        getScopes().values().forEach(s -> s.setComputeEnvironmentConfig(this));
 
         if (getHardwareOptions() == null) {
             // This is a new entity, so we need to create the hardwareOptions entity
-            ComputeSpecHardwareOptionsEntity computeSpecHardwareOptionsEntity = ComputeSpecHardwareOptionsEntity.fromPojo(pojo.getHardwareOptions());
-            setHardwareOptions(computeSpecHardwareOptionsEntity);
-            computeSpecHardwareOptionsEntity.setComputeSpecConfig(this);
+            ComputeEnvironmentHardwareOptionsEntity computeEnvironmentHardwareOptionsEntity = ComputeEnvironmentHardwareOptionsEntity.fromPojo(pojo.getHardwareOptions());
+            setHardwareOptions(computeEnvironmentHardwareOptionsEntity);
+            computeEnvironmentHardwareOptionsEntity.setComputeEnvironmentConfig(this);
         } else {
             // This is an existing entity, so we need to update the hardwareOptions entity
             getHardwareOptions().update(pojo.getHardwareOptions());

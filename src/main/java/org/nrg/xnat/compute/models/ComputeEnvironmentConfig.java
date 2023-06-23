@@ -14,13 +14,13 @@ import java.util.Set;
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
-public class ComputeSpecConfig {
+public class ComputeEnvironmentConfig {
 
     @ApiModelProperty(position = 0) private Long id;
     @ApiModelProperty(position = 1) private Set<ConfigType> configTypes;
-    @ApiModelProperty(position = 2) private ComputeSpec computeSpec;
-    @ApiModelProperty(position = 3) private Map<Scope, ComputeSpecScope> scopes;
-    @ApiModelProperty(position = 4) private ComputeSpecHardwareOptions hardwareOptions;
+    @ApiModelProperty(position = 2) private ComputeEnvironment computeEnvironment;
+    @ApiModelProperty(position = 3) private Map<Scope, ComputeEnvironmentScope> scopes;
+    @ApiModelProperty(position = 4) private ComputeEnvironmentHardwareOptions hardwareOptions;
 
     public enum ConfigType {
         JUPYTERHUB,

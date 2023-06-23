@@ -1,7 +1,7 @@
 package org.nrg.xnat.compute.entities;
 
 import lombok.*;
-import org.nrg.xnat.compute.models.ComputeSpecHardwareOptions;
+import org.nrg.xnat.compute.models.ComputeEnvironmentHardwareOptions;
 
 import javax.persistence.*;
 import java.util.HashSet;
@@ -14,11 +14,11 @@ import java.util.stream.Collectors;
 @NoArgsConstructor
 @ToString
 @EqualsAndHashCode
-public class ComputeSpecHardwareOptionsEntity {
+public class ComputeEnvironmentHardwareOptionsEntity {
 
     private long id;
 
-    @ToString.Exclude @EqualsAndHashCode.Exclude private ComputeSpecConfigEntity computeSpecConfig;
+    @ToString.Exclude @EqualsAndHashCode.Exclude private ComputeEnvironmentConfigEntity computeEnvironmentConfig;
 
     private boolean allowAllHardware;
     private Set<HardwareConfigEntity> hardwareConfigs;
@@ -34,12 +34,12 @@ public class ComputeSpecHardwareOptionsEntity {
 
     @OneToOne
     @MapsId
-    public ComputeSpecConfigEntity getComputeSpecConfig() {
-        return computeSpecConfig;
+    public ComputeEnvironmentConfigEntity getComputeEnvironmentConfig() {
+        return computeEnvironmentConfig;
     }
 
-    public void setComputeSpecConfig(ComputeSpecConfigEntity computeSpecConfig) {
-        this.computeSpecConfig = computeSpecConfig;
+    public void setComputeEnvironmentConfig(ComputeEnvironmentConfigEntity computeEnvironmentConfig) {
+        this.computeEnvironmentConfig = computeEnvironmentConfig;
     }
 
     public boolean isAllowAllHardware() {
@@ -51,8 +51,8 @@ public class ComputeSpecHardwareOptionsEntity {
     }
 
     @ManyToMany
-    @JoinTable(name = "compute_spec_hardware_options_hardware_config",
-               joinColumns = @JoinColumn(name = "compute_spec_hardware_options_id"),
+    @JoinTable(name = "compute_environment_hardware_options_hardware_config",
+               joinColumns = @JoinColumn(name = "compute_environment_hardware_options_id"),
                inverseJoinColumns = @JoinColumn(name = "hardware_config_id"))
     public Set<HardwareConfigEntity> getHardwareConfigs() {
         return hardwareConfigs;
@@ -81,8 +81,8 @@ public class ComputeSpecHardwareOptionsEntity {
      * @param pojo The pojo to create the entity from.
      * @return The newly created entity.
      */
-    public static ComputeSpecHardwareOptionsEntity fromPojo(final ComputeSpecHardwareOptions pojo) {
-        final ComputeSpecHardwareOptionsEntity entity = new ComputeSpecHardwareOptionsEntity();
+    public static ComputeEnvironmentHardwareOptionsEntity fromPojo(final ComputeEnvironmentHardwareOptions pojo) {
+        final ComputeEnvironmentHardwareOptionsEntity entity = new ComputeEnvironmentHardwareOptionsEntity();
         entity.update(pojo);
         return entity;
     }
@@ -91,8 +91,8 @@ public class ComputeSpecHardwareOptionsEntity {
      * Creates a new pojo from the given entity.
      * @return The newly created pojo.
      */
-    public ComputeSpecHardwareOptions toPojo() {
-        return ComputeSpecHardwareOptions.builder()
+    public ComputeEnvironmentHardwareOptions toPojo() {
+        return ComputeEnvironmentHardwareOptions.builder()
                 .allowAllHardware(allowAllHardware)
                 .hardwareConfigs(hardwareConfigs.stream().map(HardwareConfigEntity::toPojo).collect(Collectors.toSet()))
                 .build();
@@ -102,7 +102,7 @@ public class ComputeSpecHardwareOptionsEntity {
      * Updates the entity with the values from the given pojo.
      * @param pojo The pojo to update the entity with.
      */
-    public void update(final ComputeSpecHardwareOptions pojo) {
+    public void update(final ComputeEnvironmentHardwareOptions pojo) {
         setAllowAllHardware(pojo.isAllowAllHardware());
 
         if (hardwareConfigs == null) {

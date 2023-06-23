@@ -2,7 +2,7 @@ package org.nrg.xnat.compute.entities;
 
 import lombok.*;
 import org.nrg.framework.constants.Scope;
-import org.nrg.xnat.compute.models.ComputeSpecScope;
+import org.nrg.xnat.compute.models.ComputeEnvironmentScope;
 
 import javax.persistence.*;
 import java.util.HashSet;
@@ -14,14 +14,14 @@ import java.util.Set;
 @NoArgsConstructor
 @ToString
 @EqualsAndHashCode
-public class ComputeSpecScopeEntity {
+public class ComputeEnvironmentScopeEntity {
 
     private long id;
     private String scope;
     private boolean enabled;
     private Set<String> ids;
 
-    @ToString.Exclude @EqualsAndHashCode.Exclude private ComputeSpecConfigEntity computeSpecConfig;
+    @ToString.Exclude @EqualsAndHashCode.Exclude private ComputeEnvironmentConfigEntity computeEnvironmentConfig;
 
     @Id
     @GeneratedValue
@@ -63,19 +63,19 @@ public class ComputeSpecScopeEntity {
     }
 
     @ManyToOne
-    public ComputeSpecConfigEntity getComputeSpecConfig() {
-        return computeSpecConfig;
+    public ComputeEnvironmentConfigEntity getComputeEnvironmentConfig() {
+        return computeEnvironmentConfig;
     }
 
-    public void setComputeSpecConfig(ComputeSpecConfigEntity computeSpecConfig) {
-        this.computeSpecConfig = computeSpecConfig;
+    public void setComputeEnvironmentConfig(ComputeEnvironmentConfigEntity computeEnvironmentConfig) {
+        this.computeEnvironmentConfig = computeEnvironmentConfig;
     }
 
     /**
      * Updates this entity with the values from the given pojo.
      * @param pojo The pojo to update from
      */
-    public void update(ComputeSpecScope pojo) {
+    public void update(ComputeEnvironmentScope pojo) {
         setScope(pojo.getScope().name());
         setEnabled(pojo.isEnabled());
 
@@ -91,8 +91,8 @@ public class ComputeSpecScopeEntity {
      * Converts this entity to a pojo.
      * @return The pojo
      */
-    public ComputeSpecScope toPojo() {
-        return ComputeSpecScope.builder()
+    public ComputeEnvironmentScope toPojo() {
+        return ComputeEnvironmentScope.builder()
                 .scope(Scope.valueOf(getScope()))
                 .enabled(isEnabled())
                 .ids(getIds())
@@ -104,8 +104,8 @@ public class ComputeSpecScopeEntity {
      * @param pojo The pojo to create from
      * @return The new entity
      */
-    public static ComputeSpecScopeEntity fromPojo(ComputeSpecScope pojo) {
-        final ComputeSpecScopeEntity entity = new ComputeSpecScopeEntity();
+    public static ComputeEnvironmentScopeEntity fromPojo(ComputeEnvironmentScope pojo) {
+        final ComputeEnvironmentScopeEntity entity = new ComputeEnvironmentScopeEntity();
         entity.update(pojo);
         return entity;
     }

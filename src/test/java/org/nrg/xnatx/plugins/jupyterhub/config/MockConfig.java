@@ -5,7 +5,7 @@ import org.nrg.framework.configuration.ConfigPaths;
 import org.nrg.framework.services.NrgEventServiceI;
 import org.nrg.framework.services.SerializerService;
 import org.nrg.framework.utilities.OrderedProperties;
-import org.nrg.xnat.compute.services.ComputeSpecConfigService;
+import org.nrg.xnat.compute.services.ComputeEnvironmentConfigService;
 import org.nrg.xnat.compute.services.HardwareConfigService;
 import org.nrg.xnat.compute.services.JobTemplateService;
 import org.nrg.prefs.services.NrgPreferenceService;
@@ -145,8 +145,8 @@ public class MockConfig {
     }
 
     @Bean
-    public ComputeSpecConfigService mockComputeSpecConfigService() {
-        return Mockito.mock(ComputeSpecConfigService.class);
+    public ComputeEnvironmentConfigService mockComputeEnvironmentConfigService() {
+        return Mockito.mock(ComputeEnvironmentConfigService.class);
     }
 
     @Bean

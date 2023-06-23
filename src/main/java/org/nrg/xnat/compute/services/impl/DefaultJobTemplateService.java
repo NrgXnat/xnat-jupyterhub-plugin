@@ -2,7 +2,7 @@ package org.nrg.xnat.compute.services.impl;
 
 import lombok.extern.slf4j.Slf4j;
 import org.nrg.xnat.compute.models.*;
-import org.nrg.xnat.compute.services.ComputeSpecConfigService;
+import org.nrg.xnat.compute.services.ComputeEnvironmentConfigService;
 import org.nrg.xnat.compute.services.ConstraintConfigService;
 import org.nrg.xnat.compute.services.HardwareConfigService;
 import org.nrg.xnat.compute.services.JobTemplateService;
@@ -16,77 +16,77 @@ import java.util.stream.Collectors;
 @Slf4j
 public class DefaultJobTemplateService implements JobTemplateService {
 
-    private final ComputeSpecConfigService computeSpecConfigService;
+    private final ComputeEnvironmentConfigService computeEnvironmentConfigService;
     private final HardwareConfigService hardwareConfigService;
     private final ConstraintConfigService constraintConfigService;
 
     @Autowired
-    public DefaultJobTemplateService(final ComputeSpecConfigService computeSpecConfigService,
+    public DefaultJobTemplateService(final ComputeEnvironmentConfigService computeEnvironmentConfigService,
                                      final HardwareConfigService hardwareConfigService,
                                      final ConstraintConfigService constraintConfigService) {
-        this.computeSpecConfigService = computeSpecConfigService;
+        this.computeEnvironmentConfigService = computeEnvironmentConfigService;
         this.hardwareConfigService = hardwareConfigService;
         this.constraintConfigService = constraintConfigService;
     }
 
     /**
-     * Returns true if the specified compute spec config and hardware config are available for the specified user and
-     * project and the hardware config is allowed by the compute spec config.
+     * Returns true if the specified compute environment config and hardware config are available for the specified user and
+     * project and the hardware config is allowed by the compute environment config.
      * @param user the user
      * @param project the project
-     * @param computeSpecConfigId the compute spec config id
+     * @param computeEnvironmentConfigId the compute environment config id
      * @param hardwareConfigId  the hardware config id
-     * @return true if the specified compute spec config and hardware config are available for the specified user and
-     * project and the hardware config is allowed by the compute spec config
+     * @return true if the specified compute environment config and hardware config are available for the specified user and
+     * project and the hardware config is allowed by the compute environment config
      */
     @Override
-    public boolean isAvailable(String user, String project, Long computeSpecConfigId, Long hardwareConfigId) {
-        if (user == null || project == null || computeSpecConfigId == null || hardwareConfigId == null) {
+    public boolean isAvailable(String user, String project, Long computeEnvironmentConfigId, Long hardwareConfigId) {
+        if (user == null || project == null || computeEnvironmentConfigId == null || hardwareConfigId == null) {
             throw new IllegalArgumentException("One or more parameters is null");
         }
 
-        boolean isComputeSpecConfigAvailable = computeSpecConfigService.isAvailable(user, project, computeSpecConfigId);
+        boolean isComputeEnvironmentConfigAvailable = computeEnvironmentConfigService.isAvailable(user, project, computeEnvironmentConfigId);
         boolean isHardwareConfigAvailable = hardwareConfigService.isAvailable(user, project, hardwareConfigId);
 
-        if (!isComputeSpecConfigAvailable || !isHardwareConfigAvailable) {
+        if (!isComputeEnvironmentConfigAvailable || !isHardwareConfigAvailable) {
             return false;
         }
 
-        ComputeSpecConfig computeSpecConfig = computeSpecConfigService
-                .retrieve(computeSpecConfigId)
-                .orElseThrow(() -> new IllegalArgumentException("ComputeSpecConfig with id " + computeSpecConfigId + " does not exist"));
+        ComputeEnvironmentConfig computeEnvironmentConfig = computeEnvironmentConfigService
+                .retrieve(computeEnvironmentConfigId)
+                .orElseThrow(() -> new IllegalArgumentException("ComputeEnvironmentConfig with id " + computeEnvironmentConfigId + " does not exist"));
 
-        if (computeSpecConfig.getHardwareOptions().isAllowAllHardware()) {
+        if (computeEnvironmentConfig.getHardwareOptions().isAllowAllHardware()) {
             return true;
         }
 
-        return computeSpecConfig.getHardwareOptions()
+        return computeEnvironmentConfig.getHardwareOptions()
                 .getHardwareConfigs().stream()
                 .map(HardwareConfig::getId)
                 .anyMatch(id -> id.equals(hardwareConfigId));
     }
 
     /**
-     * Returns a job template for the specified user, project, compute spec config, and hardware config.
+     * Returns a job template for the specified user, project, compute environment config, and hardware config.
      * @param user the user
      * @param project the project
-     * @param computeSpecConfigId the compute spec config id
+     * @param computeEnvironmentConfigId the compute environment config id
      * @param hardwareConfigId the hardware config id
-     * @return a job template complete with compute spec and hardware
+     * @return a job template complete with compute environment and hardware
      */
     @Override
-    public JobTemplate resolve(String user, String project, Long computeSpecConfigId, Long hardwareConfigId) {
-        if (user == null || project == null || computeSpecConfigId == null || hardwareConfigId == null) {
+    public JobTemplate resolve(String user, String project, Long computeEnvironmentConfigId, Long hardwareConfigId) {
+        if (user == null || project == null || computeEnvironmentConfigId == null || hardwareConfigId == null) {
             throw new IllegalArgumentException("One or more parameters is null");
         }
 
-        if (!isAvailable(user, project, computeSpecConfigId, hardwareConfigId)) {
-            throw new IllegalArgumentException("JobTemplate with user " + user + ", project " + project + ", computeSpecConfigId " + computeSpecConfigId + ", and hardwareConfigId " + hardwareConfigId + " is not available");
+        if (!isAvailable(user, project, computeEnvironmentConfigId, hardwareConfigId)) {
+            throw new IllegalArgumentException("JobTemplate with user " + user + ", project " + project + ", computeEnvironmentConfigId " + computeEnvironmentConfigId + ", and hardwareConfigId " + hardwareConfigId + " is not available");
         }
 
-        ComputeSpecConfig computeSpecConfig = computeSpecConfigService
-                .retrieve(computeSpecConfigId)
-                .orElseThrow(() -> new IllegalArgumentException("ComputeSpecConfig with id " + computeSpecConfigId + " does not exist"));
+        ComputeEnvironmentConfig computeEnvironmentConfig = computeEnvironmentConfigService
+                .retrieve(computeEnvironmentConfigId)
+                .orElseThrow(() -> new IllegalArgumentException("ComputeEnvironmentConfig with id " + computeEnvironmentConfigId + " does not exist"));
 
         HardwareConfig hardwareConfig = hardwareConfigService
                 .retrieve(hardwareConfigId)
@@ -97,7 +97,7 @@ public class DefaultJobTemplateService implements JobTemplateService {
                 .collect(Collectors.toList());
 
         JobTemplate jobTemplate = JobTemplate.builder()
-                .computeSpec(computeSpecConfig.getComputeSpec())
+                .computeEnvironment(computeEnvironmentConfig.getComputeEnvironment())
                 .hardware(hardwareConfig.getHardware())
                 .constraints(constraints)
                 .build();

@@ -114,11 +114,11 @@ public class DefaultUserOptionsServiceTest {
                 .readOnly(false)
                 .build();
 
-        // Setup first compute spec
-        ComputeSpec computeSpec1 = ComputeSpec.builder()
+        // Setup first compute environment
+        ComputeEnvironment computeEnvironment1 = ComputeEnvironment.builder()
                 .name("Jupyter Datascience Notebook")
                 .image("jupyter/datascience-notebook:hub-3.0.0")
-                .environmentVariables(Collections.singletonList(new EnvironmentVariable("COMPUTE_SPEC", "1")))
+                .environmentVariables(Collections.singletonList(new EnvironmentVariable("COMPUTE_ENV", "1")))
                 .mounts(Arrays.asList(mount1, mount2))
                 .build();
 
@@ -142,7 +142,7 @@ public class DefaultUserOptionsServiceTest {
 
         // Now create the job template
         JobTemplate template = JobTemplate.builder()
-                .computeSpec(computeSpec1)
+                .computeEnvironment(computeEnvironment1)
                 .hardware(hardware1)
                 .constraints(Arrays.asList(constraint1, constraint2, constraint3))
                 .build();
@@ -151,16 +151,16 @@ public class DefaultUserOptionsServiceTest {
         TaskTemplate result = userOptionsService.toTaskTemplate(template);
 
         // Verify the results
-        assertEquals(computeSpec1.getImage(), result.getContainerSpec().getImage());
+        assertEquals(computeEnvironment1.getImage(), result.getContainerSpec().getImage());
 
-        // Verify the environment variables from the hardware and compute spec are merged
+        // Verify the environment variables from the hardware and compute environment are merged
         Map<String, String> expectedEnv = new HashMap<>();
-        expectedEnv.put("COMPUTE_SPEC", "1");
+        expectedEnv.put("COMPUTE_ENV", "1");
         expectedEnv.put("MATLAB_LICENSE_FILE", "12345@myserver");
         expectedEnv.put("NVIDIA_VISIBLE_DEVICES", "all");
         assertEquals(expectedEnv, result.getContainerSpec().getEnv());
 
-        // Verify the mounts from the hardware and compute spec are merged
+        // Verify the mounts from the hardware and compute environment are merged
         assertEquals(2, result.getContainerSpec().getMounts().size());
         assertEquals("/data/xnat/archive/Project1", result.getContainerSpec().getMounts().get(0).getSource());
         assertEquals("/data/xnat/archive/Project1", result.getContainerSpec().getMounts().get(0).getTarget());

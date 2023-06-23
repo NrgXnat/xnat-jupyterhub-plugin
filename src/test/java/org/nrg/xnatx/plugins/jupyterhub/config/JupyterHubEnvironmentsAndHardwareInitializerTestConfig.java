@@ -1,6 +1,6 @@
 package org.nrg.xnatx.plugins.jupyterhub.config;
 
-import org.nrg.xnat.compute.services.ComputeSpecConfigService;
+import org.nrg.xnat.compute.services.ComputeEnvironmentConfigService;
 import org.nrg.xnat.compute.services.HardwareConfigService;
 import org.nrg.xnat.services.XnatAppInfo;
 import org.nrg.xnatx.plugins.jupyterhub.initialize.JupyterHubEnvironmentsAndHardwareInitializer;
@@ -16,12 +16,12 @@ public class JupyterHubEnvironmentsAndHardwareInitializerTestConfig {
     @Bean
     public JupyterHubEnvironmentsAndHardwareInitializer JupyterHubJobTemplateInitializer(final XFTManagerHelper mockXFTManagerHelper,
                                                                                          final XnatAppInfo mockXnatAppInfo,
-                                                                                         final ComputeSpecConfigService mockComputeSpecConfigService,
+                                                                                         final ComputeEnvironmentConfigService mockComputeEnvironmentConfigService,
                                                                                          final HardwareConfigService mockHardwareConfigService) {
         return new JupyterHubEnvironmentsAndHardwareInitializer(
                 mockXFTManagerHelper,
                 mockXnatAppInfo,
-                mockComputeSpecConfigService,
+                mockComputeEnvironmentConfigService,
                 mockHardwareConfigService
         );
     }

@@ -6,9 +6,9 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
-import org.nrg.xnat.compute.config.ComputeSpecConfigsApiConfig;
-import org.nrg.xnat.compute.models.ComputeSpecConfig;
-import org.nrg.xnat.compute.services.ComputeSpecConfigService;
+import org.nrg.xnat.compute.config.ComputeEnvironmentConfigsApiConfig;
+import org.nrg.xnat.compute.models.ComputeEnvironmentConfig;
+import org.nrg.xnat.compute.services.ComputeEnvironmentConfigService;
 import org.nrg.xdat.security.services.RoleServiceI;
 import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.nrg.xft.security.UserI;
@@ -35,20 +35,20 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebAppConfiguration
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(classes = {ComputeSpecConfigsApiConfig.class})
-public class ComputeSpecConfigsApiTest {
+@ContextConfiguration(classes = {ComputeEnvironmentConfigsApiConfig.class})
+public class ComputeEnvironmentConfigsApiTest {
 
     @Autowired private WebApplicationContext wac;
     @Autowired private ObjectMapper mapper;
     @Autowired private RoleServiceI mockRoleService;
     @Autowired private UserManagementServiceI mockUserManagementService;
-    @Autowired private ComputeSpecConfigService mockComputeSpecConfigService;
+    @Autowired private ComputeEnvironmentConfigService mockComputeEnvironmentConfigService;
 
     private MockMvc mockMvc;
     private UserI mockUser;
     private Authentication mockAuthentication;
 
-    private ComputeSpecConfig computeSpecConfig;
+    private ComputeEnvironmentConfig computeEnvironmentConfig;
 
     @Before
     public void before() throws Exception {
@@ -63,9 +63,9 @@ public class ComputeSpecConfigsApiTest {
         when(mockRoleService.isSiteAdmin(mockUser)).thenReturn(true);
         mockAuthentication = new TestingAuthenticationToken(mockUser, mockUser.getPassword());
 
-        // Setup the compute spec config
-        computeSpecConfig = new ComputeSpecConfig();
-        computeSpecConfig.setId(1L);
+        // Setup the compute environment config
+        computeEnvironmentConfig = new ComputeEnvironmentConfig();
+        computeEnvironmentConfig.setId(1L);
     }
 
     @After
@@ -73,15 +73,15 @@ public class ComputeSpecConfigsApiTest {
         Mockito.reset(
                 mockRoleService,
                 mockUserManagementService,
-                mockComputeSpecConfigService,
+                mockComputeEnvironmentConfigService,
                 mockUser
         );
     }
 
     @Test
-    public void testGetAllComputeSpecConfigs() throws Exception {
+    public void testGetAllComputeEnvironmentConfigs() throws Exception {
         final MockHttpServletRequestBuilder request = MockMvcRequestBuilders
-                .get("/compute-spec-configs")
+                .get("/compute-environment-configs")
                 .with(authentication(mockAuthentication))
                 .with(csrf())
                 .with(testSecurityContext());
@@ -89,14 +89,14 @@ public class ComputeSpecConfigsApiTest {
         mockMvc.perform(request).andExpect(status().isOk());
 
         // Verify that the service was called
-        verify(mockComputeSpecConfigService, times(1)).getAll();
-        verify(mockComputeSpecConfigService, never()).getByType(any());
+        verify(mockComputeEnvironmentConfigService, times(1)).getAll();
+        verify(mockComputeEnvironmentConfigService, never()).getByType(any());
     }
 
     @Test
-    public void testGetComputeSpecConfigsByType() throws Exception {
+    public void testGetComputeEnvironmentConfigsByType() throws Exception {
         final MockHttpServletRequestBuilder request = MockMvcRequestBuilders
-                .get("/compute-spec-configs")
+                .get("/compute-environment-configs")
                 .param("type", "JUPYTERHUB")
                 .with(authentication(mockAuthentication))
                 .with(csrf())
@@ -105,51 +105,51 @@ public class ComputeSpecConfigsApiTest {
         mockMvc.perform(request).andExpect(status().isOk());
 
         // Verify that the service was called
-        verify(mockComputeSpecConfigService, never()).getAll();
-        verify(mockComputeSpecConfigService, times(1)).getByType(any());
+        verify(mockComputeEnvironmentConfigService, never()).getAll();
+        verify(mockComputeEnvironmentConfigService, times(1)).getByType(any());
     }
 
     @Test
-    public void testGetComputeSpecConfigById() throws Exception {
+    public void testGetComputeEnvironmentConfigById() throws Exception {
         final MockHttpServletRequestBuilder request = MockMvcRequestBuilders
-                .get("/compute-spec-configs/1")
+                .get("/compute-environment-configs/1")
                 .accept(APPLICATION_JSON)
                 .with(authentication(mockAuthentication))
                 .with(csrf())
                 .with(testSecurityContext());
 
-        when(mockComputeSpecConfigService.retrieve(any())).thenReturn(Optional.of(computeSpecConfig));
+        when(mockComputeEnvironmentConfigService.retrieve(any())).thenReturn(Optional.of(computeEnvironmentConfig));
 
         mockMvc.perform(request).andExpect(status().isOk());
 
         // Verify that the service was called
-        verify(mockComputeSpecConfigService, times(1)).retrieve(any());
+        verify(mockComputeEnvironmentConfigService, times(1)).retrieve(any());
     }
 
     @Test
-    public void testGetComputeSpecConfigByIdNotFound() throws Exception {
+    public void testGetComputeEnvironmentConfigByIdNotFound() throws Exception {
         final MockHttpServletRequestBuilder request = MockMvcRequestBuilders
-                .get("/compute-spec-configs/1")
+                .get("/compute-environment-configs/1")
                 .accept(APPLICATION_JSON)
                 .with(authentication(mockAuthentication))
                 .with(csrf())
                 .with(testSecurityContext());
 
-        when(mockComputeSpecConfigService.retrieve(any())).thenReturn(Optional.empty());
+        when(mockComputeEnvironmentConfigService.retrieve(any())).thenReturn(Optional.empty());
 
         mockMvc.perform(request).andExpect(status().isNotFound());
 
         // Verify that the service was called
-        verify(mockComputeSpecConfigService, times(1)).retrieve(any());
+        verify(mockComputeEnvironmentConfigService, times(1)).retrieve(any());
     }
 
     @Test
-    public void testCreateComputeSpecConfig() throws Exception {
+    public void testCreateComputeEnvironmentConfig() throws Exception {
         final MockHttpServletRequestBuilder request = MockMvcRequestBuilders
-                .post("/compute-spec-configs")
+                .post("/compute-environment-configs")
                 .accept(APPLICATION_JSON)
                 .contentType(APPLICATION_JSON)
-                .content(mapper.writeValueAsString(new ComputeSpecConfig()))
+                .content(mapper.writeValueAsString(new ComputeEnvironmentConfig()))
                 .with(authentication(mockAuthentication))
                 .with(csrf())
                 .with(testSecurityContext());
@@ -157,35 +157,35 @@ public class ComputeSpecConfigsApiTest {
         mockMvc.perform(request).andExpect(status().isCreated());
 
         // Verify that the service was called
-        verify(mockComputeSpecConfigService, times(1)).create(any());
+        verify(mockComputeEnvironmentConfigService, times(1)).create(any());
     }
 
     @Test
-    public void testUpdateComputeSpecConfig() throws Exception {
+    public void testUpdateComputeEnvironmentConfig() throws Exception {
         final MockHttpServletRequestBuilder request = MockMvcRequestBuilders
-                .put("/compute-spec-configs/1")
+                .put("/compute-environment-configs/1")
                 .accept(APPLICATION_JSON)
                 .contentType(APPLICATION_JSON)
-                .content(mapper.writeValueAsString(computeSpecConfig))
+                .content(mapper.writeValueAsString(computeEnvironmentConfig))
                 .with(authentication(mockAuthentication))
                 .with(csrf())
                 .with(testSecurityContext());
 
-        when(mockComputeSpecConfigService.retrieve(any())).thenReturn(Optional.of(computeSpecConfig));
+        when(mockComputeEnvironmentConfigService.retrieve(any())).thenReturn(Optional.of(computeEnvironmentConfig));
 
         mockMvc.perform(request).andExpect(status().isOk());
 
         // Verify that the service was called
-        verify(mockComputeSpecConfigService, times(1)).update(eq(computeSpecConfig));
+        verify(mockComputeEnvironmentConfigService, times(1)).update(eq(computeEnvironmentConfig));
     }
 
     @Test(expected = NestedServletException.class)
-    public void testUpdateComputeSpecConfig_IdMismatch() throws Exception {
+    public void testUpdateComputeEnvironmentConfig_IdMismatch() throws Exception {
         final MockHttpServletRequestBuilder request = MockMvcRequestBuilders
-                .put("/compute-spec-configs/2")
+                .put("/compute-environment-configs/2")
                 .accept(APPLICATION_JSON)
                 .contentType(APPLICATION_JSON)
-                .content(mapper.writeValueAsString(computeSpecConfig))
+                .content(mapper.writeValueAsString(computeEnvironmentConfig))
                 .with(authentication(mockAuthentication))
                 .with(csrf())
                 .with(testSecurityContext());
@@ -194,13 +194,13 @@ public class ComputeSpecConfigsApiTest {
         mockMvc.perform(request).andExpect(status().isBadRequest());
 
         // Verify that the service was not called
-        verify(mockComputeSpecConfigService, never()).update(any());
+        verify(mockComputeEnvironmentConfigService, never()).update(any());
     }
 
     @Test
-    public void testDeleteComputeSpecConfig() throws Exception {
+    public void testDeleteComputeEnvironmentConfig() throws Exception {
         final MockHttpServletRequestBuilder request = MockMvcRequestBuilders
-                .delete("/compute-spec-configs/1")
+                .delete("/compute-environment-configs/1")
                 .with(authentication(mockAuthentication))
                 .with(csrf())
                 .with(testSecurityContext());
@@ -208,13 +208,13 @@ public class ComputeSpecConfigsApiTest {
         mockMvc.perform(request).andExpect(status().isNoContent());
 
         // Verify that the service was called
-        verify(mockComputeSpecConfigService, times(1)).delete(eq(1L));
+        verify(mockComputeEnvironmentConfigService, times(1)).delete(eq(1L));
     }
 
     @Test
-    public void testGetAvailableComputeSpecConfigs() throws Exception {
+    public void testGetAvailableComputeEnvironmentConfigs() throws Exception {
         final MockHttpServletRequestBuilder request = MockMvcRequestBuilders
-                .get("/compute-spec-configs/available")
+                .get("/compute-environment-configs/available")
                 .param("user", mockUser.getLogin())
                 .param("project", "projectId")
                 .param("type", "JUPYTERHUB")
@@ -225,7 +225,7 @@ public class ComputeSpecConfigsApiTest {
         mockMvc.perform(request).andExpect(status().isOk());
 
         // Verify that the service was called
-        verify(mockComputeSpecConfigService, times(1)).getAvailable(eq(mockUser.getLogin()), eq("projectId"), eq(ComputeSpecConfig.ConfigType.JUPYTERHUB));
+        verify(mockComputeEnvironmentConfigService, times(1)).getAvailable(eq(mockUser.getLogin()), eq("projectId"), eq(ComputeEnvironmentConfig.ConfigType.JUPYTERHUB));
     }
 
 

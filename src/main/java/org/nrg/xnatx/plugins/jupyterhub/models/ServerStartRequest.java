@@ -22,7 +22,7 @@ public class ServerStartRequest implements UserOptions {
     private String projectId;
     private String eventTrackingId;
 
-    private Long computeSpecConfigId;
+    private Long computeEnvironmentConfigId;
     private Long hardwareConfigId;
 
 }

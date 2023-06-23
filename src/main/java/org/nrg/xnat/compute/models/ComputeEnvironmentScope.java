@@ -12,7 +12,7 @@ import java.util.Set;
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
-public class ComputeSpecScope {
+public class ComputeEnvironmentScope {
 
     private Scope scope;
     private boolean enabled; // For project and user scopes, this is whether the scope is enabled for all projects or users

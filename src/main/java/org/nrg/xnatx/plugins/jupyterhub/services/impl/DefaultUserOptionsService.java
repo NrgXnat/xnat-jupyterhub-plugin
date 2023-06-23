@@ -273,7 +273,7 @@ public class DefaultUserOptionsService implements UserOptionsService {
 
     @Override
     public void storeUserOptions(UserI user, String servername, String xsiType, String id, String projectId,
-                                 Long computeSpecConfigId, Long hardwareConfigId, String eventTrackingId) {
+                                 Long computeEnvironmentConfigId, Long hardwareConfigId, String eventTrackingId) {
         log.debug("Storing user options for user '{}' server '{}' xsiType '{}' id '{}' projectId '{}'",
                   user.getUsername(), servername, xsiType, id, projectId);
 
@@ -282,7 +282,7 @@ public class DefaultUserOptionsService implements UserOptionsService {
         }
 
         // Resolve the job template before resolving the paths
-        JobTemplate jobTemplate = jobTemplateService.resolve(user.getUsername(), projectId, computeSpecConfigId, hardwareConfigId);
+        JobTemplate jobTemplate = jobTemplateService.resolve(user.getUsername(), projectId, computeEnvironmentConfigId, hardwareConfigId);
 
         // specific xsi type -> general xsi type
         if (instanceOf(xsiType, XnatExperimentdata.SCHEMA_ELEMENT_NAME)) {
@@ -450,22 +450,22 @@ public class DefaultUserOptionsService implements UserOptionsService {
                 .placement(placement)
                 .build();
 
-        // Get the compute spec, hardware, and constraints from the job template
-        ComputeSpec computeSpec = jobTemplate.getComputeSpec();
+        // Get the compute environment, hardware, and constraints from the job template
+        ComputeEnvironment computeEnvironment = jobTemplate.getComputeEnvironment();
         Hardware hardware = jobTemplate.getHardware();
         List<Constraint> constraints = jobTemplate.getConstraints();
 
         // Build container spec for the task template
-        containerSpec.setImage(computeSpec.getImage());
+        containerSpec.setImage(computeEnvironment.getImage());
 
-        // Add environment variables from compute spec and hardware
+        // Add environment variables from compute environment and hardware
         Map<String, String> environmentVariables = new HashMap<>();
-        Map<String, String> computeSpecEnvVars = computeSpec.getEnvironmentVariables().stream().collect(Collectors.toMap(EnvironmentVariable::getKey, EnvironmentVariable::getValue));
+        Map<String, String> computeEnvironmentEnvVars = computeEnvironment.getEnvironmentVariables().stream().collect(Collectors.toMap(EnvironmentVariable::getKey, EnvironmentVariable::getValue));
         Map<String, String> hardwareEnvVars = hardware.getEnvironmentVariables().stream().collect(Collectors.toMap(EnvironmentVariable::getKey, EnvironmentVariable::getValue));
 
         // check for empty otherwise putAll will throw an exception
-        if (!computeSpecEnvVars.isEmpty()) {
-            environmentVariables.putAll(computeSpecEnvVars);
+        if (!computeEnvironmentEnvVars.isEmpty()) {
+            environmentVariables.putAll(computeEnvironmentEnvVars);
         }
 
         // check for empty otherwise putAll will throw an exception
@@ -475,11 +475,11 @@ public class DefaultUserOptionsService implements UserOptionsService {
 
         containerSpec.setEnv(environmentVariables);
 
-        // Add mounts from compute spec and hardware
+        // Add mounts from compute environment and hardware
         // check for empty otherwise addAll will throw an exception
         List<Mount> mounts = new ArrayList<>();
-        if (!computeSpec.getMounts().isEmpty()) {
-            mounts.addAll(computeSpec.getMounts().stream().map(mount -> {
+        if (!computeEnvironment.getMounts().isEmpty()) {
+            mounts.addAll(computeEnvironment.getMounts().stream().map(mount -> {
                 return Mount.builder()
                         .source(mount.getLocalPath())
                         .target(mount.getContainerPath())

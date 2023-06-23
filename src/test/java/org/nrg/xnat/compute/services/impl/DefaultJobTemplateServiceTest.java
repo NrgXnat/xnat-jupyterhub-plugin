@@ -7,7 +7,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.nrg.xnat.compute.models.*;
 import org.nrg.xnat.compute.config.DefaultJobTemplateServiceTestConfig;
-import org.nrg.xnat.compute.services.ComputeSpecConfigService;
+import org.nrg.xnat.compute.services.ComputeEnvironmentConfigService;
 import org.nrg.xnat.compute.services.ConstraintConfigService;
 import org.nrg.xnat.compute.services.HardwareConfigService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,7 +28,7 @@ import static org.mockito.Mockito.when;
 public class DefaultJobTemplateServiceTest {
 
     @Autowired private DefaultJobTemplateService jobTemplateService;
-    @Autowired private ComputeSpecConfigService mockComputeSpecConfigService;
+    @Autowired private ComputeEnvironmentConfigService mockComputeEnvironmentConfigService;
     @Autowired private HardwareConfigService mockHardwareConfigService;
     @Autowired private ConstraintConfigService mockConstraintConfigService;
 
@@ -39,16 +39,16 @@ public class DefaultJobTemplateServiceTest {
     @After
     public void after() {
         Mockito.reset(
-                mockComputeSpecConfigService,
+                mockComputeEnvironmentConfigService,
                 mockHardwareConfigService,
                 mockConstraintConfigService
         );
     }
 
     @Test
-    public void testIsAvailable_ComputeSpecNotAvailable() {
+    public void testIsAvailable_ComputeEnvironmentNotAvailable() {
         // Setup
-        when(mockComputeSpecConfigService.isAvailable(any(), any(), any())).thenReturn(false);
+        when(mockComputeEnvironmentConfigService.isAvailable(any(), any(), any())).thenReturn(false);
         when(mockHardwareConfigService.isAvailable(any(), any(), any())).thenReturn(true);
 
         // Run
@@ -61,7 +61,7 @@ public class DefaultJobTemplateServiceTest {
     @Test
     public void testIsAvailable_HardwareNotAvailable() {
         // Setup
-        when(mockComputeSpecConfigService.isAvailable(any(), any(), any())).thenReturn(true);
+        when(mockComputeEnvironmentConfigService.isAvailable(any(), any(), any())).thenReturn(true);
         when(mockHardwareConfigService.isAvailable(any(), any(), any())).thenReturn(false);
 
         // Run
@@ -72,9 +72,9 @@ public class DefaultJobTemplateServiceTest {
     }
 
     @Test
-    public void testIsAvailable_ComputeSpecAndHardwareNotAvailable() {
+    public void testIsAvailable_ComputeEnvironmentAndHardwareNotAvailable() {
         // Setup
-        when(mockComputeSpecConfigService.isAvailable(any(), any(), any())).thenReturn(false);
+        when(mockComputeEnvironmentConfigService.isAvailable(any(), any(), any())).thenReturn(false);
         when(mockHardwareConfigService.isAvailable(any(), any(), any())).thenReturn(false);
 
         // Run
@@ -85,16 +85,16 @@ public class DefaultJobTemplateServiceTest {
     }
 
     @Test
-    public void testIsAvailable_ComputeSpecConfigAllHardwareIsAvailable() {
+    public void testIsAvailable_ComputeEnvironmentConfigAllHardwareIsAvailable() {
         // Setup
-        when(mockComputeSpecConfigService.isAvailable(any(), any(), any())).thenReturn(true);
+        when(mockComputeEnvironmentConfigService.isAvailable(any(), any(), any())).thenReturn(true);
         when(mockHardwareConfigService.isAvailable(any(), any(), any())).thenReturn(true);
 
-        ComputeSpecConfig computeSpecConfig = ComputeSpecConfig.builder().build();
-        ComputeSpecHardwareOptions hardwareOptions = ComputeSpecHardwareOptions.builder().build();
+        ComputeEnvironmentConfig computeEnvironmentConfig = ComputeEnvironmentConfig.builder().build();
+        ComputeEnvironmentHardwareOptions hardwareOptions = ComputeEnvironmentHardwareOptions.builder().build();
         hardwareOptions.setAllowAllHardware(true);
-        computeSpecConfig.setHardwareOptions(hardwareOptions);
-        when(mockComputeSpecConfigService.retrieve(any())).thenReturn(Optional.of(computeSpecConfig));
+        computeEnvironmentConfig.setHardwareOptions(hardwareOptions);
+        when(mockComputeEnvironmentConfigService.retrieve(any())).thenReturn(Optional.of(computeEnvironmentConfig));
 
         // Run
         boolean isAvailable = jobTemplateService.isAvailable("user", "project", 1L, 1L);
@@ -104,18 +104,18 @@ public class DefaultJobTemplateServiceTest {
     }
 
     @Test
-    public void testIsAvailable_ComputeSpecConfigSpecificHardwareAllowed() {
+    public void testIsAvailable_ComputeEnvironmentConfigEnvironmentificHardwareAllowed() {
         // Setup
-        when(mockComputeSpecConfigService.isAvailable(any(), any(), any())).thenReturn(true);
+        when(mockComputeEnvironmentConfigService.isAvailable(any(), any(), any())).thenReturn(true);
         when(mockHardwareConfigService.isAvailable(any(), any(), any())).thenReturn(true);
 
-        ComputeSpecConfig computeSpecConfig = ComputeSpecConfig.builder().id(1L).build();
-        ComputeSpecHardwareOptions hardwareOptions = ComputeSpecHardwareOptions.builder().build();
+        ComputeEnvironmentConfig computeEnvironmentConfig = ComputeEnvironmentConfig.builder().id(1L).build();
+        ComputeEnvironmentHardwareOptions hardwareOptions = ComputeEnvironmentHardwareOptions.builder().build();
         hardwareOptions.setAllowAllHardware(false);
-        computeSpecConfig.setHardwareOptions(hardwareOptions);
+        computeEnvironmentConfig.setHardwareOptions(hardwareOptions);
         HardwareConfig hardwareConfig = HardwareConfig.builder().id(1L).build();
         hardwareOptions.setHardwareConfigs(new HashSet<>(Arrays.asList(hardwareConfig)));
-        when(mockComputeSpecConfigService.retrieve(any())).thenReturn(Optional.of(computeSpecConfig));
+        when(mockComputeEnvironmentConfigService.retrieve(any())).thenReturn(Optional.of(computeEnvironmentConfig));
 
         // Run
         boolean isAvailable = jobTemplateService.isAvailable("user", "project", 1L, 1L);
@@ -125,18 +125,18 @@ public class DefaultJobTemplateServiceTest {
     }
 
     @Test
-    public void testIsAvailable_ComputeSpecConfigSpecificHardwareNotAllowed() {
+    public void testIsAvailable_ComputeEnvironmentConfigEnvironmentificHardwareNotAllowed() {
         // Setup
-        when(mockComputeSpecConfigService.isAvailable(any(), any(), any())).thenReturn(true);
+        when(mockComputeEnvironmentConfigService.isAvailable(any(), any(), any())).thenReturn(true);
         when(mockHardwareConfigService.isAvailable(any(), any(), any())).thenReturn(true);
 
-        ComputeSpecConfig computeSpecConfig = ComputeSpecConfig.builder().id(1L).build();
-        ComputeSpecHardwareOptions hardwareOptions = ComputeSpecHardwareOptions.builder().build();
+        ComputeEnvironmentConfig computeEnvironmentConfig = ComputeEnvironmentConfig.builder().id(1L).build();
+        ComputeEnvironmentHardwareOptions hardwareOptions = ComputeEnvironmentHardwareOptions.builder().build();
         hardwareOptions.setAllowAllHardware(false);
-        computeSpecConfig.setHardwareOptions(hardwareOptions);
+        computeEnvironmentConfig.setHardwareOptions(hardwareOptions);
         HardwareConfig hardwareConfig = HardwareConfig.builder().id(1L).build();
         hardwareOptions.setHardwareConfigs(new HashSet<>(Arrays.asList(hardwareConfig)));
-        when(mockComputeSpecConfigService.retrieve(any())).thenReturn(Optional.of(computeSpecConfig));
+        when(mockComputeEnvironmentConfigService.retrieve(any())).thenReturn(Optional.of(computeEnvironmentConfig));
 
         // Run
         boolean isAvailable = jobTemplateService.isAvailable("user", "project", 1L, 2L);
@@ -148,18 +148,18 @@ public class DefaultJobTemplateServiceTest {
     @Test
     public void testResolve() {
         // Setup
-        when(mockComputeSpecConfigService.isAvailable(any(), any(), any())).thenReturn(true);
+        when(mockComputeEnvironmentConfigService.isAvailable(any(), any(), any())).thenReturn(true);
         when(mockHardwareConfigService.isAvailable(any(), any(), any())).thenReturn(true);
 
-        ComputeSpecConfig computeSpecConfig = ComputeSpecConfig.builder().id(1L).build();
-        ComputeSpec computeSpec = ComputeSpec.builder()
+        ComputeEnvironmentConfig computeEnvironmentConfig = ComputeEnvironmentConfig.builder().id(1L).build();
+        ComputeEnvironment computeEnvironment = ComputeEnvironment.builder()
                 .name("JupyterHub Data Science Notebook")
                 .image("jupyter/datascience-notebook:latest")
                 .build();
-        computeSpecConfig.setComputeSpec(computeSpec);
-        ComputeSpecHardwareOptions hardwareOptions = ComputeSpecHardwareOptions.builder().build();
+        computeEnvironmentConfig.setComputeEnvironment(computeEnvironment);
+        ComputeEnvironmentHardwareOptions hardwareOptions = ComputeEnvironmentHardwareOptions.builder().build();
         hardwareOptions.setAllowAllHardware(false);
-        computeSpecConfig.setHardwareOptions(hardwareOptions);
+        computeEnvironmentConfig.setHardwareOptions(hardwareOptions);
         HardwareConfig hardwareConfig = HardwareConfig.builder().id(1L).build();
         Hardware hardware = Hardware.builder()
                 .name("Standard")
@@ -180,7 +180,7 @@ public class DefaultJobTemplateServiceTest {
                 .constraint(constraint)
                 .build();
 
-        when(mockComputeSpecConfigService.retrieve(any())).thenReturn(Optional.of(computeSpecConfig));
+        when(mockComputeEnvironmentConfigService.retrieve(any())).thenReturn(Optional.of(computeEnvironmentConfig));
         when(mockHardwareConfigService.retrieve(any())).thenReturn(Optional.of(hardwareConfig));
         when(mockConstraintConfigService.getAvailable(any())).thenReturn(Collections.singletonList(constraintConfig));
 
@@ -189,7 +189,7 @@ public class DefaultJobTemplateServiceTest {
 
         // Verify
         assertNotNull(jobTemplate);
-        assertEquals(computeSpecConfig.getComputeSpec(), jobTemplate.getComputeSpec());
+        assertEquals(computeEnvironmentConfig.getComputeEnvironment(), jobTemplate.getComputeEnvironment());
         assertEquals(hardware, jobTemplate.getHardware());
         assertEquals(Collections.singletonList(constraint), jobTemplate.getConstraints());
     }

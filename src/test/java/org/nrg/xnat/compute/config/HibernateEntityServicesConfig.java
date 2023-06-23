@@ -1,13 +1,13 @@
 package org.nrg.xnat.compute.config;
 
 import org.hibernate.SessionFactory;
-import org.nrg.xnat.compute.repositories.ComputeSpecConfigDao;
+import org.nrg.xnat.compute.repositories.ComputeEnvironmentConfigDao;
 import org.nrg.xnat.compute.repositories.ConstraintConfigDao;
 import org.nrg.xnat.compute.repositories.HardwareConfigDao;
-import org.nrg.xnat.compute.services.ComputeSpecConfigEntityService;
+import org.nrg.xnat.compute.services.ComputeEnvironmentConfigEntityService;
 import org.nrg.xnat.compute.services.ConstraintConfigEntityService;
 import org.nrg.xnat.compute.services.HardwareConfigEntityService;
-import org.nrg.xnat.compute.services.impl.HibernateComputeSpecConfigEntityService;
+import org.nrg.xnat.compute.services.impl.HibernateComputeEnvironmentConfigEntityService;
 import org.nrg.xnat.compute.services.impl.HibernateConstraintConfigEntityService;
 import org.nrg.xnat.compute.services.impl.HibernateHardwareConfigEntityService;
 import org.springframework.context.annotation.Bean;
@@ -36,16 +36,16 @@ public class HibernateEntityServicesConfig {
     }
 
     @Bean
-    public ComputeSpecConfigDao computeSpecConfigDao(final SessionFactory sessionFactory,
-                                                     final HardwareConfigDao hardwareConfigDao) {
-        return new ComputeSpecConfigDao(sessionFactory, hardwareConfigDao);
+    public ComputeEnvironmentConfigDao computeEnvironmentConfigDao(final SessionFactory sessionFactory,
+                                                                   final HardwareConfigDao hardwareConfigDao) {
+        return new ComputeEnvironmentConfigDao(sessionFactory, hardwareConfigDao);
     }
 
     @Bean
-    public ComputeSpecConfigEntityService computeSpecConfigEntityService(final ComputeSpecConfigDao computeSpecConfigDao,
-                                                                             final HardwareConfigDao hardwareConfigDao) {
-        return new HibernateComputeSpecConfigEntityService(
-                computeSpecConfigDao,
+    public ComputeEnvironmentConfigEntityService computeEnvironmentConfigEntityService(final ComputeEnvironmentConfigDao computeEnvironmentConfigDao,
+                                                                                       final HardwareConfigDao hardwareConfigDao) {
+        return new HibernateComputeEnvironmentConfigEntityService(
+                computeEnvironmentConfigDao,
                 hardwareConfigDao
         );
     }

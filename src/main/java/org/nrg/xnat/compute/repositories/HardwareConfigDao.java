@@ -43,8 +43,8 @@ public class HardwareConfigDao extends AbstractHibernateDAO<HardwareConfigEntity
             initialize(entity.getHardware());
         }
 
-        if (entity.getComputeSpecHardwareOptions() != null) {
-            Hibernate.initialize(entity.getComputeSpecHardwareOptions());
+        if (entity.getComputeEnvironmentHardwareOptions() != null) {
+            Hibernate.initialize(entity.getComputeEnvironmentHardwareOptions());
         }
     }
 

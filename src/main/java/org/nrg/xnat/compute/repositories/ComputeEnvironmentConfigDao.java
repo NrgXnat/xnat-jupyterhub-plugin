@@ -6,8 +6,8 @@ import org.hibernate.Hibernate;
 import org.hibernate.SessionFactory;
 import org.hibernate.criterion.Restrictions;
 import org.nrg.framework.orm.hibernate.AbstractHibernateDAO;
-import org.nrg.xnat.compute.entities.ComputeSpecConfigEntity;
-import org.nrg.xnat.compute.entities.ComputeSpecScopeEntity;
+import org.nrg.xnat.compute.entities.ComputeEnvironmentConfigEntity;
+import org.nrg.xnat.compute.entities.ComputeEnvironmentScopeEntity;
 import org.nrg.xnat.compute.entities.HardwareConfigEntity;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
@@ -17,19 +17,19 @@ import java.util.List;
 
 @Repository
 @Slf4j
-public class ComputeSpecConfigDao extends AbstractHibernateDAO<ComputeSpecConfigEntity> {
+public class ComputeEnvironmentConfigDao extends AbstractHibernateDAO<ComputeEnvironmentConfigEntity> {
 
     private final HardwareConfigDao hardwareConfigDao;
 
     // For testing
-    public ComputeSpecConfigDao(final SessionFactory sessionFactory,
-                                final HardwareConfigDao hardwareConfigDao) {
+    public ComputeEnvironmentConfigDao(final SessionFactory sessionFactory,
+                                       final HardwareConfigDao hardwareConfigDao) {
         super(sessionFactory);
         this.hardwareConfigDao = hardwareConfigDao;
     }
 
     @Autowired
-    public ComputeSpecConfigDao(HardwareConfigDao hardwareConfigDao) {
+    public ComputeEnvironmentConfigDao(HardwareConfigDao hardwareConfigDao) {
         this.hardwareConfigDao = hardwareConfigDao;
     }
 
@@ -38,7 +38,7 @@ public class ComputeSpecConfigDao extends AbstractHibernateDAO<ComputeSpecConfig
      * @param entity The entity to initialize.
      */
     @Override
-    public void initialize(final ComputeSpecConfigEntity entity) {
+    public void initialize(final ComputeEnvironmentConfigEntity entity) {
         if (entity == null) {
             return;
         }
@@ -47,16 +47,16 @@ public class ComputeSpecConfigDao extends AbstractHibernateDAO<ComputeSpecConfig
 
         Hibernate.initialize(entity.getConfigTypes());
 
-        Hibernate.initialize(entity.getComputeSpec());
-        if (entity.getComputeSpec() != null) {
-            Hibernate.initialize(entity.getComputeSpec().getEnvironmentVariables());
-            Hibernate.initialize(entity.getComputeSpec().getMounts());
+        Hibernate.initialize(entity.getComputeEnvironment());
+        if (entity.getComputeEnvironment() != null) {
+            Hibernate.initialize(entity.getComputeEnvironment().getEnvironmentVariables());
+            Hibernate.initialize(entity.getComputeEnvironment().getMounts());
         }
 
         Hibernate.initialize(entity.getScopes());
         if (entity.getScopes() != null) {
-            entity.getScopes().forEach((scope, computeSpecScopeEntity) -> {
-                initialize(computeSpecScopeEntity);
+            entity.getScopes().forEach((scope, computeEnvironmentScopeEntity) -> {
+                initialize(computeEnvironmentScopeEntity);
             });
         }
 
@@ -76,7 +76,7 @@ public class ComputeSpecConfigDao extends AbstractHibernateDAO<ComputeSpecConfig
      * Initializes the entity, loading all collections and proxies.
      * @param entity The entity to initialize.
      */
-    public void initialize(ComputeSpecScopeEntity entity) {
+    public void initialize(ComputeEnvironmentScopeEntity entity) {
         if (entity == null) {
             return;
         }
@@ -86,23 +86,23 @@ public class ComputeSpecConfigDao extends AbstractHibernateDAO<ComputeSpecConfig
     }
 
     /**
-     * Finds all compute spec configs that have the specified type.
+     * Finds all compute environment configs that have the specified type.
      * @param type The type to search for.
-     * @return The list of compute spec configs that have the specified type.
+     * @return The list of compute environment configs that have the specified type.
      */
-    public List<ComputeSpecConfigEntity> findByType(String type) {
+    public List<ComputeEnvironmentConfigEntity> findByType(String type) {
         // Need to use a criteria query because the configTypes field is a collection.
-        Criteria criteria = getSession().createCriteria(ComputeSpecConfigEntity.class)
+        Criteria criteria = getSession().createCriteria(ComputeEnvironmentConfigEntity.class)
                 .createCriteria("configTypes")
                 .add(Restrictions.eq("elements", type));
 
-        List<ComputeSpecConfigEntity> entities = criteria.list();
+        List<ComputeEnvironmentConfigEntity> entities = criteria.list();
 
         if (entities == null) {
             return Collections.emptyList();
         }
 
-        for (ComputeSpecConfigEntity entity : entities) {
+        for (ComputeEnvironmentConfigEntity entity : entities) {
             initialize(entity);
         }
 

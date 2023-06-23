@@ -4,13 +4,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 import org.nrg.framework.constants.Scope;
 import org.nrg.framework.exceptions.NotFoundException;
-import org.nrg.xnat.compute.entities.ComputeSpecConfigEntity;
-import org.nrg.xnat.compute.entities.ComputeSpecHardwareOptionsEntity;
+import org.nrg.xnat.compute.entities.ComputeEnvironmentConfigEntity;
+import org.nrg.xnat.compute.entities.ComputeEnvironmentHardwareOptionsEntity;
 import org.nrg.xnat.compute.entities.HardwareConfigEntity;
 import org.nrg.xnat.compute.models.Hardware;
 import org.nrg.xnat.compute.models.HardwareConfig;
 import org.nrg.xnat.compute.models.HardwareScope;
-import org.nrg.xnat.compute.services.ComputeSpecConfigEntityService;
+import org.nrg.xnat.compute.services.ComputeEnvironmentConfigEntityService;
 import org.nrg.xnat.compute.services.HardwareConfigEntityService;
 import org.nrg.xnat.compute.services.HardwareConfigService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,13 +27,13 @@ import java.util.stream.Collectors;
 public class DefaultHardwareConfigService implements HardwareConfigService {
 
     private final HardwareConfigEntityService hardwareConfigEntityService;
-    private final ComputeSpecConfigEntityService computeSpecConfigEntityService;
+    private final ComputeEnvironmentConfigEntityService computeEnvironmentConfigEntityService;
 
     @Autowired
     public DefaultHardwareConfigService(final HardwareConfigEntityService hardwareConfigEntityService,
-                                        final ComputeSpecConfigEntityService computeSpecConfigEntityService) {
+                                        final ComputeEnvironmentConfigEntityService computeEnvironmentConfigEntityService) {
         this.hardwareConfigEntityService = hardwareConfigEntityService;
-        this.computeSpecConfigEntityService = computeSpecConfigEntityService;
+        this.computeEnvironmentConfigEntityService = computeEnvironmentConfigEntityService;
     }
 
     /**
@@ -83,12 +83,12 @@ public class DefaultHardwareConfigService implements HardwareConfigService {
         // Create the new hardware config entity
         HardwareConfigEntity hardwareConfigEntity = hardwareConfigEntityService.create(HardwareConfigEntity.fromPojo(hardwareConfig));
 
-        // Add the hardware config to all compute spec configs that allow all hardware
-        computeSpecConfigEntityService.getAll().stream()
-                .map(ComputeSpecConfigEntity::getHardwareOptions)
-                .filter(ComputeSpecHardwareOptionsEntity::isAllowAllHardware)
+        // Add the hardware config to all compute environment configs that allow all hardware
+        computeEnvironmentConfigEntityService.getAll().stream()
+                .map(ComputeEnvironmentConfigEntity::getHardwareOptions)
+                .filter(ComputeEnvironmentHardwareOptionsEntity::isAllowAllHardware)
                 .forEach(hardwareOptions -> {
-                    computeSpecConfigEntityService.addHardwareConfigEntity(hardwareOptions.getId(), hardwareConfigEntity.getId());
+                    computeEnvironmentConfigEntityService.addHardwareConfigEntity(hardwareOptions.getId(), hardwareConfigEntity.getId());
                 });
 
         return hardwareConfigEntityService.retrieve(hardwareConfigEntity.getId()).toPojo();
@@ -127,12 +127,12 @@ public class DefaultHardwareConfigService implements HardwareConfigService {
             throw new NotFoundException("No hardware config found with id " + id);
         }
 
-        // Remove the hardware config from all compute spec configs
+        // Remove the hardware config from all compute environment configs
         // Probably a more efficient way to do this, but this is the easiest way to do it
-        computeSpecConfigEntityService.getAll().stream()
-                .map(ComputeSpecConfigEntity::getHardwareOptions)
+        computeEnvironmentConfigEntityService.getAll().stream()
+                .map(ComputeEnvironmentConfigEntity::getHardwareOptions)
                 .forEach(hardwareOptions -> {
-                    computeSpecConfigEntityService.removeHardwareConfigEntity(hardwareOptions.getId(), id);
+                    computeEnvironmentConfigEntityService.removeHardwareConfigEntity(hardwareOptions.getId(), id);
                 });
 
         hardwareConfigEntityService.delete(id);

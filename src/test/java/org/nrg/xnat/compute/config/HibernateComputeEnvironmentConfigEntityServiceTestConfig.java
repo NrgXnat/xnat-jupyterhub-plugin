@@ -2,10 +2,10 @@ package org.nrg.xnat.compute.config;
 
 import org.hibernate.SessionFactory;
 import org.nrg.xnat.compute.entities.*;
-import org.nrg.xnat.compute.repositories.ComputeSpecConfigDao;
+import org.nrg.xnat.compute.repositories.ComputeEnvironmentConfigDao;
 import org.nrg.xnat.compute.repositories.ConstraintConfigDao;
 import org.nrg.xnat.compute.repositories.HardwareConfigDao;
-import org.nrg.xnat.compute.services.impl.HibernateComputeSpecConfigEntityService;
+import org.nrg.xnat.compute.services.impl.HibernateComputeEnvironmentConfigEntityService;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -19,13 +19,13 @@ import java.util.Properties;
 
 @Configuration
 @Import({HibernateConfig.class})
-public class HibernateComputeSpecConfigEntityServiceTestConfig {
+public class HibernateComputeEnvironmentConfigEntityServiceTestConfig {
 
     @Bean
-    public HibernateComputeSpecConfigEntityService hibernateComputeSpecConfigEntityServiceTest(@Qualifier("computeSpecConfigDaoImpl") final ComputeSpecConfigDao computeSpecConfigDaoImpl,
-                                                                                               @Qualifier("hardwareConfigDaoImpl") final HardwareConfigDao hardwareConfigDaoImpl) {
-        return new HibernateComputeSpecConfigEntityService(
-                computeSpecConfigDaoImpl,
+    public HibernateComputeEnvironmentConfigEntityService hibernateComputeEnvironmentConfigEntityServiceTest(@Qualifier("computeEnvironmentConfigDaoImpl") final ComputeEnvironmentConfigDao computeEnvironmentConfigDaoImpl,
+                                                                                                             @Qualifier("hardwareConfigDaoImpl") final HardwareConfigDao hardwareConfigDaoImpl) {
+        return new HibernateComputeEnvironmentConfigEntityService(
+                computeEnvironmentConfigDaoImpl,
                 hardwareConfigDaoImpl);
     }
 
@@ -38,10 +38,10 @@ public class HibernateComputeSpecConfigEntityServiceTestConfig {
                 ConstraintConfigEntity.class,
                 ConstraintEntity.class,
                 ConstraintScopeEntity.class,
-                ComputeSpecConfigEntity.class,
-                ComputeSpecEntity.class,
-                ComputeSpecScopeEntity.class,
-                ComputeSpecHardwareOptionsEntity.class,
+                ComputeEnvironmentConfigEntity.class,
+                ComputeEnvironmentEntity.class,
+                ComputeEnvironmentScopeEntity.class,
+                ComputeEnvironmentHardwareOptionsEntity.class,
                 HardwareConfigEntity.class,
                 HardwareEntity.class,
                 HardwareScopeEntity.class,
@@ -70,10 +70,10 @@ public class HibernateComputeSpecConfigEntityServiceTestConfig {
     }
 
     @Bean
-    @Qualifier("computeSpecConfigDaoImpl")
-    public ComputeSpecConfigDao computeSpecConfigDaoImpl(final SessionFactory sessionFactory,
-                                                         final @Qualifier("hardwareConfigDaoImpl") HardwareConfigDao hardwareConfigDaoImpl) {
-        return new ComputeSpecConfigDao(sessionFactory, hardwareConfigDaoImpl);
+    @Qualifier("computeEnvironmentConfigDaoImpl")
+    public ComputeEnvironmentConfigDao computeEnvironmentConfigDaoImpl(final SessionFactory sessionFactory,
+                                                                       final @Qualifier("hardwareConfigDaoImpl") HardwareConfigDao hardwareConfigDaoImpl) {
+        return new ComputeEnvironmentConfigDao(sessionFactory, hardwareConfigDaoImpl);
     }
 
 }

@@ -6,9 +6,9 @@ import org.junit.runner.RunWith;
 import org.nrg.xnat.compute.models.*;
 import org.nrg.framework.constants.Scope;
 import org.nrg.xnat.compute.config.DefaultHardwareConfigServiceTestConfig;
-import org.nrg.xnat.compute.entities.ComputeSpecConfigEntity;
+import org.nrg.xnat.compute.entities.ComputeEnvironmentConfigEntity;
 import org.nrg.xnat.compute.entities.HardwareConfigEntity;
-import org.nrg.xnat.compute.services.ComputeSpecConfigEntityService;
+import org.nrg.xnat.compute.services.ComputeEnvironmentConfigEntityService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
@@ -29,10 +29,10 @@ import static org.nrg.xnat.compute.utils.TestingUtils.commitTransaction;
 public class DefaultHardwareConfigServiceTest {
 
     @Autowired private DefaultHardwareConfigService defaultHardwareConfigService;
-    @Autowired private ComputeSpecConfigEntityService computeSpecConfigEntityService;
+    @Autowired private ComputeEnvironmentConfigEntityService computeEnvironmentConfigEntityService;
 
-    private ComputeSpecConfig computeSpecConfig1;
-    private ComputeSpecConfig computeSpecConfig2;
+    private ComputeEnvironmentConfig computeEnvironmentConfig1;
+    private ComputeEnvironmentConfig computeEnvironmentConfig2;
     private HardwareConfig hardwareConfig1;
     private HardwareConfig hardwareConfig2;
     private HardwareConfig hardwareConfigInvalid;
@@ -109,9 +109,9 @@ public class DefaultHardwareConfigServiceTest {
     @Test
     @DirtiesContext
     public void testCreate() {
-        // First, create the compute spec configs
-        ComputeSpecConfigEntity computeSpecConfigEntity1 = computeSpecConfigEntityService.create(ComputeSpecConfigEntity.fromPojo(computeSpecConfig1));
-        ComputeSpecConfigEntity computeSpecConfigEntity2 = computeSpecConfigEntityService.create(ComputeSpecConfigEntity.fromPojo(computeSpecConfig2));
+        // First, create the compute environment configs
+        ComputeEnvironmentConfigEntity computeEnvironmentConfigEntity1 = computeEnvironmentConfigEntityService.create(ComputeEnvironmentConfigEntity.fromPojo(computeEnvironmentConfig1));
+        ComputeEnvironmentConfigEntity computeEnvironmentConfigEntity2 = computeEnvironmentConfigEntityService.create(ComputeEnvironmentConfigEntity.fromPojo(computeEnvironmentConfig2));
         commitTransaction();
 
         // Now create a hardware config
@@ -120,14 +120,14 @@ public class DefaultHardwareConfigServiceTest {
         HardwareConfig created2 = defaultHardwareConfigService.create(hardwareConfig2);
         commitTransaction();
 
-        // Then retrieve the compute spec configs
-        computeSpecConfigEntity1 = computeSpecConfigEntityService.retrieve(computeSpecConfigEntity1.getId());
-        computeSpecConfigEntity2 = computeSpecConfigEntityService.retrieve(computeSpecConfigEntity2.getId());
+        // Then retrieve the compute environment configs
+        computeEnvironmentConfigEntity1 = computeEnvironmentConfigEntityService.retrieve(computeEnvironmentConfigEntity1.getId());
+        computeEnvironmentConfigEntity2 = computeEnvironmentConfigEntityService.retrieve(computeEnvironmentConfigEntity2.getId());
 
-        // Verify that the hardware config were added only to the first compute spec config
-        assertThat(computeSpecConfigEntity1.getHardwareOptions().getHardwareConfigs().size(), is(2));
-        assertThat(computeSpecConfigEntity2.getHardwareOptions().getHardwareConfigs().size(), is(0));
-        assertThat(computeSpecConfigEntity1
+        // Verify that the hardware config were added only to the first compute environment config
+        assertThat(computeEnvironmentConfigEntity1.getHardwareOptions().getHardwareConfigs().size(), is(2));
+        assertThat(computeEnvironmentConfigEntity2.getHardwareOptions().getHardwareConfigs().size(), is(0));
+        assertThat(computeEnvironmentConfigEntity1
                            .getHardwareOptions()
                            .getHardwareConfigs().stream()
                            .map(HardwareConfigEntity::toPojo)
@@ -380,90 +380,90 @@ public class DefaultHardwareConfigServiceTest {
                 .scopes(hardwareScopesInvalid)
                 .build();
 
-        // Setup first compute spec
-        ComputeSpec computeSpec1 = ComputeSpec.builder()
+        // Setup first compute environment
+        ComputeEnvironment computeEnvironment1 = ComputeEnvironment.builder()
                 .name("Jupyter Datascience Notebook")
                 .image("jupyter/datascience-notebook:hub-3.0.0")
                 .environmentVariables(new ArrayList<>())
                 .mounts(new ArrayList<>())
                 .build();
 
-        ComputeSpecScope computeSpecSiteScope1 = ComputeSpecScope.builder()
+        ComputeEnvironmentScope computeEnvironmentSiteScope1 = ComputeEnvironmentScope.builder()
                 .scope(Site)
                 .enabled(true)
                 .ids(new HashSet<>(Collections.emptyList()))
                 .build();
 
-        ComputeSpecScope computeSpecProjectScope1 = ComputeSpecScope.builder()
+        ComputeEnvironmentScope computeEnvironmentProjectScope1 = ComputeEnvironmentScope.builder()
                 .scope(Project)
                 .enabled(true)
                 .ids(new HashSet<>(Collections.emptyList()))
                 .build();
 
-        ComputeSpecScope computeSpecUserScope1 = ComputeSpecScope.builder()
+        ComputeEnvironmentScope computeEnvironmentUserScope1 = ComputeEnvironmentScope.builder()
                 .scope(User)
                 .enabled(true)
                 .ids(new HashSet<>(Collections.emptyList()))
                 .build();
 
-        Map<Scope, ComputeSpecScope> computeSpecScopes1 = new HashMap<>();
-        computeSpecScopes1.put(Site, computeSpecSiteScope1);
-        computeSpecScopes1.put(Project, computeSpecProjectScope1);
-        computeSpecScopes1.put(User, computeSpecUserScope1);
+        Map<Scope, ComputeEnvironmentScope> computeEnvironmentScopes1 = new HashMap<>();
+        computeEnvironmentScopes1.put(Site, computeEnvironmentSiteScope1);
+        computeEnvironmentScopes1.put(Project, computeEnvironmentProjectScope1);
+        computeEnvironmentScopes1.put(User, computeEnvironmentUserScope1);
 
-        ComputeSpecHardwareOptions computeSpecHardwareOptions1 = ComputeSpecHardwareOptions.builder()
+        ComputeEnvironmentHardwareOptions computeEnvironmentHardwareOptions1 = ComputeEnvironmentHardwareOptions.builder()
                 .allowAllHardware(true)
                 .hardwareConfigs(new HashSet<>(Arrays.asList(hardwareConfig1, hardwareConfig2)))
                 .build();
 
-        computeSpecConfig1 = ComputeSpecConfig.builder()
-                .configTypes(new HashSet<>(Collections.singletonList(ComputeSpecConfig.ConfigType.JUPYTERHUB)))
-                .computeSpec(computeSpec1)
-                .scopes(computeSpecScopes1)
-                .hardwareOptions(computeSpecHardwareOptions1)
+        computeEnvironmentConfig1 = ComputeEnvironmentConfig.builder()
+                .configTypes(new HashSet<>(Collections.singletonList(ComputeEnvironmentConfig.ConfigType.JUPYTERHUB)))
+                .computeEnvironment(computeEnvironment1)
+                .scopes(computeEnvironmentScopes1)
+                .hardwareOptions(computeEnvironmentHardwareOptions1)
                 .build();
 
-        // Setup second compute spec
-        ComputeSpec computeSpec2 = ComputeSpec.builder()
+        // Setup second compute environment
+        ComputeEnvironment computeEnvironment2 = ComputeEnvironment.builder()
                 .name("XNAT Datascience Notebook")
                 .image("xnat/datascience-notebook:latest")
                 .environmentVariables(new ArrayList<>())
                 .mounts(new ArrayList<>())
                 .build();
 
-        ComputeSpecScope computeSpecSiteScope2 = ComputeSpecScope.builder()
+        ComputeEnvironmentScope computeEnvironmentSiteScope2 = ComputeEnvironmentScope.builder()
                 .scope(Site)
                 .enabled(true)
                 .ids(new HashSet<>(Collections.emptyList()))
                 .build();
 
-        ComputeSpecScope computeSpecProjectScope2 = ComputeSpecScope.builder()
+        ComputeEnvironmentScope computeEnvironmentProjectScope2 = ComputeEnvironmentScope.builder()
                 .scope(Project)
                 .enabled(false)
                 .ids(new HashSet<>(Collections.singletonList("Project1")))
                 .build();
 
-        ComputeSpecScope computeSpecUserScope2 = ComputeSpecScope.builder()
+        ComputeEnvironmentScope computeEnvironmentUserScope2 = ComputeEnvironmentScope.builder()
                 .scope(User)
                 .enabled(false)
                 .ids(new HashSet<>(Collections.singletonList("User1")))
                 .build();
 
-        Map<Scope, ComputeSpecScope> computeSpecScopes2 = new HashMap<>();
-        computeSpecScopes2.put(Site, computeSpecSiteScope2);
-        computeSpecScopes2.put(Project, computeSpecProjectScope2);
-        computeSpecScopes2.put(User, computeSpecUserScope2);
+        Map<Scope, ComputeEnvironmentScope> computeEnvironmentScopes2 = new HashMap<>();
+        computeEnvironmentScopes2.put(Site, computeEnvironmentSiteScope2);
+        computeEnvironmentScopes2.put(Project, computeEnvironmentProjectScope2);
+        computeEnvironmentScopes2.put(User, computeEnvironmentUserScope2);
 
-        ComputeSpecHardwareOptions computeSpecHardwareOptions2 = ComputeSpecHardwareOptions.builder()
+        ComputeEnvironmentHardwareOptions computeEnvironmentHardwareOptions2 = ComputeEnvironmentHardwareOptions.builder()
                 .allowAllHardware(false)
                 .hardwareConfigs(new HashSet<>(Arrays.asList(hardwareConfig2)))
                 .build();
 
-        computeSpecConfig2 = ComputeSpecConfig.builder()
-                .configTypes(new HashSet<>(Collections.singletonList(ComputeSpecConfig.ConfigType.JUPYTERHUB)))
-                .computeSpec(computeSpec2)
-                .scopes(computeSpecScopes2)
-                .hardwareOptions(computeSpecHardwareOptions2)
+        computeEnvironmentConfig2 = ComputeEnvironmentConfig.builder()
+                .configTypes(new HashSet<>(Collections.singletonList(ComputeEnvironmentConfig.ConfigType.JUPYTERHUB)))
+                .computeEnvironment(computeEnvironment2)
+                .scopes(computeEnvironmentScopes2)
+                .hardwareOptions(computeEnvironmentHardwareOptions2)
                 .build();
 
     }

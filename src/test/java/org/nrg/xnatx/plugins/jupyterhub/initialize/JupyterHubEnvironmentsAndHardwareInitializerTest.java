@@ -4,9 +4,9 @@ import org.junit.After;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
-import org.nrg.xnat.compute.models.ComputeSpecConfig;
+import org.nrg.xnat.compute.models.ComputeEnvironmentConfig;
 import org.nrg.xnat.compute.models.HardwareConfig;
-import org.nrg.xnat.compute.services.ComputeSpecConfigService;
+import org.nrg.xnat.compute.services.ComputeEnvironmentConfigService;
 import org.nrg.xnat.compute.services.HardwareConfigService;
 import org.nrg.xnat.initialization.tasks.InitializingTaskException;
 import org.nrg.xnat.services.XnatAppInfo;
@@ -32,7 +32,7 @@ public class JupyterHubEnvironmentsAndHardwareInitializerTest {
     @Autowired private JupyterHubEnvironmentsAndHardwareInitializer jupyterHubJobTemplateInitializer;
     @Autowired private XFTManagerHelper mockXFTManagerHelper;
     @Autowired private XnatAppInfo mockXnatAppInfo;
-    @Autowired private ComputeSpecConfigService mockComputeSpecConfigService;
+    @Autowired private ComputeEnvironmentConfigService mockComputeEnvironmentConfigService;
     @Autowired private HardwareConfigService mockHardwareConfigService;
 
     @After
@@ -40,7 +40,7 @@ public class JupyterHubEnvironmentsAndHardwareInitializerTest {
         Mockito.reset(
                 mockXFTManagerHelper,
                 mockXnatAppInfo,
-                mockComputeSpecConfigService,
+                mockComputeEnvironmentConfigService,
                 mockHardwareConfigService
         );
     }
@@ -83,8 +83,8 @@ public class JupyterHubEnvironmentsAndHardwareInitializerTest {
 
 
         // Setup mock
-        when(mockComputeSpecConfigService.getByType(any()))
-                .thenReturn(Collections.singletonList(new ComputeSpecConfig()));
+        when(mockComputeEnvironmentConfigService.getByType(any()))
+                .thenReturn(Collections.singletonList(new ComputeEnvironmentConfig()));
         when(mockHardwareConfigService.retrieveAll())
                 .thenReturn(Collections.singletonList(new HardwareConfig()));
 
@@ -96,7 +96,7 @@ public class JupyterHubEnvironmentsAndHardwareInitializerTest {
         }
 
         // Verify
-        verify(mockComputeSpecConfigService, never()).create(any());
+        verify(mockComputeEnvironmentConfigService, never()).create(any());
         verify(mockHardwareConfigService, never()).create(any());
     }
 
@@ -107,7 +107,7 @@ public class JupyterHubEnvironmentsAndHardwareInitializerTest {
         when(mockXnatAppInfo.isInitialized()).thenReturn(true);
 
         // Setup mock
-        when(mockComputeSpecConfigService.getByType(any()))
+        when(mockComputeEnvironmentConfigService.getByType(any()))
                 .thenReturn(Collections.emptyList());
         when(mockHardwareConfigService.retrieveAll())
                 .thenReturn(Collections.emptyList());
@@ -120,7 +120,7 @@ public class JupyterHubEnvironmentsAndHardwareInitializerTest {
         }
 
         // Verify
-        verify(mockComputeSpecConfigService, atLeast(1)).create(any());
+        verify(mockComputeEnvironmentConfigService, atLeast(1)).create(any());
         verify(mockHardwareConfigService, atLeast(1)).create(any());
     }
 

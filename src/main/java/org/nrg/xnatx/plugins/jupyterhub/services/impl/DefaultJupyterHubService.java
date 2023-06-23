@@ -152,7 +152,7 @@ public class DefaultJupyterHubService implements JupyterHubService {
         final String itemLabel = startRequest.getItemLabel();
         final String projectId = startRequest.getProjectId();
         final String eventTrackingId = startRequest.getEventTrackingId();
-        final Long computeSpecConfigId = startRequest.getComputeSpecConfigId();
+        final Long computeEnvironmentConfigId = startRequest.getComputeEnvironmentConfigId();
         final Long hardwareConfigId = startRequest.getHardwareConfigId();
 
         eventService.triggerEvent(JupyterServerEvent.progress(eventTrackingId, user.getID(), xsiType, itemId,
@@ -166,7 +166,7 @@ public class DefaultJupyterHubService implements JupyterHubService {
             return;
         }
 
-        if (!jobTemplateService.isAvailable(user.getUsername(), projectId, computeSpecConfigId, hardwareConfigId)) {
+        if (!jobTemplateService.isAvailable(user.getUsername(), projectId, computeEnvironmentConfigId, hardwareConfigId)) {
             eventService.triggerEvent(JupyterServerEvent.failed(eventTrackingId, user.getID(), xsiType, itemId,
                                                                 JupyterServerEventI.Operation.Start,
                                                                 "Failed to launch Jupyter notebook server. The job template either does not exist or is not available to the user and project."));
@@ -207,7 +207,7 @@ public class DefaultJupyterHubService implements JupyterHubService {
                                                                       JupyterServerEventI.Operation.Start, 20,
                                                                       "Building notebook server container configuration."));
 
-                userOptionsService.storeUserOptions(user, servername, xsiType, itemId, projectId, computeSpecConfigId, hardwareConfigId, eventTrackingId);
+                userOptionsService.storeUserOptions(user, servername, xsiType, itemId, projectId, computeEnvironmentConfigId, hardwareConfigId, eventTrackingId);
 
                 eventService.triggerEvent(JupyterServerEvent.progress(eventTrackingId, user.getID(), xsiType, itemId,
                                                                       JupyterServerEventI.Operation.Start, 30,
@@ -323,12 +323,12 @@ public class DefaultJupyterHubService implements JupyterHubService {
             errorMessages.add("Event tracking ID cannot be blank");
         }
 
-        if (request.getComputeSpecConfigId() == null) {
-            errorMessages.add("Compute spec config ID cannot be null");
+        if (request.getComputeEnvironmentConfigId() == null) {
+            errorMessages.add("Compute environment config ID cannot be null");
         }
 
         if (request.getHardwareConfigId() == null) {
-            errorMessages.add("Compute resource cannot be null");
+            errorMessages.add("hardware config id cannot be null");
         }
 
         if (!errorMessages.isEmpty()) {

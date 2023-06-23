@@ -176,7 +176,7 @@ XNAT.plugin.jupyterhub.servers.user_options = getObject(XNAT.plugin.jupyterhub.s
         console.debug(`jupyterhub-servers.js: XNAT.plugin.jupyterhub.servers.startServer`);
         console.debug(`Launching jupyter server. User: ${username}, Server Name: ${servername}, XSI Type: ${xsiType}, ID: ${itemId}, Label: ${itemLabel}, Project ID: ${projectId}, eventTrackingId: ${eventTrackingId}`);
 
-        XNAT.compute.computeSpecConfigs.available("JUPYTERHUB", username, projectId).then(computeSpecConfigs => {
+        XNAT.compute.computeEnvironmentConfigs.available("JUPYTERHUB", username, projectId).then(computeEnvironmentConfigs => {
             const cancelButton = {
                 label: 'Cancel',
                 isDefault: false,
@@ -188,10 +188,10 @@ XNAT.plugin.jupyterhub.servers.user_options = getObject(XNAT.plugin.jupyterhub.s
                 isDefault: true,
                 close: false,
                 action: function(obj) {
-                    const computeSpecConfigId = document.querySelector('select#compute-spec-config').value;
+                    const computeEnvironmentConfigId = document.querySelector('select#compute-environment-config').value;
                     const hardwareConfigId = document.querySelector('select#hardware-config').value;
                     
-                    if (!computeSpecConfigId) {
+                    if (!computeEnvironmentConfigId) {
                         XNAT.dialog.open({
                             width: 450,
                             title: "Error",
@@ -233,7 +233,7 @@ XNAT.plugin.jupyterhub.servers.user_options = getObject(XNAT.plugin.jupyterhub.s
                         'itemLabel': itemLabel,
                         'projectId': projectId,
                         'eventTrackingId': eventTrackingId,
-                        'computeSpecConfigId': computeSpecConfigId,
+                        'computeEnvironmentConfigId': computeEnvironmentConfigId,
                         'hardwareConfigId': hardwareConfigId,
                     }
         
@@ -259,7 +259,7 @@ XNAT.plugin.jupyterhub.servers.user_options = getObject(XNAT.plugin.jupyterhub.s
                 }
             }
             
-            const buttons = (computeSpecConfigs.length === 0) ? [cancelButton] : [cancelButton, startButton];
+            const buttons = (computeEnvironmentConfigs.length === 0) ? [cancelButton] : [cancelButton, startButton];
             
             XNAT.dialog.open({
                 title: 'Start Jupyter',
@@ -270,8 +270,8 @@ XNAT.plugin.jupyterhub.servers.user_options = getObject(XNAT.plugin.jupyterhub.s
                     const form = document.getElementById('server-start-request-form');
                     form.classList.add('panel');
                     
-                    if (computeSpecConfigs.length === 0) {
-                        obj.$modal.find('.xnat-dialog-content').html('<div class="error">No compute specs are available for Jupyter. Please contact your administrator.</div>');
+                    if (computeEnvironmentConfigs.length === 0) {
+                        obj.$modal.find('.xnat-dialog-content').html('<div class="error">No compute environments are available for Jupyter. Please contact your administrator.</div>');
                         return;
                     }
                     
@@ -310,12 +310,12 @@ XNAT.plugin.jupyterhub.servers.user_options = getObject(XNAT.plugin.jupyterhub.s
                         xnatData.querySelector('p.experiment').remove();
                     }
                     
-                    let computeSpecConfigSelect = spawn('div', { style : { marginTop: '20px', marginBottom: '40px', } }, [
+                    let computeEnvironmentConfigSelect = spawn('div', { style : { marginTop: '20px', marginBottom: '40px', } }, [
                         spawn('h2', 'Jupyter Environment'),
                         spawn('p.description', 'Select from the list of Jupyter environments available to you. This determines the software available to your Jupyter notebook server.'),
-                        spawn('select#compute-spec-config', [
+                        spawn('select#compute-environment-config', [
                             spawn('option', {value: ''}, 'Select a Jupyter environment'),
-                            ...computeSpecConfigs.map(c => spawn('option', {value: c['id']}, c['computeSpec']['name'])),
+                            ...computeEnvironmentConfigs.map(c => spawn('option', {value: c['id']}, c['computeEnvironment']['name'])),
                         ])]
                     );
 
@@ -329,16 +329,16 @@ XNAT.plugin.jupyterhub.servers.user_options = getObject(XNAT.plugin.jupyterhub.s
                     
                     form.appendChild(spawn('!', [
                         xnatData,
-                        computeSpecConfigSelect,
+                        computeEnvironmentConfigSelect,
                         hardwareConfigSelect
                     ]));
                     
-                    computeSpecConfigSelect.querySelector('select').addEventListener('change', () => {
+                    computeEnvironmentConfigSelect.querySelector('select').addEventListener('change', () => {
                         let hardwareSelect = document.getElementById('hardware-config');
                         hardwareSelect.innerHTML = '';
                         hardwareSelect.appendChild(spawn('option', {value: ''}, 'Select Hardware'));
-                        let computeSpecConfig = computeSpecConfigs.filter(c => c['id'].toString() === computeSpecConfigSelect.querySelector('select').value)[0];
-                        let hardwareConfigs = computeSpecConfig['hardwareOptions']['hardwareConfigs'];
+                        let computeEnvironmentConfig = computeEnvironmentConfigs.filter(c => c['id'].toString() === computeEnvironmentConfigSelect.querySelector('select').value)[0];
+                        let hardwareConfigs = computeEnvironmentConfig['hardwareOptions']['hardwareConfigs'];
                         hardwareConfigs.forEach(h => {
                             hardwareSelect.appendChild(spawn('option', {value: h['id']}, h['hardware']['name']));
                         });

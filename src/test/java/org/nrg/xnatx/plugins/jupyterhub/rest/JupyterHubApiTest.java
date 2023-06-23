@@ -160,7 +160,7 @@ public class JupyterHubApiTest {
                 .itemLabel("TestProject")
                 .projectId("TestProject")
                 .eventTrackingId("20220822T201541799Z")
-                .computeSpecConfigId(1L)
+                .computeEnvironmentConfigId(1L)
                 .hardwareConfigId(1L)
                 .build();
 

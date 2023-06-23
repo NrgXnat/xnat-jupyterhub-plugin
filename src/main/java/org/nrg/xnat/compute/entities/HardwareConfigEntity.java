@@ -21,7 +21,7 @@ public class HardwareConfigEntity extends AbstractHibernateEntity {
     private HardwareEntity hardware;
     private Map<Scope, HardwareScopeEntity> scopes;
 
-    @ToString.Exclude @EqualsAndHashCode.Exclude private List<ComputeSpecHardwareOptionsEntity> computeSpecHardwareOptions;
+    @ToString.Exclude @EqualsAndHashCode.Exclude private List<ComputeEnvironmentHardwareOptionsEntity> computeEnvironmentHardwareOptions;
 
     @OneToOne(mappedBy = "hardwareConfig", cascade = CascadeType.ALL, orphanRemoval = true)
     public HardwareEntity getHardware() {
@@ -43,12 +43,12 @@ public class HardwareConfigEntity extends AbstractHibernateEntity {
     }
 
     @ManyToMany(mappedBy = "hardwareConfigs")
-    public List<ComputeSpecHardwareOptionsEntity> getComputeSpecHardwareOptions() {
-        return computeSpecHardwareOptions;
+    public List<ComputeEnvironmentHardwareOptionsEntity> getComputeEnvironmentHardwareOptions() {
+        return computeEnvironmentHardwareOptions;
     }
 
-    public void setComputeSpecHardwareOptions(List<ComputeSpecHardwareOptionsEntity> computeSpecHardwareOptions) {
-        this.computeSpecHardwareOptions = computeSpecHardwareOptions;
+    public void setComputeEnvironmentHardwareOptions(List<ComputeEnvironmentHardwareOptionsEntity> computeEnvironmentHardwareOptions) {
+        this.computeEnvironmentHardwareOptions = computeEnvironmentHardwareOptions;
     }
 
     /**

@@ -3,7 +3,7 @@ package org.nrg.xnatx.plugins.jupyterhub.initialize;
 import lombok.extern.slf4j.Slf4j;
 import org.nrg.framework.constants.Scope;
 import org.nrg.xnat.compute.models.*;
-import org.nrg.xnat.compute.services.ComputeSpecConfigService;
+import org.nrg.xnat.compute.services.ComputeEnvironmentConfigService;
 import org.nrg.xnat.compute.services.HardwareConfigService;
 import org.nrg.xnat.initialization.tasks.AbstractInitializingTask;
 import org.nrg.xnat.initialization.tasks.InitializingTaskException;
@@ -15,7 +15,7 @@ import org.springframework.stereotype.Component;
 import java.util.*;
 
 /**
- * Initialization task for creating the default JupyterHub ComputeSpec and Hardware configurations.
+ * Initialization task for creating the default JupyterHub ComputeEnvironment and Hardware configurations.
  */
 @Component
 @Slf4j
@@ -23,17 +23,17 @@ public class JupyterHubEnvironmentsAndHardwareInitializer extends AbstractInitia
 
     private final XFTManagerHelper xftManagerHelper;
     private final XnatAppInfo appInfo;
-    private final ComputeSpecConfigService computeSpecConfigService;
+    private final ComputeEnvironmentConfigService computeEnvironmentConfigService;
     private final HardwareConfigService hardwareConfigService;
 
     @Autowired
     public JupyterHubEnvironmentsAndHardwareInitializer(final XFTManagerHelper xftManagerHelper,
                                                         final XnatAppInfo appInfo,
-                                                        final ComputeSpecConfigService computeSpecConfigService,
+                                                        final ComputeEnvironmentConfigService computeEnvironmentConfigService,
                                                         final HardwareConfigService hardwareConfigService) {
         this.xftManagerHelper = xftManagerHelper;
         this.appInfo = appInfo;
-        this.computeSpecConfigService = computeSpecConfigService;
+        this.computeEnvironmentConfigService = computeEnvironmentConfigService;
         this.hardwareConfigService = hardwareConfigService;
     }
 
@@ -43,12 +43,12 @@ public class JupyterHubEnvironmentsAndHardwareInitializer extends AbstractInitia
     }
 
     /**
-     * Builds the default ComputeSpec and Hardware configurations for JupyterHub.
+     * Builds the default ComputeEnvironment and Hardware configurations for JupyterHub.
      * @throws InitializingTaskException if the XFT or XNAT services are not initialized.
      */
     @Override
     protected void callImpl() throws InitializingTaskException {
-        log.debug("Initializing ComputeSpecs and Hardware for JupyterHub.");
+        log.debug("Initializing ComputeEnvironments and Hardware for JupyterHub.");
 
         // Not sure if I need to check both of these or just one.
         if (!xftManagerHelper.isInitialized()) {
@@ -61,8 +61,8 @@ public class JupyterHubEnvironmentsAndHardwareInitializer extends AbstractInitia
             throw new InitializingTaskException(InitializingTaskException.Level.RequiresInitialization);
         }
 
-        if (computeSpecConfigService.getByType(ComputeSpecConfig.ConfigType.JUPYTERHUB).size() > 0) {
-            log.debug("ComputeSpecs already exist. Skipping initialization.");
+        if (computeEnvironmentConfigService.getByType(ComputeEnvironmentConfig.ConfigType.JUPYTERHUB).size() > 0) {
+            log.debug("ComputeEnvironments already exist. Skipping initialization.");
             return;
         }
 
@@ -71,13 +71,13 @@ public class JupyterHubEnvironmentsAndHardwareInitializer extends AbstractInitia
             return;
         }
 
-        ComputeSpecConfig computeSpecConfig = buildDefaultComputeSpecConfig();
+        ComputeEnvironmentConfig computeEnvironmentConfig = buildDefaultComputeEnvironmentConfig();
 
         try {
-            computeSpecConfigService.create(computeSpecConfig);
-            log.info("Created default ComputeSpec for JupyterHub.");
+            computeEnvironmentConfigService.create(computeEnvironmentConfig);
+            log.info("Created default ComputeEnvironment for JupyterHub.");
         } catch (Exception e) {
-            log.error("Error creating default ComputeSpec for JupyterHub.", e);
+            log.error("Error creating default ComputeEnvironment for JupyterHub.", e);
         }
 
         HardwareConfig smallHardwareConfig = buildSmallHardwareConfig();
@@ -97,38 +97,38 @@ public class JupyterHubEnvironmentsAndHardwareInitializer extends AbstractInitia
     }
 
     /**
-     * Builds the default ComputeSpec for JupyterHub.
-     * @return the default ComputeSpec for JupyterHub.
+     * Builds the default ComputeEnvironment for JupyterHub.
+     * @return the default ComputeEnvironment for JupyterHub.
      */
-    private ComputeSpecConfig buildDefaultComputeSpecConfig() {
-        // Initialize the ComputeSpecConfig
-        ComputeSpec computeSpec = new ComputeSpec();
-        Map<Scope, ComputeSpecScope> scopes = new HashMap<>();
-        ComputeSpecHardwareOptions hardwareOptions = new ComputeSpecHardwareOptions();
-        ComputeSpecConfig computeSpecConfig = ComputeSpecConfig.builder()
+    private ComputeEnvironmentConfig buildDefaultComputeEnvironmentConfig() {
+        // Initialize the ComputeEnvironmentConfig
+        ComputeEnvironment computeEnvironment = new ComputeEnvironment();
+        Map<Scope, ComputeEnvironmentScope> scopes = new HashMap<>();
+        ComputeEnvironmentHardwareOptions hardwareOptions = new ComputeEnvironmentHardwareOptions();
+        ComputeEnvironmentConfig computeEnvironmentConfig = ComputeEnvironmentConfig.builder()
                 .id(null)
-                .configTypes(new HashSet<>(Collections.singletonList(ComputeSpecConfig.ConfigType.JUPYTERHUB)))
-                .computeSpec(computeSpec)
+                .configTypes(new HashSet<>(Collections.singletonList(ComputeEnvironmentConfig.ConfigType.JUPYTERHUB)))
+                .computeEnvironment(computeEnvironment)
                 .scopes(scopes)
                 .hardwareOptions(hardwareOptions)
                 .build();
 
-        // Set the ComputeSpec values
-        computeSpec.setName("XNAT Datascience Notebook");
-        computeSpec.setImage("xnat/datascience-notebook:latest");
-        computeSpec.setEnvironmentVariables(new ArrayList<>());
-        computeSpec.setMounts(new ArrayList<>());
+        // Set the ComputeEnvironment values
+        computeEnvironment.setName("XNAT Datascience Notebook");
+        computeEnvironment.setImage("xnat/datascience-notebook:latest");
+        computeEnvironment.setEnvironmentVariables(new ArrayList<>());
+        computeEnvironment.setMounts(new ArrayList<>());
 
-        // Set the ComputeSpecHardwareOptions values
+        // Set the ComputeEnvironmentHardwareOptions values
         hardwareOptions.setAllowAllHardware(true);
         hardwareOptions.setHardwareConfigs(new HashSet<>());
 
-        // Set the ComputeSpecScope values
-        scopes.put(Scope.Site, new ComputeSpecScope(Scope.Site, true, Collections.emptySet()));
-        scopes.put(Scope.Project, new ComputeSpecScope(Scope.Project, true, Collections.emptySet()));
-        scopes.put(Scope.User, new ComputeSpecScope(Scope.User, true, Collections.emptySet()));
+        // Set the ComputeEnvironmentScope values
+        scopes.put(Scope.Site, new ComputeEnvironmentScope(Scope.Site, true, Collections.emptySet()));
+        scopes.put(Scope.Project, new ComputeEnvironmentScope(Scope.Project, true, Collections.emptySet()));
+        scopes.put(Scope.User, new ComputeEnvironmentScope(Scope.User, true, Collections.emptySet()));
 
-        return computeSpecConfig;
+        return computeEnvironmentConfig;
     }
 
     /**

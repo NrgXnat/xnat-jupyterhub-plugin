@@ -2,7 +2,7 @@ package org.nrg.xnat.compute.entities;
 
 import lombok.*;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
-import org.nrg.xnat.compute.models.ComputeSpec;
+import org.nrg.xnat.compute.models.ComputeEnvironment;
 
 import javax.persistence.*;
 import java.util.ArrayList;
@@ -16,7 +16,7 @@ import java.util.stream.Collectors;
 @NoArgsConstructor
 @ToString
 @EqualsAndHashCode(callSuper = true)
-public class ComputeSpecEntity extends AbstractHibernateEntity {
+public class ComputeEnvironmentEntity extends AbstractHibernateEntity {
 
     private String name;
     private String image;
@@ -25,7 +25,7 @@ public class ComputeSpecEntity extends AbstractHibernateEntity {
     private List<EnvironmentVariableEntity> environmentVariables;
     private List<MountEntity> mounts;
 
-    @ToString.Exclude @EqualsAndHashCode.Exclude private ComputeSpecConfigEntity computeSpecConfig;
+    @ToString.Exclude @EqualsAndHashCode.Exclude private ComputeEnvironmentConfigEntity computeEnvironmentConfig;
 
     public String getName() {
         return name;
@@ -78,12 +78,12 @@ public class ComputeSpecEntity extends AbstractHibernateEntity {
     }
 
     @OneToOne
-    public ComputeSpecConfigEntity getComputeSpecConfig() {
-        return computeSpecConfig;
+    public ComputeEnvironmentConfigEntity getComputeEnvironmentConfig() {
+        return computeEnvironmentConfig;
     }
 
-    public void setComputeSpecConfig(ComputeSpecConfigEntity computeSpecConfig) {
-        this.computeSpecConfig = computeSpecConfig;
+    public void setComputeEnvironmentConfig(ComputeEnvironmentConfigEntity computeEnvironmentConfig) {
+        this.computeEnvironmentConfig = computeEnvironmentConfig;
     }
 
     /**
@@ -91,8 +91,8 @@ public class ComputeSpecEntity extends AbstractHibernateEntity {
      * @param pojo The pojo to convert.
      * @return The entity created from the pojo.
      */
-    public static ComputeSpecEntity fromPojo(ComputeSpec pojo) {
-        final ComputeSpecEntity entity = new ComputeSpecEntity();
+    public static ComputeEnvironmentEntity fromPojo(ComputeEnvironment pojo) {
+        final ComputeEnvironmentEntity entity = new ComputeEnvironmentEntity();
         entity.update(pojo);
         return entity;
     }
@@ -101,8 +101,8 @@ public class ComputeSpecEntity extends AbstractHibernateEntity {
      * Converts this entity to a pojo.
      * @return The pojo created from this entity.
      */
-    public ComputeSpec toPojo() {
-        return ComputeSpec.builder()
+    public ComputeEnvironment toPojo() {
+        return ComputeEnvironment.builder()
                 .name(getName())
                 .image(getImage())
                 .command(getCommand())
@@ -115,7 +115,7 @@ public class ComputeSpecEntity extends AbstractHibernateEntity {
      * Updates this entity from the given pojo.
      * @param pojo The pojo to update from.
      */
-    public void update(ComputeSpec pojo) {
+    public void update(ComputeEnvironment pojo) {
         setName(pojo.getName());
         setImage(pojo.getImage());
         setCommand(pojo.getCommand());

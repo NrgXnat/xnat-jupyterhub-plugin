@@ -1,8 +1,8 @@
-console.debug("Loading compute-spec-configs.js");
+console.debug("Loading compute-environment-configs.js");
 
 var XNAT = getObject(XNAT || {});
 XNAT.compute = getObject(XNAT.compute|| {});
-XNAT.compute.computeSpecConfigs = getObject(XNAT.compute.computeSpecConfigs || {});
+XNAT.compute.computeEnvironmentConfigs = getObject(XNAT.compute.computeEnvironmentConfigs || {});
 
 (function (factory) {
     if (typeof define === 'function' && define.amd) {
@@ -14,9 +14,9 @@ XNAT.compute.computeSpecConfigs = getObject(XNAT.compute.computeSpecConfigs || {
     }
 }(function () {
     
-    XNAT.compute.computeSpecConfigs.get = async (id) => {
-        console.debug("Fetching compute spec config " + id)
-        const url = XNAT.url.csrfUrl(`/xapi/compute-spec-configs/${id}`);
+    XNAT.compute.computeEnvironmentConfigs.get = async (id) => {
+        console.debug("Fetching compute environment config " + id)
+        const url = XNAT.url.csrfUrl(`/xapi/compute-environment-configs/${id}`);
         
         const response = await fetch(url, {
             method: 'GET',
@@ -28,16 +28,16 @@ XNAT.compute.computeSpecConfigs = getObject(XNAT.compute.computeSpecConfigs || {
         if (response.ok) {
             return response.json();
         } else {
-            throw new Error(`Error fetching compute spec config ${id}`);
+            throw new Error(`Error fetching compute environment config ${id}`);
         }
     }
     
-    XNAT.compute.computeSpecConfigs.getAll = async (type) => {
-        console.debug("Fetching compute spec configs")
+    XNAT.compute.computeEnvironmentConfigs.getAll = async (type) => {
+        console.debug("Fetching compute environment configs")
         
         const url = type ?
-            XNAT.url.csrfUrl(`/xapi/compute-spec-configs?type=${type}`) :
-            XNAT.url.csrfUrl(`/xapi/compute-spec-configs`);
+            XNAT.url.csrfUrl(`/xapi/compute-environment-configs?type=${type}`) :
+            XNAT.url.csrfUrl(`/xapi/compute-environment-configs`);
         
         const response = await fetch(url, {
             method: 'GET',
@@ -49,83 +49,83 @@ XNAT.compute.computeSpecConfigs = getObject(XNAT.compute.computeSpecConfigs || {
         if (response.ok) {
             return response.json();
         } else {
-            throw new Error(`Error fetching compute spec configs`);
+            throw new Error(`Error fetching compute environment configs`);
         }
     }
     
-    XNAT.compute.computeSpecConfigs.create = async (computeSpec) => {
-        console.debug("Creating compute spec config")
-        const url = XNAT.url.csrfUrl(`/xapi/compute-spec-configs`);
+    XNAT.compute.computeEnvironmentConfigs.create = async (computeEnvironment) => {
+        console.debug("Creating compute environment config")
+        const url = XNAT.url.csrfUrl(`/xapi/compute-environment-configs`);
         
         const response = await fetch(url, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify(computeSpec)
+            body: JSON.stringify(computeEnvironment)
         });
         
         if (response.ok) {
             return response.json();
         } else {
-            throw new Error(`Error creating compute spec config`);
+            throw new Error(`Error creating compute environment config`);
         }
     }
     
-    XNAT.compute.computeSpecConfigs.update = async (computeSpec) => {
-        console.debug("Updating compute spec config")
-        const id = computeSpec['id'];
+    XNAT.compute.computeEnvironmentConfigs.update = async (computeEnvironment) => {
+        console.debug("Updating compute environment config")
+        const id = computeEnvironment['id'];
         
         if (!id) {
-            throw new Error(`Cannot update compute spec config without an ID`);
+            throw new Error(`Cannot update compute environment config without an ID`);
         }
         
-        const url = XNAT.url.csrfUrl(`/xapi/compute-spec-configs/${id}`);
+        const url = XNAT.url.csrfUrl(`/xapi/compute-environment-configs/${id}`);
         
         const response = await fetch(url, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify(computeSpec)
+            body: JSON.stringify(computeEnvironment)
         });
         
         if (response.ok) {
             return response.json();
         } else {
-            throw new Error(`Error updating compute spec config ${id}`);
+            throw new Error(`Error updating compute environment config ${id}`);
         }
     }
     
-    XNAT.compute.computeSpecConfigs.save = async (computeSpec) => {
-        console.debug("Saving compute spec config")
-        const id = computeSpec['id'];
+    XNAT.compute.computeEnvironmentConfigs.save = async (computeEnvironment) => {
+        console.debug("Saving compute environment config")
+        const id = computeEnvironment['id'];
         
         if (id) {
-            return XNAT.compute.computeSpecConfigs.update(computeSpec);
+            return XNAT.compute.computeEnvironmentConfigs.update(computeEnvironment);
         } else {
-            return XNAT.compute.computeSpecConfigs.create(computeSpec);
+            return XNAT.compute.computeEnvironmentConfigs.create(computeEnvironment);
         }
     }
     
-    XNAT.compute.computeSpecConfigs.delete = async (id) => {
-        console.debug("Deleting compute spec config " + id)
-        const url = XNAT.url.csrfUrl(`/xapi/compute-spec-configs/${id}`);
+    XNAT.compute.computeEnvironmentConfigs.delete = async (id) => {
+        console.debug("Deleting compute environment config " + id)
+        const url = XNAT.url.csrfUrl(`/xapi/compute-environment-configs/${id}`);
         
         const response = await fetch(url, {
             method: 'DELETE',
         });
         
         if (!response.ok) {
-            throw new Error(`Error deleting compute spec config ${id}`);
+            throw new Error(`Error deleting compute environment config ${id}`);
         }
     }
     
-    XNAT.compute.computeSpecConfigs.available = async (type, user, project) => {
-        console.debug(`Fetching available compute spec configs for type ${type} and user ${user} and project ${project}`);
+    XNAT.compute.computeEnvironmentConfigs.available = async (type, user, project) => {
+        console.debug(`Fetching available compute environment configs for type ${type} and user ${user} and project ${project}`);
         const url = type ?
-            XNAT.url.csrfUrl(`/xapi/compute-spec-configs/available?type=${type}&user=${user}&project=${project}`) :
-            XNAT.url.csrfUrl(`/xapi/compute-spec-configs/available?user=${user}&project=${project}`);
+            XNAT.url.csrfUrl(`/xapi/compute-environment-configs/available?type=${type}&user=${user}&project=${project}`) :
+            XNAT.url.csrfUrl(`/xapi/compute-environment-configs/available?user=${user}&project=${project}`);
         
         const response = await fetch(url, {
             method: 'GET',
@@ -137,21 +137,21 @@ XNAT.compute.computeSpecConfigs = getObject(XNAT.compute.computeSpecConfigs || {
         if (response.ok) {
             return response.json();
         } else {
-            throw new Error(`Error fetching available compute spec configs`);
+            throw new Error(`Error fetching available compute environment configs`);
         }
     }
     
-    XNAT.compute.computeSpecConfigs.manager = async (containerId, computeSpecType) => {
-        console.debug("Initializing compute spec manager")
+    XNAT.compute.computeEnvironmentConfigs.manager = async (containerId, computeEnvironmentType) => {
+        console.debug("Initializing compute environment manager")
         
         let container,
             footer,
-            computeSpecConfigs = [],
+            computeEnvironmentConfigs = [],
             hardwareConfigs = [],
             users = [],
             projects = [];
         
-        computeSpecType = computeSpecType || '';
+        computeEnvironmentType = computeEnvironmentType || '';
         
         const init = () => {
             container = document.getElementById(containerId);
@@ -206,7 +206,7 @@ XNAT.compute.computeSpecConfigs = getObject(XNAT.compute.computeSpecConfigs || {
             
             let button = spawn('div', [
                 spawn('div.pull-right', [
-                    spawn('button.btn.btn-sm.submit', { html: 'New ' + (computeSpecType === 'JUPYTERHUB' ? 'Jupyter Environment' : 'ComputeSpec'), onclick: () => editor(null, 'new') })
+                    spawn('button.btn.btn-sm.submit', { html: 'New ' + (computeEnvironmentType === 'JUPYTERHUB' ? 'Jupyter Environment' : 'computeEnvironment'), onclick: () => editor(null, 'new') })
                 ]),
                 spawn('div.clear.clearFix')
             ])
@@ -225,11 +225,11 @@ XNAT.compute.computeSpecConfigs = getObject(XNAT.compute.computeSpecConfigs || {
                     let enabled = ckbox.checked;
                     config['scopes']['Site']['enabled'] = enabled;
                     
-                    XNAT.compute.computeSpecConfigs.update(config).then(() => {
-                        XNAT.ui.banner.top(2000, `Compute Spec ${enabled ? 'Enabled' : 'Disabled'}`, 'success');
+                    XNAT.compute.computeEnvironmentConfigs.update(config).then(() => {
+                        XNAT.ui.banner.top(2000, `Compute Environment ${enabled ? 'Enabled' : 'Disabled'}`, 'success');
                     }).catch((err) => {
                         console.error(err);
-                        XNAT.ui.banner.top(4000, `Error ${enabled ? 'Enabling' : 'Disabling'} Compute Spec`, 'error');
+                        XNAT.ui.banner.top(4000, `Error ${enabled ? 'Enabling' : 'Disabling'} Compute Environment`, 'error');
                         toggleCheckbox(!enabled);
                     });
                 }
@@ -354,36 +354,36 @@ XNAT.compute.computeSpecConfigs = getObject(XNAT.compute.computeSpecConfigs || {
         }
         
         /**
-         * Open the editor for a compute spec config
-         * @param config - the compute spec config to edit
+         * Open the editor for a compute environment config
+         * @param config - the compute environment config to edit
          * @param action - the action to perform (new, edit, or copy)
          */
         const editor = (config, action) => {
-            console.debug("Opening compute spec config editor")
+            console.debug("Opening compute environment config editor")
             let isNew  = action === 'new',
                 isCopy = action === 'copy',
                 isEdit = action === 'edit',
                 title  = isNew || isCopy ? 'New ' : 'Edit ',
                 isJupyter = config ? config.configTypes.includes('JUPYTERHUB') : false;
             
-            title = title + (isJupyter ? 'Jupyter Environment' : 'ComputeSpec');
+            title = title + (isJupyter ? 'Jupyter Environment' : 'computeEnvironment');
                 
             
             XNAT.dialog.open({
                 title: title,
-                content: spawn('div', { id: 'compute-spec-editor' }),
+                content: spawn('div', { id: 'compute-environment-editor' }),
                 width: 650,
                 maxBtn: true,
                 beforeShow: () => {
-                    const formEl = document.getElementById('compute-spec-editor');
+                    const formEl = document.getElementById('compute-environment-editor');
                     formEl.classList.add('panel');
                     
                     let id = isNew || isCopy ? '' : config.id;
-                    let type = computeSpecType;
-                    let name = isNew || isCopy ? '' : config.computeSpec?.name || '';
-                    let image = isNew ? '' : config.computeSpec?.image;
-                    let environmentVariables = isNew ? [] : config.computeSpec?.environmentVariables;
-                    let mounts = isNew ? [] : config.computeSpec?.mounts;
+                    let type = computeEnvironmentType;
+                    let name = isNew || isCopy ? '' : config.computeEnvironment?.name || '';
+                    let image = isNew ? '' : config.computeEnvironment?.image;
+                    let environmentVariables = isNew ? [] : config.computeEnvironment?.environmentVariables;
+                    let mounts = isNew ? [] : config.computeEnvironment?.mounts;
                     
                     let siteEnabled = isNew ? true : config.scopes?.Site?.enabled;
                     let allUsersEnabled = isNew ? true : config.scopes?.User?.enabled;
@@ -466,7 +466,7 @@ XNAT.compute.computeSpecConfigs = getObject(XNAT.compute.computeSpecConfigs || {
                         name: 'siteEnabled',
                         id: 'siteEnabled',
                         label: 'Site Enabled',
-                        description: 'Enable this ComputeSpec site-wide.',
+                        description: 'Enable this ComputeEnvironment site-wide.',
                         value: siteEnabled,
                     });
                     
@@ -625,7 +625,7 @@ XNAT.compute.computeSpecConfigs = getObject(XNAT.compute.computeSpecConfigs || {
                         isDefault: true,
                         close: false,
                         action: function() {
-                            const formEl = document.getElementById('compute-spec-editor');
+                            const formEl = document.getElementById('compute-environment-editor');
                             
                             const idEl = formEl.querySelector('#id');
                             const typeEl = formEl.querySelector('#type');
@@ -692,7 +692,7 @@ XNAT.compute.computeSpecConfigs = getObject(XNAT.compute.computeSpecConfigs || {
                             config = {
                                 id: idEl.value,
                                 configTypes: [typeEl.value],
-                                computeSpec: {
+                                computeEnvironment: {
                                     name: nameEl.value,
                                     image: imageEl.value,
                                     environmentVariables: getEnvironmentVariables(),
@@ -724,7 +724,7 @@ XNAT.compute.computeSpecConfigs = getObject(XNAT.compute.computeSpecConfigs || {
                                 }
                             }
                             
-                            XNAT.compute.computeSpecConfigs.save(config)
+                            XNAT.compute.computeEnvironmentConfigs.save(config)
                                 .then(() => {
                                     refreshTable();
                                     XNAT.dialog.closeAll();
@@ -741,11 +741,11 @@ XNAT.compute.computeSpecConfigs = getObject(XNAT.compute.computeSpecConfigs || {
         }
         
         const refreshTable = () => {
-            XNAT.compute.computeSpecConfigs.getAll(computeSpecType)
+            XNAT.compute.computeEnvironmentConfigs.getAll(computeEnvironmentType)
                 .then((data) => {
-                    computeSpecConfigs = data;
+                    computeEnvironmentConfigs = data;
                     
-                    if (computeSpecConfigs.length === 0) {
+                    if (computeEnvironmentConfigs.length === 0) {
                         clearContainer()
                         container.innerHTML = `<p>No Jupyter environments found</p>`
                         return;
@@ -761,7 +761,7 @@ XNAT.compute.computeSpecConfigs = getObject(XNAT.compute.computeSpecConfigs || {
         }
         
         const deleteConfig = (id) => {
-            XNAT.compute.computeSpecConfigs.delete(id)
+            XNAT.compute.computeEnvironmentConfigs.delete(id)
                 .then(() => {
                     XNAT.ui.banner.top(2000, 'Delete successful', 'success');
                     refreshTable();
@@ -773,7 +773,7 @@ XNAT.compute.computeSpecConfigs = getObject(XNAT.compute.computeSpecConfigs || {
         }
         
         const addEnvironmentVariable = (envVar) => {
-            const formEl = document.getElementById('compute-spec-editor');
+            const formEl = document.getElementById('compute-environment-editor');
             const environmentVariablesEl = formEl.querySelector('div.environment-variables');
             
             const keyEl = spawn('input.form-control.key', {
@@ -834,7 +834,7 @@ XNAT.compute.computeSpecConfigs = getObject(XNAT.compute.computeSpecConfigs || {
         }
         
         const getEnvironmentVariables = () => {
-            const formEl = document.getElementById('compute-spec-editor');
+            const formEl = document.getElementById('compute-environment-editor');
             const environmentVariablesEl = formEl.querySelector('div.environment-variables');
             
             let environmentVariables = [];
@@ -855,7 +855,7 @@ XNAT.compute.computeSpecConfigs = getObject(XNAT.compute.computeSpecConfigs || {
         }
         
         const addMount = (mount) => {
-            const formEl = document.getElementById('compute-spec-editor');
+            const formEl = document.getElementById('compute-environment-editor');
             const mountsEl = formEl.querySelector('div.mounts');
             
             let removeButton = spawn('a.close', {
@@ -907,7 +907,7 @@ XNAT.compute.computeSpecConfigs = getObject(XNAT.compute.computeSpecConfigs || {
         }
         
         const getMounts = () => {
-            const formEl = document.getElementById('compute-spec-editor');
+            const formEl = document.getElementById('compute-environment-editor');
             const mountsEl = formEl.querySelector('div.mounts');
             
             let mounts = [];
@@ -931,7 +931,7 @@ XNAT.compute.computeSpecConfigs = getObject(XNAT.compute.computeSpecConfigs || {
         }
         
         const table = () => {
-            const computeSpecTable = XNAT.table.dataTable(computeSpecConfigs, {
+            const computeEnvironmentTable = XNAT.table.dataTable(computeEnvironmentConfigs, {
                 header: true,
                 sortable: 'name',
                 columns: {
@@ -940,14 +940,14 @@ XNAT.compute.computeSpecConfigs = getObject(XNAT.compute.computeSpecConfigs || {
                         filter: true,
                         td: { className: 'word-wrapped align-top' },
                         apply: function () {
-                            return this['computeSpec']['name'];
+                            return this['computeEnvironment']['name'];
                         }
                     },
                     image: {
                         label: 'Image',
                         filter: true,
                         apply: function () {
-                            return this['computeSpec']['image'];
+                            return this['computeEnvironment']['image'];
                         },
                     },
                     hardware: {
@@ -997,14 +997,14 @@ XNAT.compute.computeSpecConfigs = getObject(XNAT.compute.computeSpecConfigs || {
             })
             
             clearContainer();
-            computeSpecTable.render(`#${containerId}`);
+            computeEnvironmentTable.render(`#${containerId}`);
         }
         
         init();
         
         return {
             container: container,
-            computeSpecConfigs: computeSpecConfigs,
+            computeEnvironmentConfigs: computeEnvironmentConfigs,
             refresh: refreshTable
         };
     }

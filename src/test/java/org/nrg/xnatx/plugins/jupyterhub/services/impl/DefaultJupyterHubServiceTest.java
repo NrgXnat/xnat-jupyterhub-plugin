@@ -67,7 +67,7 @@ public class DefaultJupyterHubServiceTest {
     private final String servername = "";
     private final String eventTrackingId = "eventTrackingId";
     private final String projectId = "TestProject";
-    private final Long computeSpecConfigId = 3L;
+    private final Long computeEnvironmentConfigId = 3L;
     private final Long hardwareConfigId = 2L;
     private User userWithServers;
     private User userNoServers;
@@ -108,7 +108,7 @@ public class DefaultJupyterHubServiceTest {
                 .itemLabel(projectId)
                 .projectId(projectId)
                 .eventTrackingId(eventTrackingId)
-                .computeSpecConfigId(computeSpecConfigId)
+                .computeEnvironmentConfigId(computeEnvironmentConfigId)
                 .hardwareConfigId(hardwareConfigId)
                 .build();
 
@@ -121,7 +121,7 @@ public class DefaultJupyterHubServiceTest {
                 .itemLabel("Subject1")
                 .projectId(projectId)
                 .eventTrackingId(eventTrackingId)
-                .computeSpecConfigId(computeSpecConfigId)
+                .computeEnvironmentConfigId(computeEnvironmentConfigId)
                 .hardwareConfigId(hardwareConfigId)
                 .build();
 
@@ -134,7 +134,7 @@ public class DefaultJupyterHubServiceTest {
                 .itemLabel("Experiment1")
                 .projectId(projectId)
                 .eventTrackingId(eventTrackingId)
-                .computeSpecConfigId(computeSpecConfigId)
+                .computeEnvironmentConfigId(computeEnvironmentConfigId)
                 .hardwareConfigId(hardwareConfigId)
                 .build();
 
@@ -147,7 +147,7 @@ public class DefaultJupyterHubServiceTest {
                 .itemLabel("Scan1")
                 .projectId(projectId)
                 .eventTrackingId(eventTrackingId)
-                .computeSpecConfigId(computeSpecConfigId)
+                .computeEnvironmentConfigId(computeEnvironmentConfigId)
                 .hardwareConfigId(hardwareConfigId)
                 .build();
 
@@ -412,7 +412,7 @@ public class DefaultJupyterHubServiceTest {
 
         // Verify user options are stored
         verify(mockUserOptionsService, times(1)).storeUserOptions(eq(user), eq(""), eq(XnatProjectdata.SCHEMA_ELEMENT_NAME),
-                                                                  eq(projectId), eq(projectId), eq(computeSpecConfigId),
+                                                                  eq(projectId), eq(projectId), eq(computeEnvironmentConfigId),
                                                                   eq(hardwareConfigId), eq(eventTrackingId));
 
         // Verify JupyterHub start server request sent
@@ -447,7 +447,7 @@ public class DefaultJupyterHubServiceTest {
 
         // Verify user options are stored
         verify(mockUserOptionsService, times(1)).storeUserOptions(eq(user), eq(""), eq(XnatProjectdata.SCHEMA_ELEMENT_NAME),
-                                                                  eq(projectId), eq(projectId), eq(computeSpecConfigId),
+                                                                  eq(projectId), eq(projectId), eq(computeEnvironmentConfigId),
                                                                   eq(hardwareConfigId), eq(eventTrackingId));
 
         // Verify JupyterHub start server request sent
@@ -484,7 +484,7 @@ public class DefaultJupyterHubServiceTest {
 
         // Verify user options are stored
         verify(mockUserOptionsService, times(1)).storeUserOptions(eq(user), eq(""), eq(XnatProjectdata.SCHEMA_ELEMENT_NAME),
-                                                                  eq(projectId), eq(projectId), eq(computeSpecConfigId),
+                                                                  eq(projectId), eq(projectId), eq(computeEnvironmentConfigId),
                                                                   eq(hardwareConfigId), eq(eventTrackingId));
 
         // Verify JupyterHub start server request sent

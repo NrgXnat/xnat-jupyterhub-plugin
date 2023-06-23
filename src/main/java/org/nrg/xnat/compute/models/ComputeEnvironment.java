@@ -12,7 +12,7 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
-public class ComputeSpec {
+public class ComputeEnvironment {
 
     @ApiModelProperty(position = 0) private String name;
     @ApiModelProperty(position = 1) private String image;

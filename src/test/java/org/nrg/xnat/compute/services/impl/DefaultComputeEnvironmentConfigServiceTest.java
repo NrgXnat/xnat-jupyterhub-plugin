@@ -3,7 +3,7 @@ package org.nrg.xnat.compute.services.impl;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.nrg.xnat.compute.config.DefaultComputeSpecConfigServiceTestConfig;
+import org.nrg.xnat.compute.config.DefaultComputeEnvironmentConfigServiceTestConfig;
 import org.nrg.xnat.compute.models.*;
 import org.nrg.framework.constants.Scope;
 import org.nrg.framework.exceptions.NotFoundException;
@@ -21,22 +21,22 @@ import static org.hamcrest.CoreMatchers.*;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.junit.Assert.*;
 import static org.nrg.framework.constants.Scope.*;
-import static org.nrg.xnat.compute.models.ComputeSpecConfig.ConfigType.CONTAINER_SERVICE;
-import static org.nrg.xnat.compute.models.ComputeSpecConfig.ConfigType.JUPYTERHUB;
+import static org.nrg.xnat.compute.models.ComputeEnvironmentConfig.ConfigType.CONTAINER_SERVICE;
+import static org.nrg.xnat.compute.models.ComputeEnvironmentConfig.ConfigType.JUPYTERHUB;
 import static org.nrg.xnat.compute.utils.TestingUtils.commitTransaction;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @Transactional
-@ContextConfiguration(classes = DefaultComputeSpecConfigServiceTestConfig.class)
-public class DefaultComputeSpecConfigServiceTest {
+@ContextConfiguration(classes = DefaultComputeEnvironmentConfigServiceTestConfig.class)
+public class DefaultComputeEnvironmentConfigServiceTest {
 
-    @Autowired private DefaultComputeSpecConfigService defaultComputeSpecConfigService;
+    @Autowired private DefaultComputeEnvironmentConfigService defaultComputeEnvironmentConfigService;
     @Autowired private HardwareConfigEntityService hardwareConfigEntityService;
 
-    private ComputeSpecConfig computeSpecConfig1;
-    private ComputeSpecConfig computeSpecConfig2;
-    private ComputeSpecConfig computeSpecConfig3;
-    private ComputeSpecConfig computeSpecConfigInvalid;
+    private ComputeEnvironmentConfig computeEnvironmentConfig1;
+    private ComputeEnvironmentConfig computeEnvironmentConfig2;
+    private ComputeEnvironmentConfig computeEnvironmentConfig3;
+    private ComputeEnvironmentConfig computeEnvironmentConfigInvalid;
 
     private HardwareConfig hardwareConfig1;
     private HardwareConfig hardwareConfig2;
@@ -50,9 +50,9 @@ public class DefaultComputeSpecConfigServiceTest {
     @DirtiesContext
     public void testExists() {
         // Test
-        ComputeSpecConfig created = defaultComputeSpecConfigService.create(computeSpecConfig1);
+        ComputeEnvironmentConfig created = defaultComputeEnvironmentConfigService.create(computeEnvironmentConfig1);
         commitTransaction();
-        boolean exists = defaultComputeSpecConfigService.exists(created.getId());
+        boolean exists = defaultComputeEnvironmentConfigService.exists(created.getId());
 
         // Verify
         assertTrue(exists);
@@ -62,9 +62,9 @@ public class DefaultComputeSpecConfigServiceTest {
     @DirtiesContext
     public void testDoesNotExist() {
         // Test
-        ComputeSpecConfig created = defaultComputeSpecConfigService.create(computeSpecConfig1);
+        ComputeEnvironmentConfig created = defaultComputeEnvironmentConfigService.create(computeEnvironmentConfig1);
         commitTransaction();
-        boolean exists = defaultComputeSpecConfigService.exists(created.getId() + 1);
+        boolean exists = defaultComputeEnvironmentConfigService.exists(created.getId() + 1);
 
         // Verify
         assertFalse(exists);
@@ -74,174 +74,174 @@ public class DefaultComputeSpecConfigServiceTest {
     @DirtiesContext
     public void testGetDoesNotExist() {
         // Test
-        Optional<ComputeSpecConfig> computeSpecConfig = defaultComputeSpecConfigService.retrieve(1L);
+        Optional<ComputeEnvironmentConfig> computeEnvironmentConfig = defaultComputeEnvironmentConfigService.retrieve(1L);
 
         // Verify
-        assertFalse(computeSpecConfig.isPresent());
+        assertFalse(computeEnvironmentConfig.isPresent());
     }
 
     @Test
     @DirtiesContext
     public void testGet() {
         // Test
-        ComputeSpecConfig created = defaultComputeSpecConfigService.create(computeSpecConfig1);
+        ComputeEnvironmentConfig created = defaultComputeEnvironmentConfigService.create(computeEnvironmentConfig1);
         commitTransaction();
-        Optional<ComputeSpecConfig> computeSpecConfig = defaultComputeSpecConfigService.retrieve(created.getId());
+        Optional<ComputeEnvironmentConfig> computeEnvironmentConfig = defaultComputeEnvironmentConfigService.retrieve(created.getId());
 
         // Verify
-        assertTrue(computeSpecConfig.isPresent());
-        assertEquals(created, computeSpecConfig.get());
+        assertTrue(computeEnvironmentConfig.isPresent());
+        assertEquals(created, computeEnvironmentConfig.get());
 
-        assertEquals(computeSpecConfig1.getComputeSpec(), computeSpecConfig.get().getComputeSpec());
-        assertEquals(computeSpecConfig1.getConfigTypes(), computeSpecConfig.get().getConfigTypes());
-        assertEquals(computeSpecConfig1.getScopes(), computeSpecConfig.get().getScopes());
+        assertEquals(computeEnvironmentConfig1.getComputeEnvironment(), computeEnvironmentConfig.get().getComputeEnvironment());
+        assertEquals(computeEnvironmentConfig1.getConfigTypes(), computeEnvironmentConfig.get().getConfigTypes());
+        assertEquals(computeEnvironmentConfig1.getScopes(), computeEnvironmentConfig.get().getScopes());
     }
 
     @Test
     @DirtiesContext
     public void testGetAll() {
         // Test
-        ComputeSpecConfig created1 = defaultComputeSpecConfigService.create(computeSpecConfig1);
+        ComputeEnvironmentConfig created1 = defaultComputeEnvironmentConfigService.create(computeEnvironmentConfig1);
         commitTransaction();
-        ComputeSpecConfig created2 = defaultComputeSpecConfigService.create(computeSpecConfig2);
+        ComputeEnvironmentConfig created2 = defaultComputeEnvironmentConfigService.create(computeEnvironmentConfig2);
         commitTransaction();
-        ComputeSpecConfig created3 = defaultComputeSpecConfigService.create(computeSpecConfig3);
+        ComputeEnvironmentConfig created3 = defaultComputeEnvironmentConfigService.create(computeEnvironmentConfig3);
         commitTransaction();
 
-        List<ComputeSpecConfig> computeSpecConfigs = defaultComputeSpecConfigService.getAll();
+        List<ComputeEnvironmentConfig> computeEnvironmentConfigs = defaultComputeEnvironmentConfigService.getAll();
 
         // Verify
-        assertThat(computeSpecConfigs.size(), is(3));
-        assertThat(computeSpecConfigs, hasItems(created1, created2, created3));
+        assertThat(computeEnvironmentConfigs.size(), is(3));
+        assertThat(computeEnvironmentConfigs, hasItems(created1, created2, created3));
     }
 
     @Test
     @DirtiesContext
     public void testGetByType() {
-        // Create ComputeSpecConfigs
-        ComputeSpecConfig created1 = defaultComputeSpecConfigService.create(computeSpecConfig1);
+        // Create ComputeEnvironmentConfigs
+        ComputeEnvironmentConfig created1 = defaultComputeEnvironmentConfigService.create(computeEnvironmentConfig1);
         commitTransaction();
-        ComputeSpecConfig created2 = defaultComputeSpecConfigService.create(computeSpecConfig2);
+        ComputeEnvironmentConfig created2 = defaultComputeEnvironmentConfigService.create(computeEnvironmentConfig2);
         commitTransaction();
-        ComputeSpecConfig created3 = defaultComputeSpecConfigService.create(computeSpecConfig3);
+        ComputeEnvironmentConfig created3 = defaultComputeEnvironmentConfigService.create(computeEnvironmentConfig3);
         commitTransaction();
 
         // Test
-        List<ComputeSpecConfig> computeSpecConfigs = defaultComputeSpecConfigService.getByType(CONTAINER_SERVICE);
+        List<ComputeEnvironmentConfig> computeEnvironmentConfigs = defaultComputeEnvironmentConfigService.getByType(CONTAINER_SERVICE);
 
         // Verify
-        assertThat(computeSpecConfigs.size(), is(2));
-        assertThat(computeSpecConfigs, hasItems(created2, created3));
+        assertThat(computeEnvironmentConfigs.size(), is(2));
+        assertThat(computeEnvironmentConfigs, hasItems(created2, created3));
 
         // Test
-        computeSpecConfigs = defaultComputeSpecConfigService.getByType(JUPYTERHUB);
+        computeEnvironmentConfigs = defaultComputeEnvironmentConfigService.getByType(JUPYTERHUB);
 
         // Verify
-        assertEquals(2, computeSpecConfigs.size());
-        assertThat(computeSpecConfigs, containsInAnyOrder(created1, created3));
+        assertEquals(2, computeEnvironmentConfigs.size());
+        assertThat(computeEnvironmentConfigs, containsInAnyOrder(created1, created3));
     }
 
     @Test
     @DirtiesContext
     public void testGetAvailable_WrongUser() {
-        // Create ComputeSpecConfigs
-        ComputeSpecConfig created1 = defaultComputeSpecConfigService.create(computeSpecConfig1);
+        // Create ComputeEnvironmentConfigs
+        ComputeEnvironmentConfig created1 = defaultComputeEnvironmentConfigService.create(computeEnvironmentConfig1);
         commitTransaction();
-        ComputeSpecConfig created2 = defaultComputeSpecConfigService.create(computeSpecConfig2);
+        ComputeEnvironmentConfig created2 = defaultComputeEnvironmentConfigService.create(computeEnvironmentConfig2);
         commitTransaction();
-        ComputeSpecConfig created3 = defaultComputeSpecConfigService.create(computeSpecConfig3);
+        ComputeEnvironmentConfig created3 = defaultComputeEnvironmentConfigService.create(computeEnvironmentConfig3);
         commitTransaction();
 
         // Test
-        List<ComputeSpecConfig> computeSpecConfigs = defaultComputeSpecConfigService.getAvailable("User2", "Project1", null);
+        List<ComputeEnvironmentConfig> computeEnvironmentConfigs = defaultComputeEnvironmentConfigService.getAvailable("User2", "Project1", null);
 
         // Verify
-        assertThat(computeSpecConfigs.size(), is(1));
-        assertThat(computeSpecConfigs, hasItems(created1));
+        assertThat(computeEnvironmentConfigs.size(), is(1));
+        assertThat(computeEnvironmentConfigs, hasItems(created1));
     }
 
     @Test
     @DirtiesContext
     public void testGetAvailable_WrongProject() {
-        // Create ComputeSpecConfigs
-        ComputeSpecConfig created1 = defaultComputeSpecConfigService.create(computeSpecConfig1);
+        // Create ComputeEnvironmentConfigs
+        ComputeEnvironmentConfig created1 = defaultComputeEnvironmentConfigService.create(computeEnvironmentConfig1);
         commitTransaction();
-        ComputeSpecConfig created2 = defaultComputeSpecConfigService.create(computeSpecConfig2);
+        ComputeEnvironmentConfig created2 = defaultComputeEnvironmentConfigService.create(computeEnvironmentConfig2);
         commitTransaction();
-        ComputeSpecConfig created3 = defaultComputeSpecConfigService.create(computeSpecConfig3);
+        ComputeEnvironmentConfig created3 = defaultComputeEnvironmentConfigService.create(computeEnvironmentConfig3);
         commitTransaction();
 
         // Test
-        List<ComputeSpecConfig> computeSpecConfigs = defaultComputeSpecConfigService.getAvailable("User1", "Project2");
+        List<ComputeEnvironmentConfig> computeEnvironmentConfigs = defaultComputeEnvironmentConfigService.getAvailable("User1", "Project2");
 
         // Verify
-        assertThat(computeSpecConfigs.size(), is(1));
-        assertThat(computeSpecConfigs, hasItem(created1));
+        assertThat(computeEnvironmentConfigs.size(), is(1));
+        assertThat(computeEnvironmentConfigs, hasItem(created1));
     }
 
     @Test
     @DirtiesContext
     public void testGetAvailable() {
-        // Create ComputeSpecConfigs
-        ComputeSpecConfig created1 = defaultComputeSpecConfigService.create(computeSpecConfig1);
+        // Create ComputeEnvironmentConfigs
+        ComputeEnvironmentConfig created1 = defaultComputeEnvironmentConfigService.create(computeEnvironmentConfig1);
         commitTransaction();
-        ComputeSpecConfig created2 = defaultComputeSpecConfigService.create(computeSpecConfig2);
+        ComputeEnvironmentConfig created2 = defaultComputeEnvironmentConfigService.create(computeEnvironmentConfig2);
         commitTransaction();
-        ComputeSpecConfig created3 = defaultComputeSpecConfigService.create(computeSpecConfig3);
+        ComputeEnvironmentConfig created3 = defaultComputeEnvironmentConfigService.create(computeEnvironmentConfig3);
         commitTransaction();
 
         // Test
-        List<ComputeSpecConfig> computeSpecConfigs = defaultComputeSpecConfigService.getAvailable("User1", "Project1");
+        List<ComputeEnvironmentConfig> computeEnvironmentConfigs = defaultComputeEnvironmentConfigService.getAvailable("User1", "Project1");
 
         // Verify
-        assertThat(computeSpecConfigs.size(), is(2));
-        assertThat(computeSpecConfigs, hasItems(created1, created2));
+        assertThat(computeEnvironmentConfigs.size(), is(2));
+        assertThat(computeEnvironmentConfigs, hasItems(created1, created2));
     }
 
     @Test
     @DirtiesContext
     public void testGetAvailable_SpecificType() {
-        // Create ComputeSpecConfigs
-        ComputeSpecConfig created1 = defaultComputeSpecConfigService.create(computeSpecConfig1);
+        // Create ComputeEnvironmentConfigs
+        ComputeEnvironmentConfig created1 = defaultComputeEnvironmentConfigService.create(computeEnvironmentConfig1);
         commitTransaction();
-        ComputeSpecConfig created2 = defaultComputeSpecConfigService.create(computeSpecConfig2);
+        ComputeEnvironmentConfig created2 = defaultComputeEnvironmentConfigService.create(computeEnvironmentConfig2);
         commitTransaction();
-        ComputeSpecConfig created3 = defaultComputeSpecConfigService.create(computeSpecConfig3);
+        ComputeEnvironmentConfig created3 = defaultComputeEnvironmentConfigService.create(computeEnvironmentConfig3);
         commitTransaction();
 
         // Test
-        List<ComputeSpecConfig> computeSpecConfigs = defaultComputeSpecConfigService.getAvailable("User1", "Project1", CONTAINER_SERVICE);
+        List<ComputeEnvironmentConfig> computeEnvironmentConfigs = defaultComputeEnvironmentConfigService.getAvailable("User1", "Project1", CONTAINER_SERVICE);
 
         // Verify
-        assertThat(computeSpecConfigs.size(), is(1));
-        assertThat(computeSpecConfigs, hasItems(created2));
+        assertThat(computeEnvironmentConfigs.size(), is(1));
+        assertThat(computeEnvironmentConfigs, hasItems(created2));
     }
 
     @Test
     @DirtiesContext
     public void testIsAvailable() {
-        // Create ComputeSpecConfigs
-        ComputeSpecConfig created1 = defaultComputeSpecConfigService.create(computeSpecConfig1);
+        // Create ComputeEnvironmentConfigs
+        ComputeEnvironmentConfig created1 = defaultComputeEnvironmentConfigService.create(computeEnvironmentConfig1);
         commitTransaction();
-        ComputeSpecConfig created2 = defaultComputeSpecConfigService.create(computeSpecConfig2);
+        ComputeEnvironmentConfig created2 = defaultComputeEnvironmentConfigService.create(computeEnvironmentConfig2);
         commitTransaction();
-        ComputeSpecConfig created3 = defaultComputeSpecConfigService.create(computeSpecConfig3);
+        ComputeEnvironmentConfig created3 = defaultComputeEnvironmentConfigService.create(computeEnvironmentConfig3);
         commitTransaction();
 
         // Test
-        boolean result = defaultComputeSpecConfigService.isAvailable("User1", "Project1", created1.getId());
+        boolean result = defaultComputeEnvironmentConfigService.isAvailable("User1", "Project1", created1.getId());
 
         // Verify
         assertTrue(result);
 
         // Test
-        result = defaultComputeSpecConfigService.isAvailable("User1", "Project1", created2.getId());
+        result = defaultComputeEnvironmentConfigService.isAvailable("User1", "Project1", created2.getId());
 
         // Verify
         assertTrue(result);
 
         // Test
-        result = defaultComputeSpecConfigService.isAvailable("User1", "Project1", created3.getId());
+        result = defaultComputeEnvironmentConfigService.isAvailable("User1", "Project1", created3.getId());
 
         // Verify
         assertFalse(result);
@@ -250,28 +250,28 @@ public class DefaultComputeSpecConfigServiceTest {
     @Test
     @DirtiesContext
     public void testNotAvailable_WrongUser() {
-        // Create ComputeSpecConfigs
-        ComputeSpecConfig created1 = defaultComputeSpecConfigService.create(computeSpecConfig1);
+        // Create ComputeEnvironmentConfigs
+        ComputeEnvironmentConfig created1 = defaultComputeEnvironmentConfigService.create(computeEnvironmentConfig1);
         commitTransaction();
-        ComputeSpecConfig created2 = defaultComputeSpecConfigService.create(computeSpecConfig2);
+        ComputeEnvironmentConfig created2 = defaultComputeEnvironmentConfigService.create(computeEnvironmentConfig2);
         commitTransaction();
-        ComputeSpecConfig created3 = defaultComputeSpecConfigService.create(computeSpecConfig3);
+        ComputeEnvironmentConfig created3 = defaultComputeEnvironmentConfigService.create(computeEnvironmentConfig3);
         commitTransaction();
 
         // Test
-        boolean result = defaultComputeSpecConfigService.isAvailable("User2", "Project1", created1.getId());
+        boolean result = defaultComputeEnvironmentConfigService.isAvailable("User2", "Project1", created1.getId());
 
         // Verify
         assertTrue(result);
 
         // Test
-        result = defaultComputeSpecConfigService.isAvailable("User2", "Project1", created2.getId());
+        result = defaultComputeEnvironmentConfigService.isAvailable("User2", "Project1", created2.getId());
 
         // Verify
         assertFalse(result);
 
         // Test
-        result = defaultComputeSpecConfigService.isAvailable("User2", "Project1", created3.getId());
+        result = defaultComputeEnvironmentConfigService.isAvailable("User2", "Project1", created3.getId());
 
         // Verify
         assertFalse(result);
@@ -280,28 +280,28 @@ public class DefaultComputeSpecConfigServiceTest {
     @Test
     @DirtiesContext
     public void testNotAvailable_WrongProject() {
-        // Create ComputeSpecConfigs
-        ComputeSpecConfig created1 = defaultComputeSpecConfigService.create(computeSpecConfig1);
+        // Create ComputeEnvironmentConfigs
+        ComputeEnvironmentConfig created1 = defaultComputeEnvironmentConfigService.create(computeEnvironmentConfig1);
         commitTransaction();
-        ComputeSpecConfig created2 = defaultComputeSpecConfigService.create(computeSpecConfig2);
+        ComputeEnvironmentConfig created2 = defaultComputeEnvironmentConfigService.create(computeEnvironmentConfig2);
         commitTransaction();
-        ComputeSpecConfig created3 = defaultComputeSpecConfigService.create(computeSpecConfig3);
+        ComputeEnvironmentConfig created3 = defaultComputeEnvironmentConfigService.create(computeEnvironmentConfig3);
         commitTransaction();
 
         // Test
-        boolean result = defaultComputeSpecConfigService.isAvailable("User1", "Project2", created1.getId());
+        boolean result = defaultComputeEnvironmentConfigService.isAvailable("User1", "Project2", created1.getId());
 
         // Verify
         assertTrue(result);
 
         // Test
-        result = defaultComputeSpecConfigService.isAvailable("User1", "Project2", created2.getId());
+        result = defaultComputeEnvironmentConfigService.isAvailable("User1", "Project2", created2.getId());
 
         // Verify
         assertFalse(result);
 
         // Test
-        result = defaultComputeSpecConfigService.isAvailable("User1", "Project2", created3.getId());
+        result = defaultComputeEnvironmentConfigService.isAvailable("User1", "Project2", created3.getId());
 
         // Verify
         assertFalse(result);
@@ -318,11 +318,11 @@ public class DefaultComputeSpecConfigServiceTest {
         hardwareConfig1.setId(hardwareConfigEntity1.getId());
         hardwareConfig2.setId(hardwareConfigEntity2.getId());
 
-        // Next create compute spec config
-        ComputeSpecConfig created1 = defaultComputeSpecConfigService.create(computeSpecConfig1);
+        // Next create compute environment config
+        ComputeEnvironmentConfig created1 = defaultComputeEnvironmentConfigService.create(computeEnvironmentConfig1);
         commitTransaction();
 
-        // Verify that all hardware configs are associated with the compute spec config
+        // Verify that all hardware configs are associated with the compute environment config
         assertThat(created1.getHardwareOptions().getHardwareConfigs().size(), is(2));
         assertThat(created1.getHardwareOptions().getHardwareConfigs(), hasItems(hardwareConfig1, hardwareConfig2));
     }
@@ -338,11 +338,11 @@ public class DefaultComputeSpecConfigServiceTest {
         hardwareConfig1.setId(hardwareConfigEntity1.getId());
         hardwareConfig2.setId(hardwareConfigEntity2.getId());
 
-        // Next create compute spec config
-        ComputeSpecConfig created2 = defaultComputeSpecConfigService.create(computeSpecConfig2);
+        // Next create compute environment config
+        ComputeEnvironmentConfig created2 = defaultComputeEnvironmentConfigService.create(computeEnvironmentConfig2);
         commitTransaction();
 
-        // Verify that only the selected hardware config is associated with the compute spec config
+        // Verify that only the selected hardware config is associated with the compute environment config
         assertThat(created2.getHardwareOptions().getHardwareConfigs().size(), is(1));
         assertThat(created2.getHardwareOptions().getHardwareConfigs(), hasItem(hardwareConfig2));
     }
@@ -358,35 +358,35 @@ public class DefaultComputeSpecConfigServiceTest {
         hardwareConfig1.setId(hardwareConfigEntity1.getId());
         hardwareConfig2.setId(hardwareConfigEntity2.getId());
 
-        // Next create compute spec config
-        ComputeSpecConfig created1 = defaultComputeSpecConfigService.create(computeSpecConfig1);
+        // Next create compute environment config
+        ComputeEnvironmentConfig created1 = defaultComputeEnvironmentConfigService.create(computeEnvironmentConfig1);
         commitTransaction();
 
-        // Verify that all hardware configs are associated with the compute spec config
+        // Verify that all hardware configs are associated with the compute environment config
         assertThat(created1.getHardwareOptions().getHardwareConfigs().size(), is(2));
         assertThat(created1.getHardwareOptions().getHardwareConfigs(), hasItems(hardwareConfig1, hardwareConfig2));
 
-        // Update the compute spec config
+        // Update the compute environment config
         created1.getHardwareOptions().setAllowAllHardware(false);
         created1.getHardwareOptions().getHardwareConfigs().remove(hardwareConfig1);
 
         // Update other fields
-        created1.getComputeSpec().setName("UpdatedName");
-        created1.getComputeSpec().setImage("UpdatedImage");
-        created1.getComputeSpec().getEnvironmentVariables().add(new EnvironmentVariable("UpdatedKey", "UpdatedValue"));
+        created1.getComputeEnvironment().setName("UpdatedName");
+        created1.getComputeEnvironment().setImage("UpdatedImage");
+        created1.getComputeEnvironment().getEnvironmentVariables().add(new EnvironmentVariable("UpdatedKey", "UpdatedValue"));
 
-        // Update the compute spec config
-        defaultComputeSpecConfigService.update(created1);
+        // Update the compute environment config
+        defaultComputeEnvironmentConfigService.update(created1);
         commitTransaction();
 
-        // Verify that only the selected hardware config is associated with the compute spec config
+        // Verify that only the selected hardware config is associated with the compute environment config
         assertThat(created1.getHardwareOptions().getHardwareConfigs().size(), is(1));
         assertThat(created1.getHardwareOptions().getHardwareConfigs(), hasItem(hardwareConfig2));
 
         // Verify that the other fields were updated
-        assertThat(created1.getComputeSpec().getName(), is("UpdatedName"));
-        assertThat(created1.getComputeSpec().getImage(), is("UpdatedImage"));
-        assertThat(created1.getComputeSpec().getEnvironmentVariables(), hasItem(new EnvironmentVariable("UpdatedKey", "UpdatedValue")));
+        assertThat(created1.getComputeEnvironment().getName(), is("UpdatedName"));
+        assertThat(created1.getComputeEnvironment().getImage(), is("UpdatedImage"));
+        assertThat(created1.getComputeEnvironment().getEnvironmentVariables(), hasItem(new EnvironmentVariable("UpdatedKey", "UpdatedValue")));
     }
 
     @Test
@@ -400,39 +400,39 @@ public class DefaultComputeSpecConfigServiceTest {
         hardwareConfig1.setId(hardwareConfigEntity1.getId());
         hardwareConfig2.setId(hardwareConfigEntity2.getId());
 
-        // Next create compute spec config
-        ComputeSpecConfig created1 = defaultComputeSpecConfigService.create(computeSpecConfig1);
+        // Next create compute environment config
+        ComputeEnvironmentConfig created1 = defaultComputeEnvironmentConfigService.create(computeEnvironmentConfig1);
         commitTransaction();
 
-        // Verify that all hardware configs are associated with the compute spec config
+        // Verify that all hardware configs are associated with the compute environment config
         assertThat(created1.getHardwareOptions().getHardwareConfigs().size(), is(2));
         assertThat(created1.getHardwareOptions().getHardwareConfigs(), hasItems(hardwareConfig1, hardwareConfig2));
 
         hardwareConfigEntity1 = hardwareConfigEntityService.retrieve(hardwareConfigEntity1.getId());
         hardwareConfigEntity2 = hardwareConfigEntityService.retrieve(hardwareConfigEntity2.getId());
 
-        assertThat(hardwareConfigEntity1.getComputeSpecHardwareOptions().size(), is(1));
-        assertThat(hardwareConfigEntity2.getComputeSpecHardwareOptions().size(), is(1));
+        assertThat(hardwareConfigEntity1.getComputeEnvironmentHardwareOptions().size(), is(1));
+        assertThat(hardwareConfigEntity2.getComputeEnvironmentHardwareOptions().size(), is(1));
 
-        // Delete the compute spec config
-        defaultComputeSpecConfigService.delete(created1.getId());
+        // Delete the compute environment config
+        defaultComputeEnvironmentConfigService.delete(created1.getId());
         commitTransaction();
 
-        // Verify that the compute spec config was deleted
-        assertThat(defaultComputeSpecConfigService.exists(created1.getId()), is(false));
+        // Verify that the compute environment config was deleted
+        assertThat(defaultComputeEnvironmentConfigService.exists(created1.getId()), is(false));
 
         // Verify that the hardware config entities were deleted
         hardwareConfigEntity1 = hardwareConfigEntityService.retrieve(hardwareConfigEntity1.getId());
         hardwareConfigEntity2 = hardwareConfigEntityService.retrieve(hardwareConfigEntity2.getId());
 
-        assertThat(hardwareConfigEntity1.getComputeSpecHardwareOptions().size(), is(0));
-        assertThat(hardwareConfigEntity2.getComputeSpecHardwareOptions().size(), is(0));
+        assertThat(hardwareConfigEntity1.getComputeEnvironmentHardwareOptions().size(), is(0));
+        assertThat(hardwareConfigEntity2.getComputeEnvironmentHardwareOptions().size(), is(0));
     }
 
     @Test
     public void testValidate() {
         try {
-            defaultComputeSpecConfigService.validate(computeSpecConfigInvalid);
+            defaultComputeEnvironmentConfigService.validate(computeEnvironmentConfigInvalid);
             fail("Expected exception to be thrown");
         } catch (IllegalArgumentException e) {
             // Verify that the exception message contains the expected validation errors
@@ -579,156 +579,156 @@ public class DefaultComputeSpecConfigServiceTest {
                 .scopes(hardwareScopes2)
                 .build();
 
-        // Setup first compute spec
-        ComputeSpec computeSpec1 = ComputeSpec.builder()
+        // Setup first compute environment
+        ComputeEnvironment computeEnvironment1 = ComputeEnvironment.builder()
                 .name("Jupyter Datascience Notebook")
                 .image("jupyter/datascience-notebook:hub-3.0.0")
                 .environmentVariables(new ArrayList<>())
                 .mounts(new ArrayList<>())
                 .build();
 
-        ComputeSpecScope computeSpecSiteScope1 = ComputeSpecScope.builder()
+        ComputeEnvironmentScope computeEnvironmentSiteScope1 = ComputeEnvironmentScope.builder()
                 .scope(Site)
                 .enabled(true)
                 .ids(new HashSet<>(Collections.emptyList()))
                 .build();
 
-        ComputeSpecScope computeSpecProjectScope1 = ComputeSpecScope.builder()
+        ComputeEnvironmentScope computeEnvironmentProjectScope1 = ComputeEnvironmentScope.builder()
                 .scope(Project)
                 .enabled(true)
                 .ids(new HashSet<>(Collections.emptyList()))
                 .build();
 
-        ComputeSpecScope computeSpecUserScope1 = ComputeSpecScope.builder()
+        ComputeEnvironmentScope computeEnvironmentUserScope1 = ComputeEnvironmentScope.builder()
                 .scope(User)
                 .enabled(true)
                 .ids(new HashSet<>(Collections.emptyList()))
                 .build();
 
-        Map<Scope, ComputeSpecScope> computeSpecScopes1 = new HashMap<>();
-        computeSpecScopes1.put(Site, computeSpecSiteScope1);
-        computeSpecScopes1.put(Project, computeSpecProjectScope1);
-        computeSpecScopes1.put(User, computeSpecUserScope1);
+        Map<Scope, ComputeEnvironmentScope> computeEnvironmentScopes1 = new HashMap<>();
+        computeEnvironmentScopes1.put(Site, computeEnvironmentSiteScope1);
+        computeEnvironmentScopes1.put(Project, computeEnvironmentProjectScope1);
+        computeEnvironmentScopes1.put(User, computeEnvironmentUserScope1);
 
-        ComputeSpecHardwareOptions computeSpecHardwareOptions1 = ComputeSpecHardwareOptions.builder()
+        ComputeEnvironmentHardwareOptions computeEnvironmentHardwareOptions1 = ComputeEnvironmentHardwareOptions.builder()
                 .allowAllHardware(true)
                 .hardwareConfigs(new HashSet<>(Arrays.asList(hardwareConfig1, hardwareConfig2)))
                 .build();
 
-        computeSpecConfig1 = ComputeSpecConfig.builder()
-                .configTypes(new HashSet<>(Collections.singletonList(ComputeSpecConfig.ConfigType.JUPYTERHUB)))
-                .computeSpec(computeSpec1)
-                .scopes(computeSpecScopes1)
-                .hardwareOptions(computeSpecHardwareOptions1)
+        computeEnvironmentConfig1 = ComputeEnvironmentConfig.builder()
+                .configTypes(new HashSet<>(Collections.singletonList(ComputeEnvironmentConfig.ConfigType.JUPYTERHUB)))
+                .computeEnvironment(computeEnvironment1)
+                .scopes(computeEnvironmentScopes1)
+                .hardwareOptions(computeEnvironmentHardwareOptions1)
                 .build();
 
-        // Setup second compute spec
-        ComputeSpec computeSpec2 = ComputeSpec.builder()
+        // Setup second compute environment
+        ComputeEnvironment computeEnvironment2 = ComputeEnvironment.builder()
                 .name("XNAT Datascience Notebook")
                 .image("xnat/datascience-notebook:latest")
                 .environmentVariables(new ArrayList<>())
                 .mounts(new ArrayList<>())
                 .build();
 
-        ComputeSpecScope computeSpecSiteScope2 = ComputeSpecScope.builder()
+        ComputeEnvironmentScope computeEnvironmentSiteScope2 = ComputeEnvironmentScope.builder()
                 .scope(Site)
                 .enabled(true)
                 .ids(new HashSet<>(Collections.emptyList()))
                 .build();
 
-        ComputeSpecScope computeSpecProjectScope2 = ComputeSpecScope.builder()
+        ComputeEnvironmentScope computeEnvironmentProjectScope2 = ComputeEnvironmentScope.builder()
                 .scope(Project)
                 .enabled(false)
                 .ids(new HashSet<>(Collections.singletonList("Project1")))
                 .build();
 
-        ComputeSpecScope computeSpecUserScope2 = ComputeSpecScope.builder()
+        ComputeEnvironmentScope computeEnvironmentUserScope2 = ComputeEnvironmentScope.builder()
                 .scope(User)
                 .enabled(false)
                 .ids(new HashSet<>(Collections.singletonList("User1")))
                 .build();
 
-        Map<Scope, ComputeSpecScope> computeSpecScopes2 = new HashMap<>();
-        computeSpecScopes2.put(Site, computeSpecSiteScope2);
-        computeSpecScopes2.put(Project, computeSpecProjectScope2);
-        computeSpecScopes2.put(User, computeSpecUserScope2);
+        Map<Scope, ComputeEnvironmentScope> computeEnvironmentScopes2 = new HashMap<>();
+        computeEnvironmentScopes2.put(Site, computeEnvironmentSiteScope2);
+        computeEnvironmentScopes2.put(Project, computeEnvironmentProjectScope2);
+        computeEnvironmentScopes2.put(User, computeEnvironmentUserScope2);
 
-        ComputeSpecHardwareOptions computeSpecHardwareOptions2 = ComputeSpecHardwareOptions.builder()
+        ComputeEnvironmentHardwareOptions computeEnvironmentHardwareOptions2 = ComputeEnvironmentHardwareOptions.builder()
                 .allowAllHardware(false)
                 .hardwareConfigs(new HashSet<>(Arrays.asList(hardwareConfig2)))
                 .build();
 
-        computeSpecConfig2 = ComputeSpecConfig.builder()
+        computeEnvironmentConfig2 = ComputeEnvironmentConfig.builder()
                 .id(2L)
                 .configTypes(new HashSet<>(Collections.singletonList(CONTAINER_SERVICE)))
-                .computeSpec(computeSpec2)
-                .scopes(computeSpecScopes2)
-                .hardwareOptions(computeSpecHardwareOptions2)
+                .computeEnvironment(computeEnvironment2)
+                .scopes(computeEnvironmentScopes2)
+                .hardwareOptions(computeEnvironmentHardwareOptions2)
                 .build();
 
-        // Setup third compute spec
-        ComputeSpec computeSpec3 = ComputeSpec.builder()
+        // Setup third compute environment
+        ComputeEnvironment computeEnvironment3 = ComputeEnvironment.builder()
                 .name("MATLAB Datascience Notebook")
                 .image("matlab/datascience-notebook:latest")
                 .environmentVariables(new ArrayList<>())
                 .mounts(new ArrayList<>())
                 .build();
 
-        ComputeSpecScope computeSpecSiteScope3 = ComputeSpecScope.builder()
+        ComputeEnvironmentScope computeEnvironmentSiteScope3 = ComputeEnvironmentScope.builder()
                 .scope(Site)
                 .enabled(false)
                 .ids(new HashSet<>(Collections.emptyList()))
                 .build();
 
-        ComputeSpecScope computeSpecProjectScope3 = ComputeSpecScope.builder()
+        ComputeEnvironmentScope computeEnvironmentProjectScope3 = ComputeEnvironmentScope.builder()
                 .scope(Project)
                 .enabled(true)
                 .ids(new HashSet<>())
                 .build();
 
-        ComputeSpecScope computeSpecUserScope3 = ComputeSpecScope.builder()
+        ComputeEnvironmentScope computeEnvironmentUserScope3 = ComputeEnvironmentScope.builder()
                 .scope(User)
                 .enabled(true)
                 .ids(new HashSet<>())
                 .build();
 
-        Map<Scope, ComputeSpecScope> computeSpecScopes3 = new HashMap<>();
-        computeSpecScopes3.put(Site, computeSpecSiteScope3);
-        computeSpecScopes3.put(Project, computeSpecProjectScope3);
-        computeSpecScopes3.put(User, computeSpecUserScope3);
+        Map<Scope, ComputeEnvironmentScope> computeEnvironmentScopes3 = new HashMap<>();
+        computeEnvironmentScopes3.put(Site, computeEnvironmentSiteScope3);
+        computeEnvironmentScopes3.put(Project, computeEnvironmentProjectScope3);
+        computeEnvironmentScopes3.put(User, computeEnvironmentUserScope3);
 
-        ComputeSpecHardwareOptions computeSpecHardwareOptions3 = ComputeSpecHardwareOptions.builder()
+        ComputeEnvironmentHardwareOptions computeEnvironmentHardwareOptions3 = ComputeEnvironmentHardwareOptions.builder()
                 .allowAllHardware(true)
                 .hardwareConfigs(new HashSet<>())
                 .build();
 
-        computeSpecConfig3 = ComputeSpecConfig.builder()
+        computeEnvironmentConfig3 = ComputeEnvironmentConfig.builder()
                 .configTypes(new HashSet<>(Arrays.asList(CONTAINER_SERVICE, JUPYTERHUB)))
-                .computeSpec(computeSpec3)
-                .scopes(computeSpecScopes3)
-                .hardwareOptions(computeSpecHardwareOptions3)
+                .computeEnvironment(computeEnvironment3)
+                .scopes(computeEnvironmentScopes3)
+                .hardwareOptions(computeEnvironmentHardwareOptions3)
                 .build();
 
-        // Setup invalid compute spec config
-        ComputeSpec computeSpecInvalid = ComputeSpec.builder()
+        // Setup invalid compute environment config
+        ComputeEnvironment computeEnvironmentInvalid = ComputeEnvironment.builder()
                 .name("") // invalid
                 .image("") // invalid
                 .environmentVariables(new ArrayList<>())
                 .mounts(new ArrayList<>())
                 .build();
 
-        Map<Scope, ComputeSpecScope> computeSpecScopesInvalid = new HashMap<>(); // invalid, no scopes
+        Map<Scope, ComputeEnvironmentScope> computeEnvironmentScopesInvalid = new HashMap<>(); // invalid, no scopes
 
-        ComputeSpecHardwareOptions computeSpecHardwareOptionsInvalid = ComputeSpecHardwareOptions.builder()
+        ComputeEnvironmentHardwareOptions computeEnvironmentHardwareOptionsInvalid = ComputeEnvironmentHardwareOptions.builder()
                 .allowAllHardware(true)
                 .hardwareConfigs(null) // invalid
                 .build();
 
-        computeSpecConfigInvalid = ComputeSpecConfig.builder()
+        computeEnvironmentConfigInvalid = ComputeEnvironmentConfig.builder()
                 .configTypes(null) // invalid
-                .computeSpec(computeSpecInvalid)
-                .scopes(computeSpecScopesInvalid)
-                .hardwareOptions(computeSpecHardwareOptionsInvalid)
+                .computeEnvironment(computeEnvironmentInvalid)
+                .scopes(computeEnvironmentScopesInvalid)
+                .hardwareOptions(computeEnvironmentHardwareOptionsInvalid)
                 .build();
     }
 

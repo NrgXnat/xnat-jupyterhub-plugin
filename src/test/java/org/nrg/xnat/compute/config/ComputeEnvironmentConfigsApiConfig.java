@@ -1,8 +1,8 @@
 package org.nrg.xnat.compute.config;
 
 import org.nrg.framework.services.ContextService;
-import org.nrg.xnat.compute.rest.ComputeSpecConfigsApi;
-import org.nrg.xnat.compute.services.ComputeSpecConfigService;
+import org.nrg.xnat.compute.rest.ComputeEnvironmentConfigsApi;
+import org.nrg.xnat.compute.services.ComputeEnvironmentConfigService;
 import org.nrg.xdat.security.services.RoleHolder;
 import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.springframework.context.ApplicationContext;
@@ -19,15 +19,17 @@ import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 @EnableWebMvc
 @EnableWebSecurity
 @Import({MockConfig.class, RestApiTestConfig.class})
-public class ComputeSpecConfigsApiConfig extends WebSecurityConfigurerAdapter {
+public class ComputeEnvironmentConfigsApiConfig extends WebSecurityConfigurerAdapter {
 
     @Bean
-    public ComputeSpecConfigsApi computeSpecConfigsApi(final UserManagementServiceI mockUserManagementService,
-                                                       final RoleHolder mockRoleHolder,
-                                                       final ComputeSpecConfigService mockComputeSpecConfigService) {
-        return new ComputeSpecConfigsApi(mockUserManagementService,
-                                         mockRoleHolder,
-                                         mockComputeSpecConfigService);
+    public ComputeEnvironmentConfigsApi computeEnvironmentConfigsApi(final UserManagementServiceI mockUserManagementService,
+                                                              final RoleHolder mockRoleHolder,
+                                                              final ComputeEnvironmentConfigService mockComputeEnvironmentConfigService) {
+        return new ComputeEnvironmentConfigsApi(
+                mockUserManagementService,
+                mockRoleHolder,
+                mockComputeEnvironmentConfigService
+        );
     }
 
     @Bean

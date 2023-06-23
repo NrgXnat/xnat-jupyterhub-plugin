@@ -176,16 +176,16 @@ jupyterEnvironments:
         are associated with a specific Docker image and additional configuration options (such as environment variables
         and mounts) can be specified. An environment can also be associated with a Hardware configuration that
         defines the hardware resources that will be allocated to the single-user server when it is launched."
-    computeSpecsTable:
-      tag: "div#jupyterhub-compute-spec-configs-table"
-    computeSpecsScript:
-      tag: script|src="~/scripts/xnat/plugin/compute/compute-spec-configs.js"
+    computeEnvironmentConfigsTable:
+      tag: "div#jupyterhub-compute-environment-configs-table"
+    computeEnvironmentConfigsScript:
+      tag: script|src="~/scripts/xnat/plugin/compute/compute-environment-configs.js"
     hardwareConfigsScript:
       tag: script|src="~/scripts/xnat/plugin/compute/hardware-configs.js"
-    renderComputeSpecsTable:
+    renderComputeEnvironmentConfigsTable:
       tag: script
       content: >
-        XNAT.compute.computeSpecConfigs.manager('jupyterhub-compute-spec-configs-table', 'JUPYTERHUB');
+        XNAT.compute.computeEnvironmentConfigs.manager('jupyterhub-compute-environment-configs-table', 'JUPYTERHUB');
 
 hardwareConfigs:
     kind: panel

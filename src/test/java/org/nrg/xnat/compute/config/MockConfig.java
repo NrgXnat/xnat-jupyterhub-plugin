@@ -2,7 +2,7 @@ package org.nrg.xnat.compute.config;
 
 import org.mockito.Mockito;
 import org.nrg.framework.services.SerializerService;
-import org.nrg.xnat.compute.repositories.ComputeSpecConfigDao;
+import org.nrg.xnat.compute.repositories.ComputeEnvironmentConfigDao;
 import org.nrg.xnat.compute.repositories.HardwareConfigDao;
 import org.nrg.xdat.security.services.RoleHolder;
 import org.nrg.xdat.security.services.RoleServiceI;
@@ -61,14 +61,14 @@ public class MockConfig {
     }
 
     @Bean
-    public ComputeSpecConfigService mockComputeSpecConfigService() {
-        return Mockito.mock(ComputeSpecConfigService.class);
+    public ComputeEnvironmentConfigService mockComputeEnvironmentConfigService() {
+        return Mockito.mock(ComputeEnvironmentConfigService.class);
     }
 
     @Bean
-    @Qualifier("mockComputeSpecConfigEntityService")
-    public ComputeSpecConfigEntityService mockComputeSpecConfigEntityService() {
-        return Mockito.mock(ComputeSpecConfigEntityService.class);
+    @Qualifier("mockComputeEnvironmentConfigEntityService")
+    public ComputeEnvironmentConfigEntityService mockComputeEnvironmentConfigEntityService() {
+        return Mockito.mock(ComputeEnvironmentConfigEntityService.class);
     }
 
     @Bean
@@ -89,9 +89,9 @@ public class MockConfig {
     }
 
     @Bean
-    @Qualifier("mockComputeSpecConfigDao")
-    public ComputeSpecConfigDao mockComputeSpecConfigDao() {
-        return Mockito.mock(ComputeSpecConfigDao.class);
+    @Qualifier("mockComputeEnvironmentConfigDao")
+    public ComputeEnvironmentConfigDao mockComputeEnvironmentConfigDao() {
+        return Mockito.mock(ComputeEnvironmentConfigDao.class);
     }
 
     @Bean

@@ -11,7 +11,7 @@ import java.util.Set;
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
-public class ComputeSpecHardwareOptions {
+public class ComputeEnvironmentHardwareOptions {
 
     private boolean allowAllHardware;
     private Set<HardwareConfig> hardwareConfigs;

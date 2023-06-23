@@ -13,7 +13,7 @@ import java.util.List;
 @Data
 public class JobTemplate {
 
-    private ComputeSpec computeSpec;
+    private ComputeEnvironment computeEnvironment;
     private Hardware hardware;
     private List<Constraint> constraints;
 
