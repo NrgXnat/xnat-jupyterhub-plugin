@@ -374,7 +374,7 @@ public class DefaultJupyterHubServiceTest {
         when(mockPermissionsHelper.canRead(any(), anyString(), anyString(), anyString())).thenReturn(true);
 
         // Job template unavailable
-        when(mockJobTemplateService.isAvailable(any(), any(), any(), any())).thenReturn(false);
+        when(mockJobTemplateService.isAvailable(any(), any(), any())).thenReturn(false);
 
         // Test
         jupyterHubService.startServer(user, startProjectRequest);
@@ -399,7 +399,7 @@ public class DefaultJupyterHubServiceTest {
         when(mockPermissionsHelper.canRead(any(), anyString(), anyString(), anyString())).thenReturn(true);
 
         // Job template is available
-        when(mockJobTemplateService.isAvailable(any(), any(), any(), any())).thenReturn(true);
+        when(mockJobTemplateService.isAvailable(any(), any(), any())).thenReturn(true);
 
         // To successfully start a server there should be no running servers at first.
         // A subsequent call should contain a server, but let's presume it is never ready
@@ -434,7 +434,7 @@ public class DefaultJupyterHubServiceTest {
         when(mockPermissionsHelper.canRead(any(), anyString(), anyString(), anyString())).thenReturn(true);
 
         // Job template is available
-        when(mockJobTemplateService.isAvailable(any(), any(), any(), any())).thenReturn(true);
+        when(mockJobTemplateService.isAvailable(any(), any(), any())).thenReturn(true);
 
         // To successfully start a server there should be no running servers at first.
         // A subsequent call should eventually return a server in the ready state
@@ -466,7 +466,7 @@ public class DefaultJupyterHubServiceTest {
         when(mockPermissionsHelper.canRead(any(), anyString(), anyString(), anyString())).thenReturn(true);
 
         // Job template is available
-        when(mockJobTemplateService.isAvailable(any(), any(), any(), any())).thenReturn(true);
+        when(mockJobTemplateService.isAvailable(any(), any(), any())).thenReturn(true);
 
         // To successfully start a server there should be no running servers at first.
         // A subsequent call should eventually return a server in the ready state

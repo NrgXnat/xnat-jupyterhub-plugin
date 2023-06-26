@@ -176,7 +176,13 @@ XNAT.plugin.jupyterhub.servers.user_options = getObject(XNAT.plugin.jupyterhub.s
         console.debug(`jupyterhub-servers.js: XNAT.plugin.jupyterhub.servers.startServer`);
         console.debug(`Launching jupyter server. User: ${username}, Server Name: ${servername}, XSI Type: ${xsiType}, ID: ${itemId}, Label: ${itemLabel}, Project ID: ${projectId}, eventTrackingId: ${eventTrackingId}`);
 
-        XNAT.compute.computeEnvironmentConfigs.available("JUPYTERHUB", username, projectId).then(computeEnvironmentConfigs => {
+        const executionScope = {
+            'site': 'XNAT',
+            'user': username,
+            'prj': projectId,
+        }
+
+        XNAT.compute.computeEnvironmentConfigs.available("JUPYTERHUB", executionScope).then(computeEnvironmentConfigs => {
             const cancelButton = {
                 label: 'Cancel',
                 isDefault: false,

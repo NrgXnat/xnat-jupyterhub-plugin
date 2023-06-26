@@ -1,6 +1,7 @@
 package org.nrg.xnat.compute.services.impl;
 
 import lombok.extern.slf4j.Slf4j;
+import org.nrg.framework.constants.Scope;
 import org.nrg.xnat.compute.models.*;
 import org.nrg.xnat.compute.services.ComputeEnvironmentConfigService;
 import org.nrg.xnat.compute.services.ConstraintConfigService;
@@ -10,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -30,23 +32,22 @@ public class DefaultJobTemplateService implements JobTemplateService {
     }
 
     /**
-     * Returns true if the specified compute environment config and hardware config are available for the specified user and
-     * project and the hardware config is allowed by the compute environment config.
-     * @param user the user
-     * @param project the project
+     * Returns true if the specified compute environment config and hardware config are available for the provided
+     * execution scope and the hardware config is allowed by the compute environment config.
+     *
      * @param computeEnvironmentConfigId the compute environment config id
-     * @param hardwareConfigId  the hardware config id
-     * @return true if the specified compute environment config and hardware config are available for the specified user and
-     * project and the hardware config is allowed by the compute environment config
+     * @param hardwareConfigId           the hardware config id
+     * @return true if the specified compute environment config and hardware config are available for the provided
+     * execution scope and the hardware config is allowed by the compute environment config
      */
     @Override
-    public boolean isAvailable(String user, String project, Long computeEnvironmentConfigId, Long hardwareConfigId) {
-        if (user == null || project == null || computeEnvironmentConfigId == null || hardwareConfigId == null) {
+    public boolean isAvailable(Long computeEnvironmentConfigId, Long hardwareConfigId, Map<Scope, String> executionScope) {
+        if (computeEnvironmentConfigId == null || hardwareConfigId == null || executionScope == null) {
             throw new IllegalArgumentException("One or more parameters is null");
         }
 
-        boolean isComputeEnvironmentConfigAvailable = computeEnvironmentConfigService.isAvailable(user, project, computeEnvironmentConfigId);
-        boolean isHardwareConfigAvailable = hardwareConfigService.isAvailable(user, project, hardwareConfigId);
+        boolean isComputeEnvironmentConfigAvailable = computeEnvironmentConfigService.isAvailable(computeEnvironmentConfigId, executionScope);
+        boolean isHardwareConfigAvailable = hardwareConfigService.isAvailable(hardwareConfigId, executionScope);
 
         if (!isComputeEnvironmentConfigAvailable || !isHardwareConfigAvailable) {
             return false;
@@ -67,21 +68,22 @@ public class DefaultJobTemplateService implements JobTemplateService {
     }
 
     /**
-     * Returns a job template for the specified user, project, compute environment config, and hardware config.
-     * @param user the user
-     * @param project the project
+     * Returns a job template complete with compute environment, hardware, and constraints.
+     *
      * @param computeEnvironmentConfigId the compute environment config id
-     * @param hardwareConfigId the hardware config id
-     * @return a job template complete with compute environment and hardware
+     * @param hardwareConfigId           the hardware config id
+     * @param executionScope             the execution scope to verify the compute environment config and hardware are
+     *                                   available
+     * @return a job template complete with compute environment, hardware, and constraints
      */
     @Override
-    public JobTemplate resolve(String user, String project, Long computeEnvironmentConfigId, Long hardwareConfigId) {
-        if (user == null || project == null || computeEnvironmentConfigId == null || hardwareConfigId == null) {
+    public JobTemplate resolve(Long computeEnvironmentConfigId, Long hardwareConfigId, Map<Scope, String> executionScope) {
+        if (computeEnvironmentConfigId == null || hardwareConfigId == null || executionScope == null) {
             throw new IllegalArgumentException("One or more parameters is null");
         }
 
-        if (!isAvailable(user, project, computeEnvironmentConfigId, hardwareConfigId)) {
-            throw new IllegalArgumentException("JobTemplate with user " + user + ", project " + project + ", computeEnvironmentConfigId " + computeEnvironmentConfigId + ", and hardwareConfigId " + hardwareConfigId + " is not available");
+        if (!isAvailable(computeEnvironmentConfigId, hardwareConfigId, executionScope)) {
+            throw new IllegalArgumentException("JobTemplate resolution failed for computeEnvironmentConfigId " + computeEnvironmentConfigId + " and hardwareConfigId " + hardwareConfigId + " and executionScope " + executionScope);
         }
 
         ComputeEnvironmentConfig computeEnvironmentConfig = computeEnvironmentConfigService
@@ -92,7 +94,7 @@ public class DefaultJobTemplateService implements JobTemplateService {
                 .retrieve(hardwareConfigId)
                 .orElseThrow(() -> new IllegalArgumentException("HardwareConfig with id " + hardwareConfigId + " does not exist"));
 
-        List<Constraint> constraints = constraintConfigService.getAvailable(project).stream()
+        List<Constraint> constraints = constraintConfigService.getAvailable(executionScope).stream()
                 .map(ConstraintConfig::getConstraint)
                 .collect(Collectors.toList());
 

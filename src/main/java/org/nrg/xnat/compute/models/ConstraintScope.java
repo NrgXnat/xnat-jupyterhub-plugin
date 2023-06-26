@@ -12,10 +12,10 @@ import java.util.Set;
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
-public class ConstraintScope {
+public class ConstraintScope implements AccessScope {
 
     private Scope scope;
-    private boolean enabled; // For project and user scopes, this is whether the scope is enabled for all projects or users
-    private Set<String> ids; // For project and user scopes, this is the set of project or user IDs that are enabled for this scope (if isEnabled is false)
+    private boolean enabled; // Whether the scope is enabled for all ids or only for the ids in the set
+    private Set<String> ids; // The set of ids that are enabled for this scope (if isEnabled is false)
 
 }

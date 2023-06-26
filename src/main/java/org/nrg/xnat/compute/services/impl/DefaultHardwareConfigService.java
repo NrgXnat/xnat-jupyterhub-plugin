@@ -7,6 +7,7 @@ import org.nrg.framework.exceptions.NotFoundException;
 import org.nrg.xnat.compute.entities.ComputeEnvironmentConfigEntity;
 import org.nrg.xnat.compute.entities.ComputeEnvironmentHardwareOptionsEntity;
 import org.nrg.xnat.compute.entities.HardwareConfigEntity;
+import org.nrg.xnat.compute.models.AccessScope;
 import org.nrg.xnat.compute.models.Hardware;
 import org.nrg.xnat.compute.models.HardwareConfig;
 import org.nrg.xnat.compute.models.HardwareScope;
@@ -38,6 +39,7 @@ public class DefaultHardwareConfigService implements HardwareConfigService {
 
     /**
      * Checks if a hardware config with the given id exists.
+     *
      * @param id The id of the hardware config to check for
      * @return True if a hardware config with the given id exists, false otherwise
      */
@@ -48,6 +50,7 @@ public class DefaultHardwareConfigService implements HardwareConfigService {
 
     /**
      * Returns the hardware config with the given id.
+     *
      * @param id The id of the hardware config to retrieve
      * @return An optional containing the hardware config with the given id, or empty if no such hardware config exists
      */
@@ -59,6 +62,7 @@ public class DefaultHardwareConfigService implements HardwareConfigService {
 
     /**
      * Returns all hardware configs
+     *
      * @return List of all hardware configs
      */
     @Override
@@ -72,6 +76,7 @@ public class DefaultHardwareConfigService implements HardwareConfigService {
 
     /**
      * Creates a new hardware config.
+     *
      * @param hardwareConfig The hardware config to create
      * @return The newly created hardware config with an id
      */
@@ -96,6 +101,7 @@ public class DefaultHardwareConfigService implements HardwareConfigService {
 
     /**
      * Updates an existing hardware config.
+     *
      * @param hardwareConfig The hardware config to update
      * @return The updated hardware config
      * @throws NotFoundException If no hardware config exists with the given id
@@ -118,6 +124,7 @@ public class DefaultHardwareConfigService implements HardwareConfigService {
 
     /**
      * Deletes the hardware config with the given id.
+     *
      * @param id The id of the hardware config to delete
      * @throws NotFoundException If no hardware config exists with the given id
      */
@@ -139,14 +146,14 @@ public class DefaultHardwareConfigService implements HardwareConfigService {
     }
 
     /**
-     * Checks if the hardware config with the given id is available for the given user and project.
-     * @param user The user to check for
-     * @param project The project to check for
-     * @param id The id of the hardware config to check for
-     * @return True if the hardware config with the given id is available for the given user and project, false otherwise.
-     */
+     * Checks if the hardware config is available to the provided execution scope.
+     *
+     * @param id             The id of the hardware config to check
+     * @param executionScope The execution scope to check the hardware config against
+     * @return True if the hardware config is available to the provided execution scope, false otherwise
+     **/
     @Override
-    public boolean isAvailable(String user, String project, Long id) {
+    public boolean isAvailable(Long id, Map<Scope, String> executionScope) {
         final Optional<HardwareConfig> hardwareConfig = retrieve(id);
 
         if (!hardwareConfig.isPresent()) {
@@ -154,21 +161,17 @@ public class DefaultHardwareConfigService implements HardwareConfigService {
             return false;
         }
 
-        final HardwareScope siteScope = hardwareConfig.get().getScopes().get(Scope.Site);
-        final HardwareScope projectScope = hardwareConfig.get().getScopes().get(Scope.Project);
-        final HardwareScope userScope = hardwareConfig.get().getScopes().get(Scope.User);
+        Map<Scope, AccessScope> requiredScopes = hardwareConfig.get().getScopes()
+                .entrySet()
+                .stream()
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
-        return isScopeEnabledForSiteUserAndProject(user, project, siteScope, userScope, projectScope);
-    }
-
-    protected boolean isScopeEnabledForSiteUserAndProject(String user, String project, HardwareScope siteScope, HardwareScope userScope, HardwareScope projectScope) {
-        return siteScope != null && siteScope.isEnabled() && // Site scope must be enabled
-                userScope != null && (userScope.isEnabled() || userScope.getIds().contains(user)) && // User scope must be enabled for all users or the user must be in the list
-                projectScope != null && (projectScope.isEnabled() || projectScope.getIds().contains(project)); // Project scope must be enabled for all projects or the project must be in the list
+        return AccessScope.isEnabledFor(requiredScopes, executionScope);
     }
 
     /**
      * Validates the given hardware config. Throws an IllegalArgumentException if the hardware config is invalid.
+     *
      * @param hardwareConfig The hardware config to validate
      */
     protected void validate(HardwareConfig hardwareConfig) {

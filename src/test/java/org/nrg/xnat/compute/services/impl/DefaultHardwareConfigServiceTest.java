@@ -183,8 +183,11 @@ public class DefaultHardwareConfigServiceTest {
         commitTransaction();
 
         // Test
-        boolean isAvailable1 = defaultHardwareConfigService.isAvailable("User1", "Project1", created1.getId());
-        boolean isAvailable2 = defaultHardwareConfigService.isAvailable("User1", "Project1", created2.getId());
+        Map<Scope, String> executionScope = new HashMap<>();
+        executionScope.put(User, "User1");
+        executionScope.put(Project, "Project1");
+        boolean isAvailable1 = defaultHardwareConfigService.isAvailable(created1.getId(), executionScope);
+        boolean isAvailable2 = defaultHardwareConfigService.isAvailable(created2.getId(), executionScope);
 
         // Verify
         assertTrue(isAvailable1);
@@ -200,8 +203,11 @@ public class DefaultHardwareConfigServiceTest {
         commitTransaction();
 
         // Test
-        boolean isAvailable1 = defaultHardwareConfigService.isAvailable("User2", "Project1", created1.getId());
-        boolean isAvailable2 = defaultHardwareConfigService.isAvailable("User2", "Project1", created2.getId());
+        Map<Scope, String> executionScope = new HashMap<>();
+        executionScope.put(User, "User2");
+        executionScope.put(Project, "Project1");
+        boolean isAvailable1 = defaultHardwareConfigService.isAvailable(created1.getId(), executionScope);
+        boolean isAvailable2 = defaultHardwareConfigService.isAvailable(created2.getId(), executionScope);
 
         // Verify
         assertTrue(isAvailable1);
@@ -217,8 +223,11 @@ public class DefaultHardwareConfigServiceTest {
         commitTransaction();
 
         // Test
-        boolean isAvailable1 = defaultHardwareConfigService.isAvailable("User1", "Project2", created1.getId());
-        boolean isAvailable2 = defaultHardwareConfigService.isAvailable("User1", "Project2", created2.getId());
+        Map<Scope, String> executionScope = new HashMap<>();
+        executionScope.put(User, "User1");
+        executionScope.put(Project, "Project2");
+        boolean isAvailable1 = defaultHardwareConfigService.isAvailable(created1.getId(), executionScope);
+        boolean isAvailable2 = defaultHardwareConfigService.isAvailable(created2.getId(), executionScope);
 
         // Verify
         assertTrue(isAvailable1);

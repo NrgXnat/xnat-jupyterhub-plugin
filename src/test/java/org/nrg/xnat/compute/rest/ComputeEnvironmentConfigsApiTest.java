@@ -6,6 +6,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
+import org.nrg.framework.constants.Scope;
 import org.nrg.xnat.compute.config.ComputeEnvironmentConfigsApiConfig;
 import org.nrg.xnat.compute.models.ComputeEnvironmentConfig;
 import org.nrg.xnat.compute.services.ComputeEnvironmentConfigService;
@@ -25,6 +26,8 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.util.NestedServletException;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.mockito.Mockito.*;
@@ -216,7 +219,8 @@ public class ComputeEnvironmentConfigsApiTest {
         final MockHttpServletRequestBuilder request = MockMvcRequestBuilders
                 .get("/compute-environment-configs/available")
                 .param("user", mockUser.getLogin())
-                .param("project", "projectId")
+                .param("prj", "projectId")
+                .param("datatype", "xnat:mrSessionData")
                 .param("type", "JUPYTERHUB")
                 .with(authentication(mockAuthentication))
                 .with(csrf())
@@ -225,8 +229,11 @@ public class ComputeEnvironmentConfigsApiTest {
         mockMvc.perform(request).andExpect(status().isOk());
 
         // Verify that the service was called
-        verify(mockComputeEnvironmentConfigService, times(1)).getAvailable(eq(mockUser.getLogin()), eq("projectId"), eq(ComputeEnvironmentConfig.ConfigType.JUPYTERHUB));
+        Map<Scope, String> expectedScopeMap = new HashMap<>();
+        expectedScopeMap.put(Scope.User, mockUser.getLogin());
+        expectedScopeMap.put(Scope.Project, "projectId");
+        expectedScopeMap.put(Scope.DataType, "xnat:mrSessionData");
+        verify(mockComputeEnvironmentConfigService, times(1)).getAvailable(eq(ComputeEnvironmentConfig.ConfigType.JUPYTERHUB), eq(expectedScopeMap));
     }
-
 
 }

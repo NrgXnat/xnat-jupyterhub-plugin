@@ -120,12 +120,22 @@ XNAT.compute.computeEnvironmentConfigs = getObject(XNAT.compute.computeEnvironme
             throw new Error(`Error deleting compute environment config ${id}`);
         }
     }
-    
-    XNAT.compute.computeEnvironmentConfigs.available = async (type, user, project) => {
-        console.debug(`Fetching available compute environment configs for type ${type} and user ${user} and project ${project}`);
-        const url = type ?
-            XNAT.url.csrfUrl(`/xapi/compute-environment-configs/available?type=${type}&user=${user}&project=${project}`) :
-            XNAT.url.csrfUrl(`/xapi/compute-environment-configs/available?user=${user}&project=${project}`);
+
+    XNAT.compute.computeEnvironmentConfigs.available = async (type, executionScope) => {
+        console.debug(`Fetching available compute environment configs for type ${type} and execution scope ${executionScope}`)
+        let url = type ?
+            XNAT.url.csrfUrl(`/xapi/compute-environment-configs/available?type=${type}`):
+            XNAT.url.csrfUrl(`/xapi/compute-environment-configs/available?`);
+
+        // add each scope to the url as a query parameter
+        for (const scope in executionScope) {
+            if (executionScope.hasOwnProperty(scope)) {
+                const value = executionScope[scope];
+                if (value) {
+                    url += `&${scope}=${value}`;
+                }
+            }
+        }
         
         const response = await fetch(url, {
             method: 'GET',
@@ -648,7 +658,6 @@ XNAT.compute.computeEnvironmentConfigs = getObject(XNAT.compute.computeEnvironme
                             let validateImageEl = XNAT.validate(imageEl).reset().chain();
                             validateImageEl.is('notEmpty').failure('Image is required');
                             validators.push(validateImageEl);
-                            // TODO: Validate image format
                             
                             let envVarsPresent = document.querySelectorAll('input.key').length > 0;
                             if (envVarsPresent) {
@@ -702,6 +711,7 @@ XNAT.compute.computeEnvironmentConfigs = getObject(XNAT.compute.computeEnvironme
                                     Site: {
                                         scope: 'Site',
                                         enabled: siteEnabledEl.checked,
+                                        ids: [],
                                     },
                                     Project: {
                                         scope: 'Project',

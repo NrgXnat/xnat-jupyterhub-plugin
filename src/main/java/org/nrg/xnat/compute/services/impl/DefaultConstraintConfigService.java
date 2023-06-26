@@ -5,6 +5,7 @@ import org.apache.commons.lang.StringUtils;
 import org.nrg.framework.constants.Scope;
 import org.nrg.framework.exceptions.NotFoundException;
 import org.nrg.xnat.compute.entities.ConstraintConfigEntity;
+import org.nrg.xnat.compute.models.AccessScope;
 import org.nrg.xnat.compute.models.Constraint;
 import org.nrg.xnat.compute.models.ConstraintConfig;
 import org.nrg.xnat.compute.models.ConstraintScope;
@@ -32,6 +33,7 @@ public class DefaultConstraintConfigService implements ConstraintConfigService {
 
     /**
      * Returns the constraint config with the given id.
+     *
      * @param id The id of the constraint config to retrieve
      * @return The constraint config with the given id
      */
@@ -44,6 +46,7 @@ public class DefaultConstraintConfigService implements ConstraintConfigService {
 
     /**
      * Get all constraint configs.
+     *
      * @return List of all constraint configs
      */
     @Override
@@ -56,22 +59,32 @@ public class DefaultConstraintConfigService implements ConstraintConfigService {
     }
 
     /**
-     * Returns all constraint configs that are available for the given project.
-     * @param project The project to get constraint configs for
-     * @return All constraint configs that are available for the given project
+     * Returns all the constraint configs that are available to the provided execution scope.
+     *
+     * @param executionScope The scope to get constraint configs for
+     *                       (e.g. {Scope.Project: "project1", Scope.User: "user1"})
+     * @return All constraint configs that are available for the given scope
      */
     @Override
-    public List<ConstraintConfig> getAvailable(String project) {
+    public List<ConstraintConfig> getAvailable(Map<Scope, String> executionScope) {
         return constraintConfigEntityService
                 .getAll()
                 .stream()
                 .map(ConstraintConfigEntity::toPojo)
-                .filter(config -> isScopeEnabledForSiteAndProject(project, config.getScopes().get(Scope.Site), config.getScopes().get(Scope.Project)))
+                .filter(config -> {
+                    Map<Scope, AccessScope> requiredScopes = config.getScopes()
+                            .entrySet()
+                            .stream()
+                            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
+                    return AccessScope.isEnabledFor(requiredScopes, executionScope);
+                })
                 .collect(Collectors.toList());
     }
 
     /**
      * Creates a new constraint config.
+     *
      * @param config The constraint config to create
      * @return The created constraint config
      */
@@ -87,6 +100,7 @@ public class DefaultConstraintConfigService implements ConstraintConfigService {
 
     /**
      * Updates the given constraint config.
+     *
      * @param config The constraint config to update
      * @return The updated constraint config
      * @throws NotFoundException If the constraint config does not exist
@@ -109,6 +123,7 @@ public class DefaultConstraintConfigService implements ConstraintConfigService {
 
     /**
      * Deletes the constraint config with the given id.
+     *
      * @param id The id of the constraint config to delete
      */
     @Override
@@ -117,22 +132,9 @@ public class DefaultConstraintConfigService implements ConstraintConfigService {
     }
 
     /**
-     * Returns true if the site scope is enabled and the project scope is enabled for all projects or the project is in
-     * the list of enabled projects.
-     * @param project The project to check
-     * @param siteScope The site scope
-     * @param projectScope The project scope
-     * @return True if the site scope is enabled and the project scope is enabled for all projects or the project is in
-     * the list of enabled projects
-     */
-    protected boolean isScopeEnabledForSiteAndProject(String project, ConstraintScope siteScope, ConstraintScope projectScope) {
-        return siteScope != null && siteScope.isEnabled() && // Site scope must be enabled
-               projectScope != null && (projectScope.isEnabled() || projectScope.getIds().contains(project)); // Project scope must be enabled for all projects or the project must be in the list
-    }
-
-    /**
      * Validates that the given constraint config is valid. Throws an IllegalArgumentException if it is not.
-     * @param config
+     *
+     * @param config The constraint config to validate
      */
     protected void validate(ConstraintConfig config) {
         if (config == null) {

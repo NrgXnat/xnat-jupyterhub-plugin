@@ -3,6 +3,7 @@ package org.nrg.xnatx.plugins.jupyterhub.services.impl;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.nrg.framework.constants.Scope;
 import org.nrg.xdat.entities.AliasToken;
 import org.nrg.xdat.model.XnatSubjectassessordataI;
 import org.nrg.xdat.om.*;
@@ -133,7 +134,9 @@ public class DefaultUserOptionsService implements UserOptionsService {
                             final String path = ((XnatExperimentdata) subjectAssessor).getCurrentSessionFolder(true);
 
                             // Experiments
-                            subjectPaths.put("/data/projects/" + xnatProjectdata.getId() + "/experiments/" + assessorLabel, path);
+                            if (Files.exists(Paths.get(path))) {
+                                subjectPaths.put("/data/projects/" + xnatProjectdata.getId() + "/experiments/" + assessorLabel, path);
+                            }
                         } catch (BaseXnatExperimentdata.UnknownPrimaryProjectException | InvalidArchiveStructure e) {
                             // Container service ignores this error.
                             log.error("", e);
@@ -164,7 +167,10 @@ public class DefaultUserOptionsService implements UserOptionsService {
                     final String experimentLabel = xnatExperimentdata.getLabel();
                     final String experimentPath = xnatExperimentdata.getCurrentSessionFolder(true);
                     final String projectId = xnatExperimentdata.getPrimaryProject(false).getId();
-                    experimentPaths.put("/data/projects/" + projectId + "/experiments/" + experimentLabel, experimentPath);
+
+                    if (Files.exists(Paths.get(experimentPath))) {
+                        experimentPaths.put("/data/projects/" + projectId + "/experiments/" + experimentLabel, experimentPath);
+                    }
                 } catch (BaseXnatExperimentdata.UnknownPrimaryProjectException | InvalidArchiveStructure e) {
                     // Container service ignores this error.
                     log.error("", e);
@@ -282,7 +288,10 @@ public class DefaultUserOptionsService implements UserOptionsService {
         }
 
         // Resolve the job template before resolving the paths
-        JobTemplate jobTemplate = jobTemplateService.resolve(user.getUsername(), projectId, computeEnvironmentConfigId, hardwareConfigId);
+        Map<Scope, String> executionScope = new HashMap<>();
+        executionScope.put(Scope.Project, projectId);
+        executionScope.put(Scope.User, user.getUsername());
+        JobTemplate jobTemplate = jobTemplateService.resolve(computeEnvironmentConfigId, hardwareConfigId, executionScope);
 
         // specific xsi type -> general xsi type
         if (instanceOf(xsiType, XnatExperimentdata.SCHEMA_ELEMENT_NAME)) {

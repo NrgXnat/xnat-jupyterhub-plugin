@@ -734,7 +734,6 @@ XNAT.compute.hardwareConfigs = getObject(XNAT.compute.hardwareConfigs || {});
                 }
                 
                 // Sort the hardware configs by name
-                // TODO  Sort by name?  Sort by something else?
                 hardwareConfigs = hardwareConfigs.sort((a, b) => {
                     if (a.name < b.name) {
                         return -1;

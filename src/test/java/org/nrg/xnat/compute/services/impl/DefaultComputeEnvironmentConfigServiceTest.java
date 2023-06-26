@@ -40,6 +40,7 @@ public class DefaultComputeEnvironmentConfigServiceTest {
 
     private HardwareConfig hardwareConfig1;
     private HardwareConfig hardwareConfig2;
+    private HardwareConfig hardwareConfig3;
 
     @Before
     public void before() {
@@ -153,7 +154,12 @@ public class DefaultComputeEnvironmentConfigServiceTest {
         commitTransaction();
 
         // Test
-        List<ComputeEnvironmentConfig> computeEnvironmentConfigs = defaultComputeEnvironmentConfigService.getAvailable("User2", "Project1", null);
+        Map<Scope, String> executionScope = new HashMap<>();
+        executionScope.put(User, "User2");
+        executionScope.put(Project, "Project1");
+        executionScope.put(Experiment, "XNAT_E00001");
+        executionScope.put(DataType, "xnat:petSessionData");
+        List<ComputeEnvironmentConfig> computeEnvironmentConfigs = defaultComputeEnvironmentConfigService.getAvailable(null, executionScope);
 
         // Verify
         assertThat(computeEnvironmentConfigs.size(), is(1));
@@ -172,7 +178,12 @@ public class DefaultComputeEnvironmentConfigServiceTest {
         commitTransaction();
 
         // Test
-        List<ComputeEnvironmentConfig> computeEnvironmentConfigs = defaultComputeEnvironmentConfigService.getAvailable("User1", "Project2");
+        Map<Scope, String> executionScope = new HashMap<>();
+        executionScope.put(User, "User1");
+        executionScope.put(Project, "Project2");
+        executionScope.put(Experiment, "XNAT_E00001");
+        executionScope.put(DataType, "xnat:petSessionData");
+        List<ComputeEnvironmentConfig> computeEnvironmentConfigs = defaultComputeEnvironmentConfigService.getAvailable(executionScope);
 
         // Verify
         assertThat(computeEnvironmentConfigs.size(), is(1));
@@ -182,6 +193,16 @@ public class DefaultComputeEnvironmentConfigServiceTest {
     @Test
     @DirtiesContext
     public void testGetAvailable() {
+        // Create hardware configs
+        HardwareConfigEntity hardwareConfigEntity1 = hardwareConfigEntityService.create(HardwareConfigEntity.fromPojo(hardwareConfig1));
+        HardwareConfigEntity hardwareConfigEntity2 = hardwareConfigEntityService.create(HardwareConfigEntity.fromPojo(hardwareConfig2));
+        HardwareConfigEntity hardwareConfigEntity3 = hardwareConfigEntityService.create(HardwareConfigEntity.fromPojo(hardwareConfig3));
+        commitTransaction();
+
+        hardwareConfig1.setId(hardwareConfigEntity1.getId());
+        hardwareConfig2.setId(hardwareConfigEntity2.getId());
+        hardwareConfig3.setId(hardwareConfigEntity3.getId());
+
         // Create ComputeEnvironmentConfigs
         ComputeEnvironmentConfig created1 = defaultComputeEnvironmentConfigService.create(computeEnvironmentConfig1);
         commitTransaction();
@@ -191,11 +212,20 @@ public class DefaultComputeEnvironmentConfigServiceTest {
         commitTransaction();
 
         // Test
-        List<ComputeEnvironmentConfig> computeEnvironmentConfigs = defaultComputeEnvironmentConfigService.getAvailable("User1", "Project1");
+        Map<Scope, String> executionScope = new HashMap<>();
+        executionScope.put(User, "User1");
+        executionScope.put(Project, "Project1");
+        executionScope.put(Experiment, "XNAT_E00001");
+        executionScope.put(DataType, "xnat:ctSessionData");
+        List<ComputeEnvironmentConfig> computeEnvironmentConfigs = defaultComputeEnvironmentConfigService.getAvailable(executionScope);
 
         // Verify
         assertThat(computeEnvironmentConfigs.size(), is(2));
-        assertThat(computeEnvironmentConfigs, hasItems(created1, created2));
+        assertThat(computeEnvironmentConfigs.get(0).getHardwareOptions().getHardwareConfigs().size(), is(2));
+        assertThat(computeEnvironmentConfigs.get(0).getHardwareOptions().getHardwareConfigs(), hasItems(hardwareConfig1, hardwareConfig2));
+        assertThat(computeEnvironmentConfigs.get(0).getHardwareOptions().getHardwareConfigs(), not(hasItems(hardwareConfig3)));
+        assertThat(computeEnvironmentConfigs.get(1).getHardwareOptions().getHardwareConfigs().size(), is(1));
+        assertThat(computeEnvironmentConfigs.get(1).getHardwareOptions().getHardwareConfigs(), hasItems(hardwareConfig2));
     }
 
     @Test
@@ -210,7 +240,12 @@ public class DefaultComputeEnvironmentConfigServiceTest {
         commitTransaction();
 
         // Test
-        List<ComputeEnvironmentConfig> computeEnvironmentConfigs = defaultComputeEnvironmentConfigService.getAvailable("User1", "Project1", CONTAINER_SERVICE);
+        Map<Scope, String> executionScope = new HashMap<>();
+        executionScope.put(User, "User1");
+        executionScope.put(Project, "Project1");
+        executionScope.put(Experiment, "XNAT_E00001");
+        executionScope.put(DataType, "xnat:petSessionData");
+        List<ComputeEnvironmentConfig> computeEnvironmentConfigs = defaultComputeEnvironmentConfigService.getAvailable(CONTAINER_SERVICE, executionScope);
 
         // Verify
         assertThat(computeEnvironmentConfigs.size(), is(1));
@@ -229,19 +264,24 @@ public class DefaultComputeEnvironmentConfigServiceTest {
         commitTransaction();
 
         // Test
-        boolean result = defaultComputeEnvironmentConfigService.isAvailable("User1", "Project1", created1.getId());
+        Map<Scope, String> executionScope = new HashMap<>();
+        executionScope.put(User, "User1");
+        executionScope.put(Project, "Project1");
+        executionScope.put(Experiment, "XNAT_E00001");
+        executionScope.put(DataType, "xnat:petSessionData");
+        boolean result = defaultComputeEnvironmentConfigService.isAvailable(created1.getId(), executionScope);
 
         // Verify
         assertTrue(result);
 
         // Test
-        result = defaultComputeEnvironmentConfigService.isAvailable("User1", "Project1", created2.getId());
+        result = defaultComputeEnvironmentConfigService.isAvailable(created2.getId(), executionScope);
 
         // Verify
         assertTrue(result);
 
         // Test
-        result = defaultComputeEnvironmentConfigService.isAvailable("User1", "Project1", created3.getId());
+        result = defaultComputeEnvironmentConfigService.isAvailable(created3.getId(), executionScope);
 
         // Verify
         assertFalse(result);
@@ -259,19 +299,24 @@ public class DefaultComputeEnvironmentConfigServiceTest {
         commitTransaction();
 
         // Test
-        boolean result = defaultComputeEnvironmentConfigService.isAvailable("User2", "Project1", created1.getId());
+        Map<Scope, String> executionScope = new HashMap<>();
+        executionScope.put(User, "User2");
+        executionScope.put(Project, "Project1");
+        executionScope.put(Experiment, "XNAT_E00001");
+        executionScope.put(DataType, "xnat:petSessionData");
+        boolean result = defaultComputeEnvironmentConfigService.isAvailable(created1.getId(), executionScope);
 
         // Verify
         assertTrue(result);
 
         // Test
-        result = defaultComputeEnvironmentConfigService.isAvailable("User2", "Project1", created2.getId());
+        result = defaultComputeEnvironmentConfigService.isAvailable(created2.getId(), executionScope);
 
         // Verify
         assertFalse(result);
 
         // Test
-        result = defaultComputeEnvironmentConfigService.isAvailable("User2", "Project1", created3.getId());
+        result = defaultComputeEnvironmentConfigService.isAvailable(created3.getId(), executionScope);
 
         // Verify
         assertFalse(result);
@@ -289,19 +334,59 @@ public class DefaultComputeEnvironmentConfigServiceTest {
         commitTransaction();
 
         // Test
-        boolean result = defaultComputeEnvironmentConfigService.isAvailable("User1", "Project2", created1.getId());
+        Map<Scope, String> executionScope = new HashMap<>();
+        executionScope.put(User, "User1");
+        executionScope.put(Project, "Project2");
+        executionScope.put(Experiment, "XNAT_E00001");
+        executionScope.put(DataType, "xnat:petSessionData");
+        boolean result = defaultComputeEnvironmentConfigService.isAvailable(created1.getId(), executionScope);
 
         // Verify
         assertTrue(result);
 
         // Test
-        result = defaultComputeEnvironmentConfigService.isAvailable("User1", "Project2", created2.getId());
+        result = defaultComputeEnvironmentConfigService.isAvailable(created2.getId(), executionScope);
 
         // Verify
         assertFalse(result);
 
         // Test
-        result = defaultComputeEnvironmentConfigService.isAvailable("User1", "Project2", created3.getId());
+        result = defaultComputeEnvironmentConfigService.isAvailable(created3.getId(), executionScope);
+
+        // Verify
+        assertFalse(result);
+    }
+
+    @Test
+    @DirtiesContext
+    public void testNotAvailable_WrongDataType() {
+        // Create ComputeEnvironmentConfigs
+        ComputeEnvironmentConfig created1 = defaultComputeEnvironmentConfigService.create(computeEnvironmentConfig1);
+        commitTransaction();
+        ComputeEnvironmentConfig created2 = defaultComputeEnvironmentConfigService.create(computeEnvironmentConfig2);
+        commitTransaction();
+        ComputeEnvironmentConfig created3 = defaultComputeEnvironmentConfigService.create(computeEnvironmentConfig3);
+        commitTransaction();
+
+        // Test
+        Map<Scope, String> executionScope = new HashMap<>();
+        executionScope.put(User, "User1");
+        executionScope.put(Project, "Project1");
+        executionScope.put(Experiment, "XNAT_E00001");
+        executionScope.put(DataType, "xnat:projectData"); // Wrong data type
+        boolean result = defaultComputeEnvironmentConfigService.isAvailable(created1.getId(), executionScope);
+
+        // Verify
+        assertTrue(result);
+
+        // Test
+        result = defaultComputeEnvironmentConfigService.isAvailable(created2.getId(), executionScope);
+
+        // Verify
+        assertFalse(result);
+
+        // Test
+        result = defaultComputeEnvironmentConfigService.isAvailable(created3.getId(), executionScope);
 
         // Verify
         assertFalse(result);
@@ -313,18 +398,20 @@ public class DefaultComputeEnvironmentConfigServiceTest {
         // First create hardware configs
         HardwareConfigEntity hardwareConfigEntity1 = hardwareConfigEntityService.create(HardwareConfigEntity.fromPojo(hardwareConfig1));
         HardwareConfigEntity hardwareConfigEntity2 = hardwareConfigEntityService.create(HardwareConfigEntity.fromPojo(hardwareConfig2));
+        HardwareConfigEntity hardwareConfigEntity3 = hardwareConfigEntityService.create(HardwareConfigEntity.fromPojo(hardwareConfig3));
         commitTransaction();
 
         hardwareConfig1.setId(hardwareConfigEntity1.getId());
         hardwareConfig2.setId(hardwareConfigEntity2.getId());
+        hardwareConfig3.setId(hardwareConfigEntity3.getId());
 
         // Next create compute environment config
         ComputeEnvironmentConfig created1 = defaultComputeEnvironmentConfigService.create(computeEnvironmentConfig1);
         commitTransaction();
 
         // Verify that all hardware configs are associated with the compute environment config
-        assertThat(created1.getHardwareOptions().getHardwareConfigs().size(), is(2));
-        assertThat(created1.getHardwareOptions().getHardwareConfigs(), hasItems(hardwareConfig1, hardwareConfig2));
+        assertThat(created1.getHardwareOptions().getHardwareConfigs().size(), is(3));
+        assertThat(created1.getHardwareOptions().getHardwareConfigs(), hasItems(hardwareConfig1, hardwareConfig2, hardwareConfig3));
     }
 
     @Test
@@ -333,18 +420,20 @@ public class DefaultComputeEnvironmentConfigServiceTest {
         // First create hardware configs
         HardwareConfigEntity hardwareConfigEntity1 = hardwareConfigEntityService.create(HardwareConfigEntity.fromPojo(hardwareConfig1));
         HardwareConfigEntity hardwareConfigEntity2 = hardwareConfigEntityService.create(HardwareConfigEntity.fromPojo(hardwareConfig2));
+        HardwareConfigEntity hardwareConfigEntity3 = hardwareConfigEntityService.create(HardwareConfigEntity.fromPojo(hardwareConfig3));
         commitTransaction();
 
         hardwareConfig1.setId(hardwareConfigEntity1.getId());
         hardwareConfig2.setId(hardwareConfigEntity2.getId());
+        hardwareConfig3.setId(hardwareConfigEntity3.getId());
 
         // Next create compute environment config
         ComputeEnvironmentConfig created2 = defaultComputeEnvironmentConfigService.create(computeEnvironmentConfig2);
         commitTransaction();
 
         // Verify that only the selected hardware config is associated with the compute environment config
-        assertThat(created2.getHardwareOptions().getHardwareConfigs().size(), is(1));
-        assertThat(created2.getHardwareOptions().getHardwareConfigs(), hasItem(hardwareConfig2));
+        assertThat(created2.getHardwareOptions().getHardwareConfigs().size(), is(2));
+        assertThat(created2.getHardwareOptions().getHardwareConfigs(), hasItems(hardwareConfig2, hardwareConfig3));
     }
 
     @Test
@@ -579,6 +668,50 @@ public class DefaultComputeEnvironmentConfigServiceTest {
                 .scopes(hardwareScopes2)
                 .build();
 
+        // Setup second hardware config
+        Hardware hardware3 = Hardware.builder()
+                .name("Large")
+                .cpuReservation(8.0)
+                .cpuLimit(8.0)
+                .memoryReservation("16G")
+                .memoryLimit("16G")
+                .build();
+
+        // No constraints, environment variables or generic resources
+        hardware3.setConstraints(Collections.emptyList());
+        hardware3.setEnvironmentVariables(Collections.emptyList());
+        hardware3.setGenericResources(Collections.emptyList());
+
+        // Setup hardware scopes
+        HardwareScope hardwareSiteScope3 = HardwareScope.builder()
+                .scope(Site)
+                .enabled(true)
+                .ids(new HashSet<>(Collections.emptyList()))
+                .build();
+
+        HardwareScope hardwareProjectScope3 = HardwareScope.builder()
+                .scope(Project)
+                .enabled(false)
+                .ids(new HashSet<>(Collections.singletonList("ProjectABCDE")))
+                .build();
+
+        HardwareScope userHardwareScope3 = HardwareScope.builder()
+                .scope(User)
+                .enabled(true)
+                .ids(new HashSet<>(Collections.emptyList()))
+                .build();
+
+        Map<Scope, HardwareScope> hardwareScopes3 = new HashMap<>();
+        hardwareScopes3.put(Site, hardwareSiteScope3);
+        hardwareScopes3.put(Project, hardwareProjectScope3);
+        hardwareScopes3.put(User, userHardwareScope3);
+
+        // Setup second hardware config entity
+        hardwareConfig3 = HardwareConfig.builder()
+                .hardware(hardware3)
+                .scopes(hardwareScopes3)
+                .build();
+
         // Setup first compute environment
         ComputeEnvironment computeEnvironment1 = ComputeEnvironment.builder()
                 .name("Jupyter Datascience Notebook")
@@ -612,7 +745,7 @@ public class DefaultComputeEnvironmentConfigServiceTest {
 
         ComputeEnvironmentHardwareOptions computeEnvironmentHardwareOptions1 = ComputeEnvironmentHardwareOptions.builder()
                 .allowAllHardware(true)
-                .hardwareConfigs(new HashSet<>(Arrays.asList(hardwareConfig1, hardwareConfig2)))
+                .hardwareConfigs(new HashSet<>(Arrays.asList(hardwareConfig1, hardwareConfig2, hardwareConfig3)))
                 .build();
 
         computeEnvironmentConfig1 = ComputeEnvironmentConfig.builder()
@@ -639,23 +772,30 @@ public class DefaultComputeEnvironmentConfigServiceTest {
         ComputeEnvironmentScope computeEnvironmentProjectScope2 = ComputeEnvironmentScope.builder()
                 .scope(Project)
                 .enabled(false)
-                .ids(new HashSet<>(Collections.singletonList("Project1")))
+                .ids(new HashSet<>(new ArrayList<>(Arrays.asList("Project1", "Project10", "Project100"))))
                 .build();
 
         ComputeEnvironmentScope computeEnvironmentUserScope2 = ComputeEnvironmentScope.builder()
                 .scope(User)
                 .enabled(false)
-                .ids(new HashSet<>(Collections.singletonList("User1")))
+                .ids(new HashSet<>(new ArrayList<>(Arrays.asList("User1", "User10", "User100"))))
+                .build();
+
+        ComputeEnvironmentScope computeEnvironmentDatatypeScope2 = ComputeEnvironmentScope.builder()
+                .scope(DataType)
+                .enabled(false)
+                .ids(new HashSet<>(Arrays.asList("xnat:mrSessionData", "xnat:petSessionData", "xnat:ctSessionData")))
                 .build();
 
         Map<Scope, ComputeEnvironmentScope> computeEnvironmentScopes2 = new HashMap<>();
         computeEnvironmentScopes2.put(Site, computeEnvironmentSiteScope2);
         computeEnvironmentScopes2.put(Project, computeEnvironmentProjectScope2);
         computeEnvironmentScopes2.put(User, computeEnvironmentUserScope2);
+        computeEnvironmentScopes2.put(DataType, computeEnvironmentDatatypeScope2);
 
         ComputeEnvironmentHardwareOptions computeEnvironmentHardwareOptions2 = ComputeEnvironmentHardwareOptions.builder()
                 .allowAllHardware(false)
-                .hardwareConfigs(new HashSet<>(Arrays.asList(hardwareConfig2)))
+                .hardwareConfigs(new HashSet<>(Arrays.asList(hardwareConfig2, hardwareConfig3)))
                 .build();
 
         computeEnvironmentConfig2 = ComputeEnvironmentConfig.builder()

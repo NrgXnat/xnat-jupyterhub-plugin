@@ -32,6 +32,7 @@ public class DefaultComputeEnvironmentConfigService implements ComputeEnvironmen
 
     /**
      * Checks if a ComputeEnvironmentConfig with the given ID exists.
+     *
      * @param id The ID of the ComputeEnvironmentConfig to check for.
      * @return True if a ComputeEnvironmentConfig with the given ID exists, false otherwise.
      */
@@ -42,6 +43,7 @@ public class DefaultComputeEnvironmentConfigService implements ComputeEnvironmen
 
     /**
      * Gets a ComputeEnvironmentConfig by its ID.
+     *
      * @param id The ID of the ComputeEnvironmentConfig to retrieve.
      * @return The ComputeEnvironmentConfig with the given ID, if it exists or else an empty Optional.
      */
@@ -54,6 +56,7 @@ public class DefaultComputeEnvironmentConfigService implements ComputeEnvironmen
 
     /**
      * Get all ComputeEnvironmentConfigs.
+     *
      * @return A list of all ComputeEnvironmentConfigs.
      */
     @Override
@@ -67,6 +70,7 @@ public class DefaultComputeEnvironmentConfigService implements ComputeEnvironmen
 
     /**
      * Creates a new ComputeEnvironmentConfig.
+     *
      * @param type The type of the ComputeEnvironmentConfig to create.
      * @return The newly created ComputeEnvironmentConfig.
      */
@@ -80,25 +84,31 @@ public class DefaultComputeEnvironmentConfigService implements ComputeEnvironmen
     }
 
     /**
-     * Get all ComputeEnvironmentConfigs that are available to the given user and project regardless of type.
-     * @param user The user to check for.
-     * @param project The project to check for.
-     * @return A list of all ComputeEnvironmentConfigs that are available to the given user and project.
+     * Get all ComputeEnvironmentConfigs that are available to the provided execution scope. A config is available
+     * provided the execution scope contains all the required access scopes of the config and each scope/id combination
+     * is enabled.
+     *
+     * @param executionScope The execution scope to check availability for.
+     *                       Example {Scope.Site: "", Scope.Project: "Project1", Scope.User: "User1"}
+     * @return A list of ComputeEnvironmentConfigs that are available for the provided execution scope.
      */
     @Override
-    public List<ComputeEnvironmentConfig> getAvailable(String user, String project) {
-        return getAvailable(user, project, null);
+    public List<ComputeEnvironmentConfig> getAvailable(Map<Scope, String> executionScope) {
+        return getAvailable(null, executionScope);
     }
 
     /**
-     * Get all ComputeEnvironmentConfigs of the given type that are available to the given user and project.
-     * @param user The user to check for.
-     * @param project The project to check for.
-     * @param type The type of ComputeEnvironmentConfig to check for.
-     * @return A list of all ComputeEnvironmentConfigs of the given type that are available to the given user and project.
+     * Get the ComputeEnvironmentConfigs of the given type that are available to the provided execution scope. A config
+     * is available provided the execution scope contains all the required access scopes of the config and each scope/id
+     * combination is enabled.
+     *
+     * @param type           The type of the ComputeEnvironmentConfig to get. If null, all types are returned.
+     * @param executionScope The execution scope to check availability for.
+     *                       Example {Scope.Site: "", Scope.Project: "Project1", Scope.User: "User1", Scope.DataType: "xnat:mrSessionData"}
+     * @return A list of ComputeEnvironmentConfigs that are available for the provided requestedScope.
      */
     @Override
-    public List<ComputeEnvironmentConfig> getAvailable(String user, String project, ComputeEnvironmentConfig.ConfigType type) {
+    public List<ComputeEnvironmentConfig> getAvailable(ComputeEnvironmentConfig.ConfigType type, Map<Scope, String> executionScope) {
         List<ComputeEnvironmentConfig> all;
 
         if (type == null) {
@@ -108,22 +118,25 @@ public class DefaultComputeEnvironmentConfigService implements ComputeEnvironmen
         }
 
         final List<ComputeEnvironmentConfig> available = all.stream().filter(computeEnvironmentConfig -> {
-            final ComputeEnvironmentScope siteScope = computeEnvironmentConfig.getScopes().get(Scope.Site);
-            final ComputeEnvironmentScope projectScope = computeEnvironmentConfig.getScopes().get(Scope.Project);
-            final ComputeEnvironmentScope userScope = computeEnvironmentConfig.getScopes().get(Scope.User);
+            Map<Scope, AccessScope> requiredScopes = computeEnvironmentConfig.getScopes()
+                    .entrySet()
+                    .stream()
+                    .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
-            return isScopeEnabledForSiteUserAndProject(user, project, siteScope, userScope, projectScope);
+            return AccessScope.isEnabledFor(requiredScopes, executionScope);
         }).collect(Collectors.toList());
 
         available.forEach(computeEnvironmentConfig -> {
+            // Filter out any hardware configs that are not available to the execution scope
             final Set<HardwareConfig> hardwareConfigs = computeEnvironmentConfig.getHardwareOptions().getHardwareConfigs();
             final Set<HardwareConfig> availableHardware = hardwareConfigs.stream()
                     .filter(hardwareConfig -> {
-                        final HardwareScope siteScope = hardwareConfig.getScopes().get(Scope.Site);
-                        final HardwareScope projectScope = hardwareConfig.getScopes().get(Scope.Project);
-                        final HardwareScope userScope = hardwareConfig.getScopes().get(Scope.User);
+                        Map<Scope, AccessScope> requiredScopes = hardwareConfig.getScopes()
+                                .entrySet()
+                                .stream()
+                                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
-                        return isScopeEnabledForSiteUserAndProject(user, project, siteScope, userScope, projectScope);
+                        return AccessScope.isEnabledFor(requiredScopes, executionScope);
                     }).collect(Collectors.toSet());
 
             computeEnvironmentConfig.getHardwareOptions().setHardwareConfigs(availableHardware);
@@ -133,29 +146,34 @@ public class DefaultComputeEnvironmentConfigService implements ComputeEnvironmen
     }
 
     /**
-     * Checks if the given ComputeEnvironmentConfig is available to the given user and project.
-     * @param user The user to check for.
-     * @param project The project to check for.
-     * @param id The ID of the ComputeEnvironmentConfig to check for.
-     * @return True if the ComputeEnvironmentConfig with the given ID is available to the given user and project, false otherwise.
+     * Checks if a ComputeEnvironmentConfig with the given ID is available to the provided scope/id combinations. A
+     * config is available provided the execution scope contains all the required access scopes of the config and each
+     * scope/id combination is enabled.
+     *
+     * @param id             The ID of the ComputeEnvironmentConfig to check availability for.
+     * @param executionScope The execution scope to check availability for.
+     * @return True if the ComputeEnvironmentConfig with the given ID is available for the provided execution scope,
+     * false otherwise.
      */
     @Override
-    public boolean isAvailable(String user, String project, Long id) {
+    public boolean isAvailable(Long id, Map<Scope, String> executionScope) {
         final Optional<ComputeEnvironmentConfig> computeEnvironmentConfig = retrieve(id);
 
         if (!computeEnvironmentConfig.isPresent()) {
             return false;
         }
 
-        final ComputeEnvironmentScope siteScope = computeEnvironmentConfig.get().getScopes().get(Scope.Site);
-        final ComputeEnvironmentScope projectScope = computeEnvironmentConfig.get().getScopes().get(Scope.Project);
-        final ComputeEnvironmentScope userScope = computeEnvironmentConfig.get().getScopes().get(Scope.User);
+        Map<Scope, AccessScope> requiredScopes = computeEnvironmentConfig.get().getScopes()
+                .entrySet()
+                .stream()
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
-        return isScopeEnabledForSiteUserAndProject(user, project, siteScope, userScope, projectScope);
+        return AccessScope.isEnabledFor(requiredScopes, executionScope);
     }
 
     /**
      * Creates a new ComputeEnvironmentConfig.
+     *
      * @param computeEnvironmentConfig The ComputeEnvironmentConfig to create.
      * @return The newly created ComputeEnvironmentConfig, with its ID set.
      */
@@ -177,6 +195,7 @@ public class DefaultComputeEnvironmentConfigService implements ComputeEnvironmen
 
     /**
      * Updates an existing ComputeEnvironmentConfig.
+     *
      * @param computeEnvironmentConfig The ComputeEnvironmentConfig to update.
      * @return The updated ComputeEnvironmentConfig.
      * @throws NotFoundException If the ComputeEnvironmentConfig to update does not exist.
@@ -204,6 +223,7 @@ public class DefaultComputeEnvironmentConfigService implements ComputeEnvironmen
 
     /**
      * Deletes an existing ComputeEnvironmentConfig.
+     *
      * @param id The ID of the ComputeEnvironmentConfig to delete.
      * @throws NotFoundException If the ComputeEnvironmentConfig to delete does not exist.
      */
@@ -231,37 +251,8 @@ public class DefaultComputeEnvironmentConfigService implements ComputeEnvironmen
     }
 
     /**
-     * Checks if the scope is enabled for the given user and project.
-     * @param user The user to check for.
-     * @param project The project to check for.
-     * @param siteScope The site scope to check.
-     * @param userScope The user scope to check.
-     * @param projectScope The project scope to check.
-     * @return True if the scopes are enabled for the given user and project, false otherwise.
-     */
-    protected boolean isScopeEnabledForSiteUserAndProject(String user, String project, ComputeEnvironmentScope siteScope, ComputeEnvironmentScope userScope, ComputeEnvironmentScope projectScope) {
-        return siteScope != null && siteScope.isEnabled() && // Site scope must be enabled
-                userScope != null && (userScope.isEnabled() || userScope.getIds().contains(user)) && // User scope must be enabled for all users or the user must be in the list
-                projectScope != null && (projectScope.isEnabled() || projectScope.getIds().contains(project)); // Project scope must be enabled for all projects or the project must be in the list
-    }
-
-    /**
-     * Checks if the scope is enabled for the given user and project.
-     * @param user The user to check for.
-     * @param project The project to check for.
-     * @param siteScope The site scope to check.
-     * @param userScope The user scope to check.
-     * @param projectScope The project scope to check.
-     * @return True if the scopes are enabled for the given user and project, false otherwise.
-     */
-    protected boolean isScopeEnabledForSiteUserAndProject(String user, String project, HardwareScope siteScope, HardwareScope userScope, HardwareScope projectScope) {
-        return siteScope != null && siteScope.isEnabled() && // Site scope must be enabled
-                userScope != null && (userScope.isEnabled() || userScope.getIds().contains(user)) && // User scope must be enabled for all users or the user must be in the list
-                projectScope != null && (projectScope.isEnabled() || projectScope.getIds().contains(project)); // Project scope must be enabled for all projects or the project must be in the list
-    }
-
-    /**
      * Connect the hardware config entities to the compute environment config entity.
+     *
      * @param computeEnvironmentConfig The compute environment config to connect the hardware configs to.
      */
     protected void setHardwareConfigsForComputeEnvironmentConfig(ComputeEnvironmentConfig computeEnvironmentConfig) {
@@ -308,6 +299,7 @@ public class DefaultComputeEnvironmentConfigService implements ComputeEnvironmen
 
     /**
      * Validates the given ComputeEnvironmentConfig. Throws an IllegalArgumentException if the ComputeEnvironmentConfig is invalid.
+     *
      * @param config The ComputeEnvironmentConfig to validate.
      */
     protected void validate(ComputeEnvironmentConfig config) {

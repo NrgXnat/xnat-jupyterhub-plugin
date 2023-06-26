@@ -135,21 +135,25 @@ public class DefaultConstraintConfigServiceTest {
         commitTransaction();
 
         // Test
-        List<ConstraintConfig> retrieved = constraintConfigService.getAvailable("ProjectA");
+        Map<Scope, String> executionScopes = new HashMap<>();
+        executionScopes.put(Scope.Project, "ProjectA");
+        List<ConstraintConfig> retrieved = constraintConfigService.getAvailable(executionScopes);
 
         // Verify
         assertEquals(2, retrieved.size());
         assertThat(retrieved, hasItems(created1, created3));
 
         // Test
-        retrieved = constraintConfigService.getAvailable("ProjectB");
+        executionScopes.put(Scope.Project, "ProjectB");
+        retrieved = constraintConfigService.getAvailable(executionScopes);
 
         // Verify
         assertEquals(2, retrieved.size());
         assertThat(retrieved, hasItems(created1, created3));
 
         // Test
-        retrieved = constraintConfigService.getAvailable("ProjectC");
+        executionScopes.put(Scope.Project, "ProjectC");
+        retrieved = constraintConfigService.getAvailable(executionScopes);
 
         // Verify
         assertEquals(1, retrieved.size());

@@ -2,6 +2,7 @@ package org.nrg.xnatx.plugins.jupyterhub.services.impl;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.nrg.framework.constants.Scope;
 import org.nrg.framework.services.NrgEventServiceI;
 import org.nrg.xnat.compute.services.JobTemplateService;
 import org.nrg.xdat.security.services.UserManagementServiceI;
@@ -166,7 +167,10 @@ public class DefaultJupyterHubService implements JupyterHubService {
             return;
         }
 
-        if (!jobTemplateService.isAvailable(user.getUsername(), projectId, computeEnvironmentConfigId, hardwareConfigId)) {
+        Map<Scope, String> executionScope = new HashMap<>();
+        executionScope.put(Scope.Project, projectId);
+        executionScope.put(Scope.User, user.getUsername());
+        if (!jobTemplateService.isAvailable(computeEnvironmentConfigId, hardwareConfigId, executionScope)) {
             eventService.triggerEvent(JupyterServerEvent.failed(eventTrackingId, user.getID(), xsiType, itemId,
                                                                 JupyterServerEventI.Operation.Start,
                                                                 "Failed to launch Jupyter notebook server. The job template either does not exist or is not available to the user and project."));

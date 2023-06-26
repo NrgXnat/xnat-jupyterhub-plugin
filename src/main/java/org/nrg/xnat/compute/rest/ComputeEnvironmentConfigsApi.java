@@ -5,6 +5,7 @@ import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import org.nrg.framework.annotations.XapiRestController;
+import org.nrg.framework.constants.Scope;
 import org.nrg.framework.exceptions.NotFoundException;
 import org.nrg.xapi.rest.AbstractXapiRestController;
 import org.nrg.xapi.rest.XapiRequestMapping;
@@ -17,6 +18,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import static org.nrg.xdat.security.helpers.AccessLevel.Admin;
 import static org.nrg.xdat.security.helpers.AccessLevel.Read;
@@ -75,7 +78,7 @@ public class ComputeEnvironmentConfigsApi extends AbstractXapiRestController {
             @ApiResponse(code = 500, message = "Unexpected error")
     })
     @ResponseStatus(HttpStatus.CREATED)
-    @XapiRequestMapping(value = "",consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE, method = RequestMethod.POST, restrictTo = Admin)
+    @XapiRequestMapping(value = "", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE, method = RequestMethod.POST, restrictTo = Admin)
     public ComputeEnvironmentConfig create(@RequestBody final ComputeEnvironmentConfig computeEnvironmentConfig) {
         return computeEnvironmentConfigService.create(computeEnvironmentConfig);
     }
@@ -88,7 +91,7 @@ public class ComputeEnvironmentConfigsApi extends AbstractXapiRestController {
             @ApiResponse(code = 404, message = "Compute environment config not found."),
             @ApiResponse(code = 500, message = "Unexpected error")
     })
-    @XapiRequestMapping(value = "/{id}",consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE, method = RequestMethod.PUT, restrictTo = Admin)
+    @XapiRequestMapping(value = "/{id}", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE, method = RequestMethod.PUT, restrictTo = Admin)
     public ComputeEnvironmentConfig update(@PathVariable("id") final Long id,
                                            @RequestBody final ComputeEnvironmentConfig computeEnvironmentConfig) throws NotFoundException {
         if (!id.equals(computeEnvironmentConfig.getId())) {
@@ -112,7 +115,7 @@ public class ComputeEnvironmentConfigsApi extends AbstractXapiRestController {
         computeEnvironmentConfigService.delete(id);
     }
 
-    @ApiOperation(value = "Get all available compute environment configs for the given user and project.", response = ComputeEnvironmentConfig.class, responseContainer = "List")
+    @ApiOperation(value = "Get all available compute environment configs for the provided execution scope.", response = ComputeEnvironmentConfig.class, responseContainer = "List")
     @ApiResponses({
             @ApiResponse(code = 200, message = "Compute environment configs successfully retrieved."),
             @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
@@ -120,10 +123,21 @@ public class ComputeEnvironmentConfigsApi extends AbstractXapiRestController {
             @ApiResponse(code = 500, message = "Unexpected error")
     })
     @XapiRequestMapping(value = "/available", produces = APPLICATION_JSON_VALUE, method = RequestMethod.GET, restrictTo = Read)
-    public List<ComputeEnvironmentConfig> getAvailable(@RequestParam(value = "user") final String user,
-                                                       @RequestParam(value = "project") final String project,
-                                                       @RequestParam(value = "type", required = false) final ComputeEnvironmentConfig.ConfigType type) {
-        return computeEnvironmentConfigService.getAvailable(user, project, type);
+    public List<ComputeEnvironmentConfig> getAvailable(@RequestParam final Map<String, String> params) {
+        ComputeEnvironmentConfig.ConfigType type = null;
+
+        // If the type is specified, remove it from the params map so it doesn't get used as an execution scope.
+        if (params.containsKey("type")) {
+            type = ComputeEnvironmentConfig.ConfigType.valueOf(params.get("type"));
+            params.remove("type");
+        }
+
+        // Get the execution scope from the params map.
+        Map<Scope, String> executionScope = params.entrySet().stream()
+                .filter(entry -> Scope.getCodes().contains(entry.getKey()))
+                .collect(Collectors.toMap(entry -> Scope.getScope(entry.getKey()), Map.Entry::getValue));
+
+        return computeEnvironmentConfigService.getAvailable(type, executionScope);
     }
 
 }

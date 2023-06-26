@@ -5,6 +5,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
+import org.nrg.framework.constants.Scope;
 import org.nrg.xnat.compute.models.*;
 import org.nrg.xnat.compute.config.DefaultJobTemplateServiceTestConfig;
 import org.nrg.xnat.compute.services.ComputeEnvironmentConfigService;
@@ -14,10 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Optional;
+import java.util.*;
 
 import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -48,11 +46,18 @@ public class DefaultJobTemplateServiceTest {
     @Test
     public void testIsAvailable_ComputeEnvironmentNotAvailable() {
         // Setup
-        when(mockComputeEnvironmentConfigService.isAvailable(any(), any(), any())).thenReturn(false);
-        when(mockHardwareConfigService.isAvailable(any(), any(), any())).thenReturn(true);
+        when(mockComputeEnvironmentConfigService.isAvailable(any(), any())).thenReturn(false);
+        when(mockHardwareConfigService.isAvailable(any(), any())).thenReturn(true);
+
+        Map<Scope, String> executionScope = new HashMap<>();
+        executionScope.put(Scope.Site, "site");
+        executionScope.put(Scope.Project, "project");
+        executionScope.put(Scope.User, "user");
+        executionScope.put(Scope.DataType, "xnat:petSessionData");
+        executionScope.put(Scope.Experiment, "XNAT_E00001");
 
         // Run
-        boolean isAvailable = jobTemplateService.isAvailable("user", "project", 1L, 1L);
+        boolean isAvailable = jobTemplateService.isAvailable(1L, 1L, executionScope);
 
         // Verify
         assertFalse(isAvailable);
@@ -61,11 +66,15 @@ public class DefaultJobTemplateServiceTest {
     @Test
     public void testIsAvailable_HardwareNotAvailable() {
         // Setup
-        when(mockComputeEnvironmentConfigService.isAvailable(any(), any(), any())).thenReturn(true);
-        when(mockHardwareConfigService.isAvailable(any(), any(), any())).thenReturn(false);
+        when(mockComputeEnvironmentConfigService.isAvailable(any(), any())).thenReturn(true);
+        when(mockHardwareConfigService.isAvailable(any(), any())).thenReturn(false);
+
+        Map<Scope, String> executionScope = new HashMap<>();
+        executionScope.put(Scope.Project, "project");
+        executionScope.put(Scope.User, "user");
 
         // Run
-        boolean isAvailable = jobTemplateService.isAvailable("user", "project", 1L, 1L);
+        boolean isAvailable = jobTemplateService.isAvailable(1L, 1L, executionScope);
 
         // Verify
         assertFalse(isAvailable);
@@ -74,11 +83,14 @@ public class DefaultJobTemplateServiceTest {
     @Test
     public void testIsAvailable_ComputeEnvironmentAndHardwareNotAvailable() {
         // Setup
-        when(mockComputeEnvironmentConfigService.isAvailable(any(), any(), any())).thenReturn(false);
-        when(mockHardwareConfigService.isAvailable(any(), any(), any())).thenReturn(false);
+        when(mockComputeEnvironmentConfigService.isAvailable(any(), any())).thenReturn(false);
+        when(mockHardwareConfigService.isAvailable(any(), any())).thenReturn(false);
 
         // Run
-        boolean isAvailable = jobTemplateService.isAvailable("user", "project", 1L, 1L);
+        Map<Scope, String> executionScope = new HashMap<>();
+        executionScope.put(Scope.Project, "project");
+        executionScope.put(Scope.User, "user");
+        boolean isAvailable = jobTemplateService.isAvailable(1L, 1L, executionScope);
 
         // Verify
         assertFalse(isAvailable);
@@ -87,8 +99,8 @@ public class DefaultJobTemplateServiceTest {
     @Test
     public void testIsAvailable_ComputeEnvironmentConfigAllHardwareIsAvailable() {
         // Setup
-        when(mockComputeEnvironmentConfigService.isAvailable(any(), any(), any())).thenReturn(true);
-        when(mockHardwareConfigService.isAvailable(any(), any(), any())).thenReturn(true);
+        when(mockComputeEnvironmentConfigService.isAvailable(any(), any())).thenReturn(true);
+        when(mockHardwareConfigService.isAvailable(any(), any())).thenReturn(true);
 
         ComputeEnvironmentConfig computeEnvironmentConfig = ComputeEnvironmentConfig.builder().build();
         ComputeEnvironmentHardwareOptions hardwareOptions = ComputeEnvironmentHardwareOptions.builder().build();
@@ -96,18 +108,22 @@ public class DefaultJobTemplateServiceTest {
         computeEnvironmentConfig.setHardwareOptions(hardwareOptions);
         when(mockComputeEnvironmentConfigService.retrieve(any())).thenReturn(Optional.of(computeEnvironmentConfig));
 
+        Map<Scope, String> executionScope = new HashMap<>();
+        executionScope.put(Scope.Project, "project");
+        executionScope.put(Scope.User, "user");
+
         // Run
-        boolean isAvailable = jobTemplateService.isAvailable("user", "project", 1L, 1L);
+        boolean isAvailable = jobTemplateService.isAvailable(1L, 1L, executionScope);
 
         // Verify
         assertTrue(isAvailable);
     }
 
     @Test
-    public void testIsAvailable_ComputeEnvironmentConfigEnvironmentificHardwareAllowed() {
+    public void testIsAvailable_ComputeEnvironmentConfigSpecificHardwareAllowed() {
         // Setup
-        when(mockComputeEnvironmentConfigService.isAvailable(any(), any(), any())).thenReturn(true);
-        when(mockHardwareConfigService.isAvailable(any(), any(), any())).thenReturn(true);
+        when(mockComputeEnvironmentConfigService.isAvailable(any(), any())).thenReturn(true);
+        when(mockHardwareConfigService.isAvailable(any(), any())).thenReturn(true);
 
         ComputeEnvironmentConfig computeEnvironmentConfig = ComputeEnvironmentConfig.builder().id(1L).build();
         ComputeEnvironmentHardwareOptions hardwareOptions = ComputeEnvironmentHardwareOptions.builder().build();
@@ -117,18 +133,24 @@ public class DefaultJobTemplateServiceTest {
         hardwareOptions.setHardwareConfigs(new HashSet<>(Arrays.asList(hardwareConfig)));
         when(mockComputeEnvironmentConfigService.retrieve(any())).thenReturn(Optional.of(computeEnvironmentConfig));
 
+        Map<Scope, String> executionScope = new HashMap<>();
+        executionScope.put(Scope.Project, "project");
+        executionScope.put(Scope.User, "user");
+        executionScope.put(Scope.DataType, "xnat:petSessionData");
+        executionScope.put(Scope.Experiment, "XNAT_E00001");
+
         // Run
-        boolean isAvailable = jobTemplateService.isAvailable("user", "project", 1L, 1L);
+        boolean isAvailable = jobTemplateService.isAvailable(1L, 1L, executionScope);
 
         // Verify
         assertTrue(isAvailable);
     }
 
     @Test
-    public void testIsAvailable_ComputeEnvironmentConfigEnvironmentificHardwareNotAllowed() {
+    public void testIsAvailable_ComputeEnvironmentConfigSpecificHardwareNotAllowed() {
         // Setup
-        when(mockComputeEnvironmentConfigService.isAvailable(any(), any(), any())).thenReturn(true);
-        when(mockHardwareConfigService.isAvailable(any(), any(), any())).thenReturn(true);
+        when(mockComputeEnvironmentConfigService.isAvailable(any(), any())).thenReturn(true);
+        when(mockHardwareConfigService.isAvailable(any(), any())).thenReturn(true);
 
         ComputeEnvironmentConfig computeEnvironmentConfig = ComputeEnvironmentConfig.builder().id(1L).build();
         ComputeEnvironmentHardwareOptions hardwareOptions = ComputeEnvironmentHardwareOptions.builder().build();
@@ -138,8 +160,14 @@ public class DefaultJobTemplateServiceTest {
         hardwareOptions.setHardwareConfigs(new HashSet<>(Arrays.asList(hardwareConfig)));
         when(mockComputeEnvironmentConfigService.retrieve(any())).thenReturn(Optional.of(computeEnvironmentConfig));
 
+        Map<Scope, String> executionScope = new HashMap<>();
+        executionScope.put(Scope.Project, "project");
+        executionScope.put(Scope.User, "user");
+        executionScope.put(Scope.DataType, "xnat:petSessionData");
+        executionScope.put(Scope.Experiment, "XNAT_E00002");
+
         // Run
-        boolean isAvailable = jobTemplateService.isAvailable("user", "project", 1L, 2L);
+        boolean isAvailable = jobTemplateService.isAvailable(1L, 2L, executionScope);
 
         // Verify
         assertFalse(isAvailable);
@@ -148,8 +176,8 @@ public class DefaultJobTemplateServiceTest {
     @Test
     public void testResolve() {
         // Setup
-        when(mockComputeEnvironmentConfigService.isAvailable(any(), any(), any())).thenReturn(true);
-        when(mockHardwareConfigService.isAvailable(any(), any(), any())).thenReturn(true);
+        when(mockComputeEnvironmentConfigService.isAvailable(any(), any())).thenReturn(true);
+        when(mockHardwareConfigService.isAvailable(any(), any())).thenReturn(true);
 
         ComputeEnvironmentConfig computeEnvironmentConfig = ComputeEnvironmentConfig.builder().id(1L).build();
         ComputeEnvironment computeEnvironment = ComputeEnvironment.builder()
@@ -184,8 +212,12 @@ public class DefaultJobTemplateServiceTest {
         when(mockHardwareConfigService.retrieve(any())).thenReturn(Optional.of(hardwareConfig));
         when(mockConstraintConfigService.getAvailable(any())).thenReturn(Collections.singletonList(constraintConfig));
 
+        Map<Scope, String> executionScope = new HashMap<>();
+        executionScope.put(Scope.Project, "project");
+        executionScope.put(Scope.User, "user");
+
         // Run
-        JobTemplate jobTemplate = jobTemplateService.resolve("user", "project", 1L, 1L);
+        JobTemplate jobTemplate = jobTemplateService.resolve(1L, 1L, executionScope);
 
         // Verify
         assertNotNull(jobTemplate);
@@ -193,6 +225,5 @@ public class DefaultJobTemplateServiceTest {
         assertEquals(hardware, jobTemplate.getHardware());
         assertEquals(Collections.singletonList(constraint), jobTemplate.getConstraints());
     }
-
 
 }
