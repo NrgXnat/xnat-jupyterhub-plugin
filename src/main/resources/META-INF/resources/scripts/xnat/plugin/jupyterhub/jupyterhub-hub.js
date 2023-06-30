@@ -139,7 +139,7 @@ XNAT.plugin.jupyterhub.hub = getObject(XNAT.plugin.jupyterhub.hub || {});
             let status = 'version' in hubInfo;
             hubTable.tr()
                 .td([spawn('div.left', [hubPreferences['jupyterHubApiUrl']])])
-                .td([spawn(status ? 'div.center.success' : 'div.center.warning', [status ? 'OK' : 'Down'])])
+                .td([spawn(status ? 'div.center.success' : 'div.center.warning', [status ? 'Connected' : 'Connection Error'])])
                 .td([spawn('div.center', [hubInfo['version']])])
                 .td([spawn('div.center', [editButton()])]);
         }).catch(e => {
@@ -147,7 +147,7 @@ XNAT.plugin.jupyterhub.hub = getObject(XNAT.plugin.jupyterhub.hub || {});
 
             hubTable.tr()
                 .td([spawn('div.left', ['Unable to connect to JupyterHub'])])
-                .td([spawn('div.center.warning', ['Down'])])
+                .td([spawn('div.center.warning', ['Connection Error'])])
                 .td([spawn('div.center', [])])
                 .td([spawn('div.center', [editButton()])]);
         })

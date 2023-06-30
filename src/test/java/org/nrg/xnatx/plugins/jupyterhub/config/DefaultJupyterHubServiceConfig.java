@@ -7,6 +7,7 @@ import org.nrg.xnatx.plugins.jupyterhub.client.JupyterHubClient;
 import org.nrg.xnatx.plugins.jupyterhub.preferences.JupyterHubPreferences;
 import org.nrg.xnatx.plugins.jupyterhub.services.UserOptionsService;
 import org.nrg.xnatx.plugins.jupyterhub.services.impl.DefaultJupyterHubService;
+import org.nrg.xnatx.plugins.jupyterhub.utils.JupyterHubServiceAccountHelper;
 import org.nrg.xnatx.plugins.jupyterhub.utils.PermissionsHelper;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -23,14 +24,16 @@ public class DefaultJupyterHubServiceConfig {
                                                              final UserOptionsService mockUserOptionsService,
                                                              final JupyterHubPreferences mockJupyterHubPreferences,
                                                              final UserManagementServiceI mockUserManagementService,
-                                                             final JobTemplateService mockJobTemplateService) {
+                                                             final JobTemplateService mockJobTemplateService,
+                                                             final JupyterHubServiceAccountHelper mockJupyterHubServiceAccountHelper) {
         return new DefaultJupyterHubService(mockJupyterHubClient,
                                             mockNrgEventService,
                                             mockPermissionsHelper,
                                             mockUserOptionsService,
                                             mockJupyterHubPreferences,
                                             mockUserManagementService,
-                                            mockJobTemplateService);
+                                            mockJobTemplateService,
+                                            mockJupyterHubServiceAccountHelper);
     }
 
 }

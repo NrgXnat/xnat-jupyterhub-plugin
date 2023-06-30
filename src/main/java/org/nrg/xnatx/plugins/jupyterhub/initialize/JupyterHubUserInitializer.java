@@ -50,20 +50,20 @@ public class JupyterHubUserInitializer extends AbstractInitializingTask {
      */
     @Override
     protected void callImpl() throws InitializingTaskException {
-        log.debug("Initializing JupyterHub user.");
+        log.info("Creating `jupyterhub` user account.");
 
         if (!xftManagerHelper.isInitialized()) {
-            log.debug("XFT not initialized, deferring execution.");
+            log.info("XFT not initialized, deferring execution.");
             throw new InitializingTaskException(InitializingTaskException.Level.RequiresInitialization);
         }
 
         if (!appInfo.isInitialized()) {
-            log.debug("XNAT not initialized, deferring execution.");
+            log.info("XNAT not initialized, deferring execution.");
             throw new InitializingTaskException(InitializingTaskException.Level.RequiresInitialization);
         }
 
         if (userManagementService.exists("jupyterhub")) {
-            log.debug("JupyterHub user already exists.");
+            log.info("`jupyterhub` user account already exists, skipping creation.");
             return;
         }
 
@@ -76,6 +76,14 @@ public class JupyterHubUserInitializer extends AbstractInitializingTask {
         jupyterhubUser.setEnabled(false);
         jupyterhubUser.setVerified(true);
 
+        String errorMessage = "Unable to create the `jupyterhub` user account. " +
+                "This account is used by JupyterHub to communicate with XNAT. " +
+                "You will need to create this account manually in the UI. " +
+                "The default username is 'jupyterhub', the password is 'jupyterhub' (but you should change this), " +
+                "and the account must have the JupyterHub service account role. " +
+                "This accounts credentials must be added to the JupyterHub configuration/environment variables as well. " +
+                "Please see the documentation for more information.";
+
         try {
             userManagementService.save(jupyterhubUser, Users.getAdminUser(),
                                        false, new EventDetails(EventUtils.CATEGORY.DATA,
@@ -84,25 +92,31 @@ public class JupyterHubUserInitializer extends AbstractInitializingTask {
                                                                "Requested by the JupyterHub Plugin",
                                                                "Created new user " + jupyterhubUser.getUsername()));
         } catch (Exception e) {
-            throw new InitializingTaskException(InitializingTaskException.Level.Error,
-                                                "Error occurred creating user " + jupyterhubUser.getLogin(),
-                                                e);
+            log.error(errorMessage, e);
+            throw new InitializingTaskException(InitializingTaskException.Level.Error, errorMessage, e);
         }
 
         try {
             boolean added = roleHolder.addRole(Users.getAdminUser(), jupyterhubUser, "JupyterHub");
 
             if (!added) {
-                throw new InitializingTaskException(InitializingTaskException.Level.Error,
-                                                    "Error occurred adding the JupyterHub role to the jupyterhub user account.");
+                log.error(errorMessage);
+                throw new InitializingTaskException(InitializingTaskException.Level.Error, errorMessage);
             }
         } catch (Exception e) {
-            // The user can be deleted, but it is disabled.
-            throw new InitializingTaskException(InitializingTaskException.Level.Error,
-                                                "Error occurred adding the JupyterHub role to the jupyterhub user account.",
-                                                e);
+            log.error(errorMessage, e);
+            throw new InitializingTaskException(InitializingTaskException.Level.Error, errorMessage, e);
         }
 
-        log.info("Created jupyterhub user.");
+        log.info("Successfully created `jupyterhub` user account.");
     }
+
+    @Override
+    public boolean isMaxedOut() {
+        // The execution count is incremented regardless of whether XNAT has been initialized or not, padding the count
+        // to account for this. 12 * 15 seconds = 3 minutes seems reasonable.
+        int maxExecutions = 12;
+        return super.executions() >= maxExecutions;
+    }
+
 }

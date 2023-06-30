@@ -344,6 +344,32 @@ public class DefaultJupyterHubServiceTest {
     }
 
     @Test(timeout = 2000)
+    public void testStartServer_HubOnlineButXNATCantConnect() throws Exception {
+        // Grant permissions
+        when(mockPermissionsHelper.canRead(any(), anyString(), anyString(), anyString())).thenReturn(true);
+
+        // Can't getInfo from JupyterHub, but connection to JupyterHub succeeded
+        when(mockJupyterHubClient.getVersion()).thenReturn(null);
+        when(mockJupyterHubClient.getInfo()).thenThrow(RuntimeException.class);
+
+        // Test
+        jupyterHubService.startServer(user, startProjectRequest);
+        Thread.sleep(1000); // Async call, need to wait. Is there a better way to test this?
+
+        // Verify failure to start event occurred
+        verify(mockEventService, atLeastOnce()).triggerEvent(jupyterServerEventCaptor.capture());
+        JupyterServerEventI capturedEvent = jupyterServerEventCaptor.getValue();
+        assertEquals(JupyterServerEventI.Status.Failed, capturedEvent.getStatus());
+        assertEquals(JupyterServerEventI.Operation.Start, capturedEvent.getOperation());
+
+        // Verify user options are not saved
+        verify(mockUserOptionsEntityService, never()).createOrUpdate(any());
+
+        // Verify no attempts to start a server
+        verify(mockJupyterHubClient, never()).startServer(any(), any(), any());
+    }
+
+    @Test(timeout = 2000)
     public void testStartServer_serverAlreadyRunning() throws Exception {
         // Grant permissions
         when(mockPermissionsHelper.canRead(any(), anyString(), anyString(), anyString())).thenReturn(true);

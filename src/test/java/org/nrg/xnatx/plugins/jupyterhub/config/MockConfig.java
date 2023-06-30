@@ -17,6 +17,7 @@ import org.nrg.xnat.tracking.services.EventTrackingDataHibernateService;
 import org.nrg.xnatx.plugins.jupyterhub.client.JupyterHubClient;
 import org.nrg.xnatx.plugins.jupyterhub.preferences.JupyterHubPreferences;
 import org.nrg.xnatx.plugins.jupyterhub.services.*;
+import org.nrg.xnatx.plugins.jupyterhub.utils.JupyterHubServiceAccountHelper;
 import org.nrg.xnatx.plugins.jupyterhub.utils.PermissionsHelper;
 import org.nrg.xnatx.plugins.jupyterhub.utils.XFTManagerHelper;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -157,5 +158,10 @@ public class MockConfig {
     @Bean
     public JobTemplateService mockJobTemplateService() {
         return Mockito.mock(JobTemplateService.class);
+    }
+
+    @Bean
+    public JupyterHubServiceAccountHelper mockJupyterHubServiceAccountHelper() {
+        return Mockito.mock(JupyterHubServiceAccountHelper.class);
     }
 }

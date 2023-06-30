@@ -22,6 +22,7 @@ import org.nrg.xnatx.plugins.jupyterhub.models.XnatUserOptions;
 import org.nrg.xnatx.plugins.jupyterhub.preferences.JupyterHubPreferences;
 import org.nrg.xnatx.plugins.jupyterhub.services.JupyterHubService;
 import org.nrg.xnatx.plugins.jupyterhub.services.UserOptionsService;
+import org.nrg.xnatx.plugins.jupyterhub.utils.JupyterHubServiceAccountHelper;
 import org.nrg.xnatx.plugins.jupyterhub.utils.PermissionsHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -44,6 +45,7 @@ public class DefaultJupyterHubService implements JupyterHubService {
     private final JupyterHubPreferences jupyterHubPreferences;
     private final UserManagementServiceI userManagementService;
     private final JobTemplateService jobTemplateService;
+    private final JupyterHubServiceAccountHelper jupyterHubServiceAccountHelper;
 
     @Autowired
     public DefaultJupyterHubService(final JupyterHubClient jupyterHubClient,
@@ -52,7 +54,8 @@ public class DefaultJupyterHubService implements JupyterHubService {
                                     final UserOptionsService userOptionsService,
                                     final JupyterHubPreferences jupyterHubPreferences,
                                     final UserManagementServiceI userManagementService,
-                                    final JobTemplateService jobTemplateService) {
+                                    final JobTemplateService jobTemplateService,
+                                    final JupyterHubServiceAccountHelper jupyterHubServiceAccountHelper) {
         this.jupyterHubClient = jupyterHubClient;
         this.eventService = eventService;
         this.permissionsHelper = permissionsHelper;
@@ -60,6 +63,7 @@ public class DefaultJupyterHubService implements JupyterHubService {
         this.jupyterHubPreferences = jupyterHubPreferences;
         this.userManagementService = userManagementService;
         this.jobTemplateService = jobTemplateService;
+        this.jupyterHubServiceAccountHelper = jupyterHubServiceAccountHelper;
     }
 
     /**
@@ -163,7 +167,7 @@ public class DefaultJupyterHubService implements JupyterHubService {
         if (!permissionsHelper.canRead(user, projectId, itemId, xsiType)) {
             eventService.triggerEvent(JupyterServerEvent.failed(eventTrackingId, user.getID(), xsiType, itemId,
                                                                 JupyterServerEventI.Operation.Start,
-                                                                "Failed to launch Jupyter notebook server. Permission denied."));
+                                                                "Failed to launch Jupyter notebook server. Permission denied to read " + xsiType + " " + itemId + " in project " + projectId));
             return;
         }
 
@@ -173,18 +177,36 @@ public class DefaultJupyterHubService implements JupyterHubService {
         if (!jobTemplateService.isAvailable(computeEnvironmentConfigId, hardwareConfigId, executionScope)) {
             eventService.triggerEvent(JupyterServerEvent.failed(eventTrackingId, user.getID(), xsiType, itemId,
                                                                 JupyterServerEventI.Operation.Start,
-                                                                "Failed to launch Jupyter notebook server. The job template either does not exist or is not available to the user and project."));
+                                                                "Failed to launch Jupyter notebook server. The compute environment or hardware configuration is not available to the user."));
             return;
         }
 
         CompletableFuture.runAsync(() -> {
-            // Check if JupyterHub is online
+            // getVersion() does not require authentication, check if JupyterHub is online
             try {
                 jupyterHubClient.getVersion();
             } catch (Exception e) {
                 eventService.triggerEvent(JupyterServerEvent.failed(eventTrackingId, user.getID(), xsiType, itemId,
                                                                     JupyterServerEventI.Operation.Start,
-                                                                    "Unable to connect to JupyterHub"));
+                                                                    "Failed to connect to JupyterHub. Please ensure the following:\n" +
+                                                                    "(1) JupyterHub is running \n" +
+                                                                    "(2) Verify the correct API URL is set in the plugin settings."
+                ));
+                return;
+            }
+
+            // getInfo() does require authentication, check if XNAT can connect and authenticate with JupyterHub
+            try {
+                jupyterHubClient.getInfo();
+            } catch (Exception e) {
+                eventService.triggerEvent(JupyterServerEvent.failed(eventTrackingId, user.getID(), xsiType, itemId,
+                        JupyterServerEventI.Operation.Start,
+                            "Failed to connect to JupyterHub. Please check the following: \n" +
+                                    "(1) Ensure that JupyterHub is running. \n" +
+                                    "(2) Verify the correct API URL is set in the plugin settings. \n" +
+                                    "(3) Confirm XNATs token for authenticating with JupyterHub is correctly set in " +
+                                    "both the plugin settings and JupyterHub configuration."
+                ));
                 return;
             }
 
@@ -203,7 +225,8 @@ public class DefaultJupyterHubService implements JupyterHubService {
                                                                         user.getID(), xsiType, itemId,
                                                                         JupyterServerEventI.Operation.Start,
                                                                         "Failed to launch Jupyter notebook server. " +
-                                                                                "There is already one running."));
+                                                                                "There is already one running. " +
+                                                                                "Please stop the running server before starting a new one."));
                     return;
                 }
 
@@ -259,7 +282,9 @@ public class DefaultJupyterHubService implements JupyterHubService {
 
                 eventService.triggerEvent(JupyterServerEvent.failed(eventTrackingId, user.getID(), xsiType, itemId,
                                                                     JupyterServerEventI.Operation.Start,
-                                                                    "Failed to launch Jupyter notebook server. Timeout reached."));
+                                                                    "Failed to launch Jupyter notebook server. " +
+                                                                            "Timeout exceeded while waiting for JupyterHub to spawn server. " +
+                                                                            "Check the XNAT and JupyterHub system logs for error messages."));
             } catch (UserNotFoundException e) {
                 eventService.triggerEvent(JupyterServerEvent.failed(eventTrackingId, user.getID(), xsiType, itemId,
                                                                     JupyterServerEventI.Operation.Start,
@@ -267,14 +292,21 @@ public class DefaultJupyterHubService implements JupyterHubService {
             } catch (ResourceAlreadyExistsException e) {
                 eventService.triggerEvent(JupyterServerEvent.failed(eventTrackingId, user.getID(), xsiType, itemId,
                                                                     JupyterServerEventI.Operation.Start,
-                                                                    "Failed to launch Jupyter notebook server. Resource already exists."));
+                                                                    "Failed to launch Jupyter notebook server. A server with the same name is already running."));
             } catch (InterruptedException e) {
-                String msg = "Failed to launch Jupyter notebook server. Thread interrupted..";
+                String msg = "Failed to launch Jupyter notebook server. Thread interrupted. Check the XNAT and JupyterHub system logs for error messages.";
                 eventService.triggerEvent(JupyterServerEvent.failed(eventTrackingId, user.getID(), xsiType, itemId,
                                                                     JupyterServerEventI.Operation.Start, msg));
                 log.error(msg, e);
             } catch (Exception e) {
-                String msg = "Failed to launch Jupyter notebook server. See system logs for detailed error.";
+                String msg = "Failed to launch Jupyter notebook server. ";
+
+                if (!jupyterHubServiceAccountHelper.isJupyterHubServiceAccountEnabled()) {
+                    msg += "Make sure the JupyterHub service account user is enabled and provide the credentials to JupyterHub (refer to the documentation for more details). ";
+                }
+
+                msg += "Check the XNAT and JupyterHub system logs for error messages.";
+
                 eventService.triggerEvent(JupyterServerEvent.failed(eventTrackingId, user.getID(), xsiType, itemId,
                                                                     JupyterServerEventI.Operation.Start, msg));
                 log.error(msg, e);
