@@ -8,7 +8,9 @@
 <script src="$content.getURI("/scripts/xnat/plugin/jupyterhub/jupyterhub-module.js")"></script>
 <script src="$content.getURI("/scripts/xnat/plugin/jupyterhub/jupyterhub-preferences.js")"></script>
 <script src="$content.getURI("/scripts/xnat/plugin/jupyterhub/jupyterhub-hub.js")"></script>
-<script src="$content.getURI("/scripts/xnat/plugin/jupyterhub/jupyterhub-docker-images.js")"></script>
 <script src="$content.getURI("/scripts/xnat/plugin/jupyterhub/jupyterhub-users.js")"></script>
+<script src="$content.getURI("/scripts/xnat/plugin/jupyterhub/jupyterhub-user-auth.js")"></script>
 <script src="$content.getURI("/scripts/xnat/plugin/jupyterhub/jupyterhub-servers.js")"></script>
 <script src="$content.getURI("/scripts/xnat/plugin/jupyterhub/jupyterhub-topnav.js")"></script>
+<script src="$content.getURI("/scripts/xnat/plugin/compute/compute-environment-configs.js")"></script>
+<script src="$content.getURI("/scripts/xnat/plugin/compute/hardware-configs.js")"></script>

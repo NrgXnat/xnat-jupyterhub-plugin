@@ -66,7 +66,7 @@ XNAT.plugin.jupyterhub.hub = getObject(XNAT.plugin.jupyterhub.hub || {});
     XNAT.plugin.jupyterhub.hub.renderSetupForm = function(container_id) {
         console.debug(`jupyterhub-hub.js: XNAT.plugin.jupyterhub.hub.setupForm`);
 
-        XNAT.spawner
+        return XNAT.spawner
             .resolve('jupyterhub:siteSettings/jupyterhubPreferences')
             .ok(function(){ this.render(`#${container_id}`) });
     }
@@ -88,29 +88,46 @@ XNAT.plugin.jupyterhub.hub = getObject(XNAT.plugin.jupyterhub.hub || {});
         hubTable.tr()
             .th({addClass: 'left', html: '<b>API Path</b>'})
             .th('<b>Status</b>')
-            .th('<b>Version</b>')
+            .th('<b>Hub Version</b>')
             .th('<b>Actions</b>')
 
         function editButton() {
             return spawn('button.btn.sm.edit', {
                 onclick: function(e) {
                     e.preventDefault();
-                    let dialog = XNAT.dialog.open({
-                        title: '',
+                    XNAT.dialog.open({
+                        title: 'JupyterHub Setup',
                         content: spawn('div#jupyterhub-setup-form'),
                         maxBtn: true,
                         footer: false,
-                        width: 750,
+                        width: 800,
                         beforeShow: function(obj) {
                             console.log(obj)
                             let serverFormContainerEl = document.getElementById(`jupyterhub-setup-form`);
                             serverFormContainerEl.innerHTML = '';
-                            XNAT.plugin.jupyterhub.hub.renderSetupForm(`jupyterhub-setup-form`);
+                            XNAT.plugin.jupyterhub.hub.renderSetupForm(`jupyterhub-setup-form`)
+                                .ok(() => {
+                                    const formContainerEl = document.getElementById('jupyterhub-setup-form');
+                                    const form = formContainerEl.querySelector('form');
+                                    const saveButton = formContainerEl.querySelector('button.save');
+                                    const revertButton = formContainerEl.querySelector('button.revert');
+                                    
+                                    saveButton.addEventListener("click", () => {
+                                        setTimeout(() => {
+                                            if (!form.classList.contains('error')) {
+                                                XNAT.plugin.jupyterhub.hub.refreshSetupTable(hubSetupContainerId)
+                                                XNAT.ui.dialog.closeAll();
+                                            }
+                                        }, 500);
+                                    });
+                                    
+                                    revertButton.addEventListener("click", () => {
+                                        XNAT.ui.dialog.closeAll();
+                                    });
+                                })
                         },
                         buttons: []
                     })
-                    let closeButton = dialog.$modal[0].querySelector('b.close');
-                    closeButton.addEventListener("click", () => XNAT.plugin.jupyterhub.hub.refreshSetupTable(hubSetupContainerId))
                 }
             }, 'Edit');
         }
@@ -122,7 +139,7 @@ XNAT.plugin.jupyterhub.hub = getObject(XNAT.plugin.jupyterhub.hub || {});
             let status = 'version' in hubInfo;
             hubTable.tr()
                 .td([spawn('div.left', [hubPreferences['jupyterHubApiUrl']])])
-                .td([spawn(status ? 'div.center.success' : 'div.center.warning', [status ? 'OK' : 'Down'])])
+                .td([spawn(status ? 'div.center.success' : 'div.center.warning', [status ? 'Connected' : 'Connection Error'])])
                 .td([spawn('div.center', [hubInfo['version']])])
                 .td([spawn('div.center', [editButton()])]);
         }).catch(e => {
@@ -130,7 +147,7 @@ XNAT.plugin.jupyterhub.hub = getObject(XNAT.plugin.jupyterhub.hub || {});
 
             hubTable.tr()
                 .td([spawn('div.left', ['Unable to connect to JupyterHub'])])
-                .td([spawn('div.center.warning', ['Down'])])
+                .td([spawn('div.center.warning', ['Connection Error'])])
                 .td([spawn('div.center', [])])
                 .td([spawn('div.center', [editButton()])]);
         })

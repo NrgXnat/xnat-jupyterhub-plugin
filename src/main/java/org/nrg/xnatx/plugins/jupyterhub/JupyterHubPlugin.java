@@ -2,6 +2,7 @@ package org.nrg.xnatx.plugins.jupyterhub;
 
 import lombok.extern.slf4j.Slf4j;
 import org.nrg.framework.annotations.XnatPlugin;
+import org.nrg.xnat.compute.config.ComputeConfig;
 import org.nrg.xdat.security.helpers.UserHelper;
 import org.nrg.xdat.security.services.SearchHelperServiceI;
 import org.nrg.xnatx.plugins.jupyterhub.client.DefaultJupyterHubClient;
@@ -10,19 +11,16 @@ import org.nrg.xnatx.plugins.jupyterhub.preferences.JupyterHubPreferences;
 import org.nrg.xnatx.plugins.jupyterhub.services.JupyterHubService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.ComponentScan;
-import org.springframework.context.annotation.Scope;
-import org.springframework.context.annotation.ScopedProxyMode;
+import org.springframework.context.annotation.*;
 import org.springframework.scheduling.config.TriggerTask;
 import org.springframework.scheduling.support.PeriodicTrigger;
 
 import java.util.concurrent.TimeUnit;
 
-@XnatPlugin(value = "JupyterHubPlugin",
-            name  = "Jupyter Hub Plugin",
+@XnatPlugin(value = "jupyterHubPlugin",
+            name  = "XNAT JupyterHub Plugin",
             logConfigurationFile = "jupyterhub-logback.xml",
-            entityPackages = {"org.nrg.xnatx.plugins.jupyterhub.entities"})
+            entityPackages = {"org.nrg.xnatx.plugins.jupyterhub.entities", "org.nrg.xnat.compute.entities"})
 @ComponentScan({"org.nrg.xnatx.plugins.jupyterhub.preferences",
                 "org.nrg.xnatx.plugins.jupyterhub.client",
                 "org.nrg.xnatx.plugins.jupyterhub.rest",
@@ -32,7 +30,9 @@ import java.util.concurrent.TimeUnit;
                 "org.nrg.xnatx.plugins.jupyterhub.listeners",
                 "org.nrg.xnatx.plugins.jupyterhub.repositories",
                 "org.nrg.xnatx.plugins.jupyterhub.utils",
+                "org.nrg.xnatx.plugins.jupyterhub.authorization",
                 "org.nrg.xnatx.plugins.jupyterhub.initialize"})
+@Import({ComputeConfig.class})
 @Slf4j
 public class JupyterHubPlugin {
 
@@ -57,7 +57,12 @@ public class JupyterHubPlugin {
 
     @Bean
     public TriggerTask cullIdleServers(final JupyterHubService jupyterHubService) {
-        return new TriggerTask(jupyterHubService::cullInactiveServers, new PeriodicTrigger(15, TimeUnit.MINUTES));
+        return new TriggerTask(jupyterHubService::cullInactiveServers, new PeriodicTrigger(5, TimeUnit.MINUTES));
+    }
+
+    @Bean
+    public TriggerTask cullLongRunningServers(final JupyterHubService jupyterHubService) {
+        return new TriggerTask(jupyterHubService::cullLongRunningServers, new PeriodicTrigger(5, TimeUnit.MINUTES));
     }
 
 }

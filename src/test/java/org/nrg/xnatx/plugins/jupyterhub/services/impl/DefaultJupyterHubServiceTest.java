@@ -8,6 +8,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mockito;
 import org.nrg.framework.services.NrgEventServiceI;
+import org.nrg.xnat.compute.services.JobTemplateService;
 import org.nrg.xdat.om.XnatExperimentdata;
 import org.nrg.xdat.om.XnatImagescandata;
 import org.nrg.xdat.om.XnatProjectdata;
@@ -24,6 +25,7 @@ import org.nrg.xnatx.plugins.jupyterhub.client.models.User;
 import org.nrg.xnatx.plugins.jupyterhub.client.models.UserOptions;
 import org.nrg.xnatx.plugins.jupyterhub.config.DefaultJupyterHubServiceConfig;
 import org.nrg.xnatx.plugins.jupyterhub.events.JupyterServerEventI;
+import org.nrg.xnatx.plugins.jupyterhub.models.ServerStartRequest;
 import org.nrg.xnatx.plugins.jupyterhub.preferences.JupyterHubPreferences;
 import org.nrg.xnatx.plugins.jupyterhub.services.UserOptionsEntityService;
 import org.nrg.xnatx.plugins.jupyterhub.services.UserOptionsService;
@@ -55,6 +57,7 @@ public class DefaultJupyterHubServiceTest {
     @Autowired private UserOptionsService mockUserOptionsService;
     @Autowired private JupyterHubPreferences mockJupyterHubPreferences;
     @Autowired private UserManagementServiceI mockUserManagementServiceI;
+    @Autowired private JobTemplateService mockJobTemplateService;
 
     @Captor ArgumentCaptor<JupyterServerEventI> jupyterServerEventCaptor;
     @Captor ArgumentCaptor<Token> tokenArgumentCaptor;
@@ -64,10 +67,15 @@ public class DefaultJupyterHubServiceTest {
     private final String servername = "";
     private final String eventTrackingId = "eventTrackingId";
     private final String projectId = "TestProject";
-    private final String dockerImage = "jupyter/scipy-notebook:hub-2.3.0";
+    private final Long computeEnvironmentConfigId = 3L;
+    private final Long hardwareConfigId = 2L;
     private User userWithServers;
     private User userNoServers;
-    private Server server;
+
+    private ServerStartRequest startProjectRequest;
+    private ServerStartRequest startSubjectRequest;
+    private ServerStartRequest startExperimentRequest;
+    private ServerStartRequest startScanRequest;
 
     @Before
     public void before() throws org.nrg.xdat.security.user.exceptions.UserNotFoundException, UserInitException {
@@ -77,7 +85,7 @@ public class DefaultJupyterHubServiceTest {
         when(user.getUsername()).thenReturn(username);
         when(mockUserManagementServiceI.getUser(eq(username))).thenReturn(user);
 
-        server = Server.builder()
+        Server server = Server.builder()
                 .name(servername)
                 .build();
 
@@ -89,6 +97,58 @@ public class DefaultJupyterHubServiceTest {
         userNoServers = User.builder()
                 .name(username)
                 .servers(Collections.emptyMap())
+                .build();
+
+        // Setup start project request
+        startProjectRequest = ServerStartRequest.builder()
+                .username(username)
+                .servername(servername)
+                .xsiType(XnatProjectdata.SCHEMA_ELEMENT_NAME)
+                .itemId(projectId)
+                .itemLabel(projectId)
+                .projectId(projectId)
+                .eventTrackingId(eventTrackingId)
+                .computeEnvironmentConfigId(computeEnvironmentConfigId)
+                .hardwareConfigId(hardwareConfigId)
+                .build();
+
+        // Setup start subject request
+        startSubjectRequest = ServerStartRequest.builder()
+                .username(username)
+                .servername(servername)
+                .xsiType(XnatSubjectdata.SCHEMA_ELEMENT_NAME)
+                .itemId("XNAT_S00001")
+                .itemLabel("Subject1")
+                .projectId(projectId)
+                .eventTrackingId(eventTrackingId)
+                .computeEnvironmentConfigId(computeEnvironmentConfigId)
+                .hardwareConfigId(hardwareConfigId)
+                .build();
+
+        // Setup start experiment request
+        startExperimentRequest = ServerStartRequest.builder()
+                .username(username)
+                .servername(servername)
+                .xsiType(XnatExperimentdata.SCHEMA_ELEMENT_NAME)
+                .itemId("XNAT_E00001")
+                .itemLabel("Experiment1")
+                .projectId(projectId)
+                .eventTrackingId(eventTrackingId)
+                .computeEnvironmentConfigId(computeEnvironmentConfigId)
+                .hardwareConfigId(hardwareConfigId)
+                .build();
+
+        // Setup start scan request
+        startScanRequest = ServerStartRequest.builder()
+                .username(username)
+                .servername(servername)
+                .xsiType(XnatImagescandata.SCHEMA_ELEMENT_NAME)
+                .itemId("XNAT_S00001")
+                .itemLabel("Scan1")
+                .projectId(projectId)
+                .eventTrackingId(eventTrackingId)
+                .computeEnvironmentConfigId(computeEnvironmentConfigId)
+                .hardwareConfigId(hardwareConfigId)
                 .build();
 
         // Capture Jupyter events
@@ -180,7 +240,7 @@ public class DefaultJupyterHubServiceTest {
         when(mockPermissionsHelper.canRead(any(), anyString(), anyString(), anyString())).thenReturn(false);
 
         // Test
-        jupyterHubService.startServer(user, XnatProjectdata.SCHEMA_ELEMENT_NAME, projectId, projectId , projectId, eventTrackingId, dockerImage);
+        jupyterHubService.startServer(user, startProjectRequest);
 
         // Verify failure to start event occurred
         verify(mockEventService, atLeastOnce()).triggerEvent(jupyterServerEventCaptor.capture());
@@ -201,9 +261,7 @@ public class DefaultJupyterHubServiceTest {
         when(mockPermissionsHelper.canRead(any(), anyString(), anyString(), anyString())).thenReturn(false);
 
         // Test
-        String subjectId = "XNAT_S00001";
-        String subjectLabel = "Subject1";
-        jupyterHubService.startServer(user, XnatSubjectdata.SCHEMA_ELEMENT_NAME, subjectId, subjectLabel, projectId, eventTrackingId, dockerImage);
+        jupyterHubService.startServer(user, startSubjectRequest);
 
         //Verify failure to start event occurred
         verify(mockEventService, atLeastOnce()).triggerEvent(jupyterServerEventCaptor.capture());
@@ -224,9 +282,7 @@ public class DefaultJupyterHubServiceTest {
         when(mockPermissionsHelper.canRead(any(), anyString(), anyString(), anyString())).thenReturn(false);
 
         // Test
-        String experimentId = "XNAT_E00001";
-        String experimentLabel = "Experiment01";
-        jupyterHubService.startServer(user, XnatExperimentdata.SCHEMA_ELEMENT_NAME, experimentId, experimentLabel, projectId, eventTrackingId, dockerImage);
+        jupyterHubService.startServer(user, startExperimentRequest);
 
         //Verify failure to start event occurred
         verify(mockEventService, atLeastOnce()).triggerEvent(jupyterServerEventCaptor.capture());
@@ -247,7 +303,7 @@ public class DefaultJupyterHubServiceTest {
         when(mockPermissionsHelper.canRead(any(), anyString(), anyString(), anyString())).thenReturn(false);
 
         // Test
-        jupyterHubService.startServer(user, XnatImagescandata.SCHEMA_ELEMENT_NAME, "456", "Scan 456", projectId, eventTrackingId, dockerImage);
+        jupyterHubService.startServer(user, startScanRequest);
 
         //Verify failure to start event occurred
         verify(mockEventService, atLeastOnce()).triggerEvent(jupyterServerEventCaptor.capture());
@@ -271,7 +327,33 @@ public class DefaultJupyterHubServiceTest {
         when(mockJupyterHubClient.getVersion()).thenThrow(RuntimeException.class);
 
         // Test
-        jupyterHubService.startServer(user, XnatProjectdata.SCHEMA_ELEMENT_NAME, projectId, projectId, projectId, eventTrackingId, dockerImage);
+        jupyterHubService.startServer(user, startProjectRequest);
+        Thread.sleep(1000); // Async call, need to wait. Is there a better way to test this?
+
+        // Verify failure to start event occurred
+        verify(mockEventService, atLeastOnce()).triggerEvent(jupyterServerEventCaptor.capture());
+        JupyterServerEventI capturedEvent = jupyterServerEventCaptor.getValue();
+        assertEquals(JupyterServerEventI.Status.Failed, capturedEvent.getStatus());
+        assertEquals(JupyterServerEventI.Operation.Start, capturedEvent.getOperation());
+
+        // Verify user options are not saved
+        verify(mockUserOptionsEntityService, never()).createOrUpdate(any());
+
+        // Verify no attempts to start a server
+        verify(mockJupyterHubClient, never()).startServer(any(), any(), any());
+    }
+
+    @Test(timeout = 2000)
+    public void testStartServer_HubOnlineButXNATCantConnect() throws Exception {
+        // Grant permissions
+        when(mockPermissionsHelper.canRead(any(), anyString(), anyString(), anyString())).thenReturn(true);
+
+        // Can't getInfo from JupyterHub, but connection to JupyterHub succeeded
+        when(mockJupyterHubClient.getVersion()).thenReturn(null);
+        when(mockJupyterHubClient.getInfo()).thenThrow(RuntimeException.class);
+
+        // Test
+        jupyterHubService.startServer(user, startProjectRequest);
         Thread.sleep(1000); // Async call, need to wait. Is there a better way to test this?
 
         // Verify failure to start event occurred
@@ -296,7 +378,32 @@ public class DefaultJupyterHubServiceTest {
         when(mockJupyterHubClient.getUser(anyString())).thenReturn(Optional.of(userWithServers));
 
         // Test
-        jupyterHubService.startServer(user, XnatProjectdata.SCHEMA_ELEMENT_NAME, projectId, projectId, projectId, eventTrackingId, dockerImage);
+        jupyterHubService.startServer(user, startProjectRequest);
+        Thread.sleep(1000); // Async call, need to wait. Is there a better way to test this?
+
+        // Verify failure to start event occurred
+        verify(mockEventService, atLeastOnce()).triggerEvent(jupyterServerEventCaptor.capture());
+        JupyterServerEventI capturedEvent = jupyterServerEventCaptor.getValue();
+        assertEquals(JupyterServerEventI.Status.Failed, capturedEvent.getStatus());
+        assertEquals(JupyterServerEventI.Operation.Start, capturedEvent.getOperation());
+
+        // Verify user options are not saved
+        verify(mockUserOptionsEntityService, never()).createOrUpdate(any());
+
+        // Verify no attempts to start a server
+        verify(mockJupyterHubClient, never()).startServer(any(), any(), any());
+    }
+
+    @Test(timeout = 2000)
+    public void testStartServer_jobTemplateUnavailable() throws Exception {
+        // Grant permissions
+        when(mockPermissionsHelper.canRead(any(), anyString(), anyString(), anyString())).thenReturn(true);
+
+        // Job template unavailable
+        when(mockJobTemplateService.isAvailable(any(), any(), any())).thenReturn(false);
+
+        // Test
+        jupyterHubService.startServer(user, startProjectRequest);
         Thread.sleep(1000); // Async call, need to wait. Is there a better way to test this?
 
         // Verify failure to start event occurred
@@ -317,18 +424,22 @@ public class DefaultJupyterHubServiceTest {
         // Grant permissions
         when(mockPermissionsHelper.canRead(any(), anyString(), anyString(), anyString())).thenReturn(true);
 
+        // Job template is available
+        when(mockJobTemplateService.isAvailable(any(), any(), any())).thenReturn(true);
+
         // To successfully start a server there should be no running servers at first.
         // A subsequent call should contain a server, but let's presume it is never ready
         when(mockJupyterHubClient.getUser(anyString())).thenReturn(Optional.of(userNoServers));
         when(mockJupyterHubClient.getServer(anyString(), anyString())).thenReturn(Optional.empty());
 
         // Test
-        jupyterHubService.startServer(user, XnatProjectdata.SCHEMA_ELEMENT_NAME, projectId, projectId, projectId, eventTrackingId, dockerImage);
+        jupyterHubService.startServer(user, startProjectRequest);
         Thread.sleep(3000); // Async call, need to wait. Is there a better way to test this?
 
         // Verify user options are stored
         verify(mockUserOptionsService, times(1)).storeUserOptions(eq(user), eq(""), eq(XnatProjectdata.SCHEMA_ELEMENT_NAME),
-                                                                  eq(projectId), eq(projectId), eq(dockerImage), eq(eventTrackingId));
+                                                                  eq(projectId), eq(projectId), eq(computeEnvironmentConfigId),
+                                                                  eq(hardwareConfigId), eq(eventTrackingId));
 
         // Verify JupyterHub start server request sent
         verify(mockJupyterHubClient, times(1)).startServer(eq(username), eq(""), any(UserOptions.class));
@@ -348,18 +459,22 @@ public class DefaultJupyterHubServiceTest {
         // Grant permissions
         when(mockPermissionsHelper.canRead(any(), anyString(), anyString(), anyString())).thenReturn(true);
 
+        // Job template is available
+        when(mockJobTemplateService.isAvailable(any(), any(), any())).thenReturn(true);
+
         // To successfully start a server there should be no running servers at first.
         // A subsequent call should eventually return a server in the ready state
         when(mockJupyterHubClient.getUser(anyString())).thenReturn(Optional.of(userNoServers));
         when(mockJupyterHubClient.getServer(anyString(), anyString())).thenReturn(Optional.of(Server.builder().ready(true).build()));
 
         // Test
-        jupyterHubService.startServer(user, XnatProjectdata.SCHEMA_ELEMENT_NAME, projectId, projectId, projectId, eventTrackingId, dockerImage);
+        jupyterHubService.startServer(user, startProjectRequest);
         Thread.sleep(2500); // Async call, need to wait. Is there a better way to test this?
 
         // Verify user options are stored
         verify(mockUserOptionsService, times(1)).storeUserOptions(eq(user), eq(""), eq(XnatProjectdata.SCHEMA_ELEMENT_NAME),
-                                                                  eq(projectId), eq(projectId), eq(dockerImage), eq(eventTrackingId));
+                                                                  eq(projectId), eq(projectId), eq(computeEnvironmentConfigId),
+                                                                  eq(hardwareConfigId), eq(eventTrackingId));
 
         // Verify JupyterHub start server request sent
         verify(mockJupyterHubClient, times(1)).startServer(eq(username), eq(""), any(UserOptions.class));
@@ -376,6 +491,9 @@ public class DefaultJupyterHubServiceTest {
         // Grant permissions
         when(mockPermissionsHelper.canRead(any(), anyString(), anyString(), anyString())).thenReturn(true);
 
+        // Job template is available
+        when(mockJobTemplateService.isAvailable(any(), any(), any())).thenReturn(true);
+
         // To successfully start a server there should be no running servers at first.
         // A subsequent call should eventually return a server in the ready state
         // Start with a user who does not yet exist on JupyterHub
@@ -384,7 +502,7 @@ public class DefaultJupyterHubServiceTest {
         when(mockJupyterHubClient.getServer(anyString(), anyString())).thenReturn(Optional.of(Server.builder().ready(true).build()));
 
         // Test
-        jupyterHubService.startServer(user, XnatProjectdata.SCHEMA_ELEMENT_NAME, projectId, projectId, projectId, eventTrackingId, dockerImage);
+        jupyterHubService.startServer(user, startProjectRequest);
         Thread.sleep(2500); // Async call, need to wait. Is there a better way to test this?
 
         // Verify create user attempt
@@ -392,7 +510,8 @@ public class DefaultJupyterHubServiceTest {
 
         // Verify user options are stored
         verify(mockUserOptionsService, times(1)).storeUserOptions(eq(user), eq(""), eq(XnatProjectdata.SCHEMA_ELEMENT_NAME),
-                                                                  eq(projectId), eq(projectId), eq(dockerImage), eq(eventTrackingId));
+                                                                  eq(projectId), eq(projectId), eq(computeEnvironmentConfigId),
+                                                                  eq(hardwareConfigId), eq(eventTrackingId));
 
         // Verify JupyterHub start server request sent
         verify(mockJupyterHubClient, times(1)).startServer(eq(username), eq(""), any(UserOptions.class));
@@ -504,24 +623,51 @@ public class DefaultJupyterHubServiceTest {
         verify(mockJupyterHubClient, times(1)).stopServer(eq(username), eq(server_inactive.getName()));
     }
 
-    @Test
+    @Test(timeout = 3000)
     public void testCullIdleServers_NoCull() throws InterruptedException {
         // Setup -> timeout set to zero
         when(mockJupyterHubPreferences.getInactivityTimeout()).thenReturn(0L);
 
+        // Test
+        jupyterHubService.cullInactiveServers();
+        Thread.sleep(2000); // Stop server is async call, need to wait.
+
+        // Verify no servers stopped
+        verify(mockJupyterHubClient, never()).stopServer(any(), any());
+    }
+
+    @Test(timeout = 3000)
+    public void testCullIdleServers_Exception() throws InterruptedException {
+        // Setup
+        when(mockJupyterHubPreferences.getInactivityTimeout()).thenReturn(90L);
+        when(mockJupyterHubClient.getUsers()).thenThrow(new RuntimeException("Unable to connect to JupyterHub"));
+
+        // Test
+        jupyterHubService.cullInactiveServers();
+        Thread.sleep(2000); // Stop server is async call, need to wait.
+
+        // Verify no servers stopped
+        verify(mockJupyterHubClient, never()).stopServer(any(), any());
+    }
+
+    @Test(timeout = 3000)
+    public void testCullLongRunningServers_Cull() throws InterruptedException {
+        // Setup
+        when(mockJupyterHubPreferences.getMaxServerLifetime()).thenReturn(48L);
+
         Server server_active = Server.builder()
                 .name("server_active")
-                .last_activity(ZonedDateTime.now(ZoneId.of("UTC")))
+                .started(ZonedDateTime.now(ZoneId.of("UTC")))
                 .build();
 
-        Server server_inactive = Server.builder()
-                .name("server_inactive")
-                .last_activity(ZonedDateTime.now(ZoneId.of("UTC")).minusHours(2L))
+        Server server_long_running = Server.builder()
+                .name("server_long_running")
+                .started(ZonedDateTime.now(ZoneId.of("UTC")).minusHours(48L).minusMinutes(1L))
                 .build();
 
         Map<String, Server> servers = new HashMap<>();
-        servers.put("server_active", server_active);
-        servers.put("server_inactive", server_inactive);
+        servers.put(server_active.getName(), server_active);
+        servers.put(server_long_running.getName(), server_long_running);
 
         User user = User.builder()
                 .name(username)
@@ -531,14 +677,79 @@ public class DefaultJupyterHubServiceTest {
         when(mockJupyterHubClient.getUsers()).thenReturn(Collections.singletonList(user));
 
         // Test
-        jupyterHubService.cullInactiveServers();
+        jupyterHubService.cullLongRunningServers();
+        Thread.sleep(2000); // Stop server is async call, need to wait.
+
+        // Verify active server not stopped
+        verify(mockJupyterHubClient, never()).stopServer(eq(username), eq(server_active.getName()));
+
+        // Verify inactive server stopped
+        verify(mockJupyterHubClient, times(1)).stopServer(eq(username), eq(server_long_running.getName()));
+    }
+
+    @Test(timeout = 3000)
+    public void testCullLongRunningServers_NoCull_Disabled() throws InterruptedException {
+        // Setup -> timeout set to zero
+        when(mockJupyterHubPreferences.getMaxServerLifetime()).thenReturn(0L);
+
+        // Test
+        jupyterHubService.cullLongRunningServers();
+        Thread.sleep(2000); // Stop server is async call, need to wait.
+
+        // Verify servers not stopped
+        verify(mockJupyterHubClient, never()).stopServer(any(), any());
+    }
+
+    @Test(timeout = 3000)
+    public void testCullLongRunningServers_NoCull() throws InterruptedException {
+        // Setup
+        when(mockJupyterHubPreferences.getMaxServerLifetime()).thenReturn(48L);
+
+        Server server_active = Server.builder()
+                .name("server_active")
+                .started(ZonedDateTime.now(ZoneId.of("UTC")))
+                .build();
+
+        // Server started less than 48 hours ago
+        Server server_long_running = Server.builder()
+                .name("server_long_running")
+                .started(ZonedDateTime.now(ZoneId.of("UTC")).minusHours(47L).minusMinutes(59L))
+                .build();
+
+        Map<String, Server> servers = new HashMap<>();
+        servers.put(server_active.getName(), server_active);
+        servers.put(server_long_running.getName(), server_long_running);
+
+        User user = User.builder()
+                .name(username)
+                .servers(servers)
+                .build();
+
+        when(mockJupyterHubClient.getUsers()).thenReturn(Collections.singletonList(user));
+
+        // Test
+        jupyterHubService.cullLongRunningServers();
         Thread.sleep(2000); // Stop server is async call, need to wait.
 
         // Verify active server not stopped
         verify(mockJupyterHubClient, never()).stopServer(eq(username), eq(server_active.getName()));
 
         // Verify inactive server not stopped. Timeout is set to zero
-        verify(mockJupyterHubClient, never()).stopServer(eq(username), eq(server_inactive.getName()));
+        verify(mockJupyterHubClient, never()).stopServer(eq(username), eq(server_long_running.getName()));
     }
 
+    @Test(timeout = 3000)
+    public void testCullLongRunningServers_Exception() throws InterruptedException {
+        // Setup
+        when(mockJupyterHubPreferences.getMaxServerLifetime()).thenReturn(48L);
+        when(mockJupyterHubClient.getUsers()).thenThrow(new RuntimeException("Unable to connect to JupyterHub"));
+
+        // Test
+        jupyterHubService.cullLongRunningServers();
+        Thread.sleep(2000); // Stop server is async call, need to wait.
+
+        // Verify no server stopped
+        verify(mockJupyterHubClient, never()).stopServer(any(), any());
+
+    }
 }

@@ -3,18 +3,21 @@ package org.nrg.xnatx.plugins.jupyterhub.config;
 import org.mockito.Mockito;
 import org.nrg.framework.configuration.ConfigPaths;
 import org.nrg.framework.services.NrgEventServiceI;
+import org.nrg.framework.services.SerializerService;
 import org.nrg.framework.utilities.OrderedProperties;
+import org.nrg.xnat.compute.services.ComputeEnvironmentConfigService;
+import org.nrg.xnat.compute.services.HardwareConfigService;
+import org.nrg.xnat.compute.services.JobTemplateService;
 import org.nrg.prefs.services.NrgPreferenceService;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.services.*;
 import org.nrg.xdat.services.AliasTokenService;
+import org.nrg.xnat.services.XnatAppInfo;
 import org.nrg.xnat.tracking.services.EventTrackingDataHibernateService;
 import org.nrg.xnatx.plugins.jupyterhub.client.JupyterHubClient;
 import org.nrg.xnatx.plugins.jupyterhub.preferences.JupyterHubPreferences;
-import org.nrg.xnatx.plugins.jupyterhub.services.JupyterHubService;
-import org.nrg.xnatx.plugins.jupyterhub.services.UserOptionsEntityService;
-import org.nrg.xnatx.plugins.jupyterhub.services.UserOptionsService;
-import org.nrg.xnatx.plugins.jupyterhub.services.UserWorkspaceService;
+import org.nrg.xnatx.plugins.jupyterhub.services.*;
+import org.nrg.xnatx.plugins.jupyterhub.utils.JupyterHubServiceAccountHelper;
 import org.nrg.xnatx.plugins.jupyterhub.utils.PermissionsHelper;
 import org.nrg.xnatx.plugins.jupyterhub.utils.XFTManagerHelper;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -130,5 +133,35 @@ public class MockConfig {
     @Bean
     public EventTrackingDataHibernateService mockEventTrackingDataHibernateService() {
         return Mockito.mock(EventTrackingDataHibernateService.class);
+    }
+
+    @Bean
+    public SerializerService mockSerializerService() {
+        return Mockito.mock(SerializerService.class);
+    }
+
+    @Bean
+    public XnatAppInfo mockXnatAppInfo() {
+        return Mockito.mock(XnatAppInfo.class);
+    }
+
+    @Bean
+    public ComputeEnvironmentConfigService mockComputeEnvironmentConfigService() {
+        return Mockito.mock(ComputeEnvironmentConfigService.class);
+    }
+
+    @Bean
+    public HardwareConfigService mockHardwareConfigService() {
+        return Mockito.mock(HardwareConfigService.class);
+    }
+
+    @Bean
+    public JobTemplateService mockJobTemplateService() {
+        return Mockito.mock(JobTemplateService.class);
+    }
+
+    @Bean
+    public JupyterHubServiceAccountHelper mockJupyterHubServiceAccountHelper() {
+        return Mockito.mock(JupyterHubServiceAccountHelper.class);
     }
 }

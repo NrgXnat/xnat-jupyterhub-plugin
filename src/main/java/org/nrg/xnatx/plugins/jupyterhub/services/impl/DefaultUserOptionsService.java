@@ -1,7 +1,9 @@
 package org.nrg.xnatx.plugins.jupyterhub.services.impl;
 
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.nrg.framework.constants.Scope;
 import org.nrg.xdat.entities.AliasToken;
 import org.nrg.xdat.model.XnatSubjectassessordataI;
 import org.nrg.xdat.om.*;
@@ -14,9 +16,13 @@ import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.security.UserI;
+import org.nrg.xnat.compute.models.*;
+import org.nrg.xnat.compute.services.JobTemplateService;
 import org.nrg.xnat.exceptions.InvalidArchiveStructure;
 import org.nrg.xnatx.plugins.jupyterhub.entities.UserOptionsEntity;
-import org.nrg.xnatx.plugins.jupyterhub.models.*;
+import org.nrg.xnatx.plugins.jupyterhub.models.XnatUserOptions;
+import org.nrg.xnatx.plugins.jupyterhub.models.docker.Mount;
+import org.nrg.xnatx.plugins.jupyterhub.models.docker.*;
 import org.nrg.xnatx.plugins.jupyterhub.preferences.JupyterHubPreferences;
 import org.nrg.xnatx.plugins.jupyterhub.services.UserOptionsEntityService;
 import org.nrg.xnatx.plugins.jupyterhub.services.UserOptionsService;
@@ -43,7 +49,7 @@ public class DefaultUserOptionsService implements UserOptionsService {
     private final SiteConfigPreferences siteConfigPreferences;
     private final UserOptionsEntityService userOptionsEntityService;
     private final PermissionsHelper permissionsHelper;
-
+    private final JobTemplateService jobTemplateService;
 
     @Autowired
     public DefaultUserOptionsService(final JupyterHubPreferences jupyterHubPreferences,
@@ -52,7 +58,8 @@ public class DefaultUserOptionsService implements UserOptionsService {
                                      final AliasTokenService aliasTokenService,
                                      final SiteConfigPreferences siteConfigPreferences,
                                      final UserOptionsEntityService userOptionsEntityService,
-                                     final PermissionsHelper permissionsHelper) {
+                                     final PermissionsHelper permissionsHelper,
+                                     final JobTemplateService jobTemplateService) {
         this.jupyterHubPreferences = jupyterHubPreferences;
         this.userWorkspaceService = userWorkspaceService;
         this.searchHelperService = searchHelperService;
@@ -60,6 +67,7 @@ public class DefaultUserOptionsService implements UserOptionsService {
         this.siteConfigPreferences = siteConfigPreferences;
         this.userOptionsEntityService = userOptionsEntityService;
         this.permissionsHelper = permissionsHelper;
+        this.jobTemplateService = jobTemplateService;
     }
 
     @Override
@@ -126,7 +134,9 @@ public class DefaultUserOptionsService implements UserOptionsService {
                             final String path = ((XnatExperimentdata) subjectAssessor).getCurrentSessionFolder(true);
 
                             // Experiments
-                            subjectPaths.put("/data/projects/" + xnatProjectdata.getId() + "/experiments/" + assessorLabel, path);
+                            if (Files.exists(Paths.get(path))) {
+                                subjectPaths.put("/data/projects/" + xnatProjectdata.getId() + "/experiments/" + assessorLabel, path);
+                            }
                         } catch (BaseXnatExperimentdata.UnknownPrimaryProjectException | InvalidArchiveStructure e) {
                             // Container service ignores this error.
                             log.error("", e);
@@ -157,7 +167,10 @@ public class DefaultUserOptionsService implements UserOptionsService {
                     final String experimentLabel = xnatExperimentdata.getLabel();
                     final String experimentPath = xnatExperimentdata.getCurrentSessionFolder(true);
                     final String projectId = xnatExperimentdata.getPrimaryProject(false).getId();
-                    experimentPaths.put("/data/projects/" + projectId + "/experiments/" + experimentLabel, experimentPath);
+
+                    if (Files.exists(Paths.get(experimentPath))) {
+                        experimentPaths.put("/data/projects/" + projectId + "/experiments/" + experimentLabel, experimentPath);
+                    }
                 } catch (BaseXnatExperimentdata.UnknownPrimaryProjectException | InvalidArchiveStructure e) {
                     // Container service ignores this error.
                     log.error("", e);
@@ -266,13 +279,19 @@ public class DefaultUserOptionsService implements UserOptionsService {
 
     @Override
     public void storeUserOptions(UserI user, String servername, String xsiType, String id, String projectId,
-                                 String dockerImage, String eventTrackingId) {
+                                 Long computeEnvironmentConfigId, Long hardwareConfigId, String eventTrackingId) {
         log.debug("Storing user options for user '{}' server '{}' xsiType '{}' id '{}' projectId '{}'",
                   user.getUsername(), servername, xsiType, id, projectId);
 
         if (!permissionsHelper.canRead(user, projectId, id, xsiType)) {
             return;
         }
+
+        // Resolve the job template before resolving the paths
+        Map<Scope, String> executionScope = new HashMap<>();
+        executionScope.put(Scope.Project, projectId);
+        executionScope.put(Scope.User, user.getUsername());
+        JobTemplate jobTemplate = jobTemplateService.resolve(computeEnvironmentConfigId, hardwareConfigId, executionScope);
 
         // specific xsi type -> general xsi type
         if (instanceOf(xsiType, XnatExperimentdata.SCHEMA_ELEMENT_NAME)) {
@@ -308,51 +327,37 @@ public class DefaultUserOptionsService implements UserOptionsService {
 
         // Gather mounts
         final Path workspacePath = userWorkspaceService.getUserWorkspace(user);
-        final BindMount workspaceMount = BindMount.builder()
-                .name("user-workspace")
-                .writable(true)
-                .xnatHostPath(workspacePath.toString())
-                .containerHostPath(translatePath(workspacePath.toString()))
-                .jupyterHostPath(Paths.get("/workspace", user.getUsername()).toString())
+
+        // Add user workspace mount
+        final Mount userNotebookDirectoryMount = Mount.builder()
+                .source(translateWorkspacePath(workspacePath.toString()))
+                .target(Paths.get("/workspace", user.getUsername()).toString())
+                .type("bind")
+                .readOnly(false)
                 .build();
 
-        final List<BindMount> xnatDataMounts = paths.entrySet().stream()
-                .map((entry) -> BindMount.builder()
-                        .name(entry.getKey())
-                        .writable(false)
-                        .xnatHostPath(entry.getValue())
-                        .containerHostPath(translatePath(entry.getValue()))
-                        .jupyterHostPath(Paths.get(entry.getKey()).toString())
+        // Add xnat data mounts
+        final List<Mount> xnatDataMounts = paths.entrySet().stream()
+                .map((entry) -> Mount.builder()
+                        .source(translateArchivePath(entry.getValue()))
+                        .target(Paths.get(entry.getKey()).toString())
+                        .type("bind")
+                        .readOnly(true)
                         .build())
                 .collect(Collectors.toList());
 
-        final List<BindMount> mounts = new ArrayList<>(Collections.emptyList());
-        mounts.add(workspaceMount);
+        // Collect mounts
+        final List<Mount> mounts = new ArrayList<>(Collections.emptyList());
+        mounts.add(userNotebookDirectoryMount);
         mounts.addAll(xnatDataMounts);
 
-        // Get env variables
+        // Add mounts
+        TaskTemplate taskTemplate = toTaskTemplate(jobTemplate);
+        taskTemplate.getContainerSpec().getMounts().addAll(mounts);
+
+        // Get and add env variables
         Map<String, String> environmentVariables = getDefaultEnvironmentVariables(user, xsiType, id);
-
-        // ContainerSpec
-        Map<String,String> containerSpecLabels = jupyterHubPreferences.getContainerSpecLabels();
-        ContainerSpec containerSpec = ContainerSpec.builder()
-                .labels(containerSpecLabels)
-                .image(dockerImage)
-                .build();
-
-        // PlacementSpec
-        List<String> placementSpecConstraints = jupyterHubPreferences.getPlacementSpecConstraints();
-        PlacementSpec placementSpec = PlacementSpec.builder()
-                .constraints(placementSpecConstraints)
-                .build();
-
-        // ResourceSpec
-        ResourceSpec resourceSpec = ResourceSpec.builder()
-                .cpuLimit(jupyterHubPreferences.getResourceSpecCpuLimit())
-                .cpuReservation(jupyterHubPreferences.getResourceSpecCpuReservation())
-                .memLimit(jupyterHubPreferences.getResourceSpecMemLimit())
-                .memReservation(jupyterHubPreferences.getResourceSpecMemReservation())
-                .build();
+        taskTemplate.getContainerSpec().getEnv().putAll(environmentVariables);
 
         // Store the user options
         UserOptionsEntity userOptionsEntity = UserOptionsEntity.builder()
@@ -362,22 +367,41 @@ public class DefaultUserOptionsService implements UserOptionsService {
                 .itemId(id)
                 .projectId(projectId)
                 .eventTrackingId(eventTrackingId)
-                .environmentVariables(environmentVariables)
-                .bindMountsJson(UserOptionsEntity.bindMountPojo(mounts))
-                .containerSpecJson(UserOptionsEntity.containerSpecPojo(containerSpec))
-                .placementSpecJson(UserOptionsEntity.placementSpecPojo(placementSpec))
-                .resourceSpecJson(UserOptionsEntity.resourceSpecPojo(resourceSpec))
+                .taskTemplate(taskTemplate)
                 .build();
 
         userOptionsEntityService.createOrUpdate(userOptionsEntity);
     }
 
-    private String translatePath(String path) {
-        String pathTranslationXnatPrefix = jupyterHubPreferences.getPathTranslationXnatPrefix();
-        String pathTranslationDockerPrefix = jupyterHubPreferences.getPathTranslationDockerPrefix();
+    /**
+     * Translate paths within the archive to paths within the docker container
+     * @param path the path to translate, must be the archive path or a subdirectory of the archive path
+     * @return the translated path
+     */
+    protected String translateArchivePath(String path) {
+        String pathTranslationArchivePrefix = jupyterHubPreferences.getPathTranslationArchivePrefix();
+        String pathTranslationArchiveDockerPrefix = jupyterHubPreferences.getPathTranslationArchiveDockerPrefix();
 
-        if (!StringUtils.isEmpty(pathTranslationXnatPrefix) && !StringUtils.isEmpty(pathTranslationDockerPrefix)) {
-            return path.replace(pathTranslationXnatPrefix, pathTranslationDockerPrefix);
+        if (StringUtils.isNotBlank(pathTranslationArchivePrefix) &&
+            StringUtils.isNotBlank(pathTranslationArchiveDockerPrefix)) {
+            return path.replace(pathTranslationArchivePrefix, pathTranslationArchiveDockerPrefix);
+        } else {
+            return path;
+        }
+    }
+
+    /**
+     * Translate paths within the workspace to paths within the docker container
+     * @param path the path to translate, must be the workspace path or a subdirectory of the workspace path
+     * @return  the translated path
+     */
+    protected String translateWorkspacePath(String path) {
+        String pathTranslationWorkspacePrefix = jupyterHubPreferences.getPathTranslationWorkspacePrefix();
+        String pathTranslationWorkspaceDockerPrefix = jupyterHubPreferences.getPathTranslationWorkspaceDockerPrefix();
+
+        if (StringUtils.isNotBlank(pathTranslationWorkspacePrefix) &&
+            StringUtils.isNotBlank(pathTranslationWorkspaceDockerPrefix)) {
+            return path.replace(pathTranslationWorkspacePrefix, pathTranslationWorkspaceDockerPrefix);
         } else {
             return path;
         }
@@ -395,6 +419,8 @@ public class DefaultUserOptionsService implements UserOptionsService {
         defaultEnvironmentVariables.put("XNAT_DATA", "/data");
         defaultEnvironmentVariables.put("XNAT_XSI_TYPE", xsiType);
         defaultEnvironmentVariables.put("XNAT_ITEM_ID", id);
+        defaultEnvironmentVariables.put("JUPYTERHUB_ROOT_DIR", Paths.get("/workspace", user.getUsername()).toString());
+        defaultEnvironmentVariables.put("XDG_CONFIG_HOME", Paths.get("/workspace", user.getUsername()).toString());
 
         return defaultEnvironmentVariables;
     }
@@ -411,4 +437,87 @@ public class DefaultUserOptionsService implements UserOptionsService {
         }
     }
 
+    protected TaskTemplate toTaskTemplate(@NonNull JobTemplate jobTemplate) {
+        // Setup the TaskTemplate
+        ContainerSpec containerSpec = ContainerSpec
+                .builder()
+                .image("")
+                .env(new HashMap<>())
+                .labels(new HashMap<>())
+                .mounts(new ArrayList<>())
+                .build();
+
+        Resources resources = Resources.builder()
+                .genericResources(new HashMap<>())
+                .build();
+
+        Placement placement = new Placement(new ArrayList<>());
+
+        TaskTemplate taskTemplate = TaskTemplate.builder()
+                .containerSpec(containerSpec)
+                .resources(resources)
+                .placement(placement)
+                .build();
+
+        // Get the compute environment, hardware, and constraints from the job template
+        ComputeEnvironment computeEnvironment = jobTemplate.getComputeEnvironment();
+        Hardware hardware = jobTemplate.getHardware();
+        List<Constraint> constraints = jobTemplate.getConstraints();
+
+        // Build container spec for the task template
+        containerSpec.setImage(computeEnvironment.getImage());
+
+        // Add environment variables from compute environment and hardware
+        Map<String, String> environmentVariables = new HashMap<>();
+        Map<String, String> computeEnvironmentEnvVars = computeEnvironment.getEnvironmentVariables().stream().collect(Collectors.toMap(EnvironmentVariable::getKey, EnvironmentVariable::getValue));
+        Map<String, String> hardwareEnvVars = hardware.getEnvironmentVariables().stream().collect(Collectors.toMap(EnvironmentVariable::getKey, EnvironmentVariable::getValue));
+
+        // check for empty otherwise putAll will throw an exception
+        if (!computeEnvironmentEnvVars.isEmpty()) {
+            environmentVariables.putAll(computeEnvironmentEnvVars);
+        }
+
+        // check for empty otherwise putAll will throw an exception
+        if (!hardwareEnvVars.isEmpty()) {
+            environmentVariables.putAll(hardwareEnvVars);
+        }
+
+        containerSpec.setEnv(environmentVariables);
+
+        // Add mounts from compute environment and hardware
+        // check for empty otherwise addAll will throw an exception
+        List<Mount> mounts = new ArrayList<>();
+        if (!computeEnvironment.getMounts().isEmpty()) {
+            mounts.addAll(computeEnvironment.getMounts().stream().map(mount -> {
+                return Mount.builder()
+                        .source(mount.getLocalPath())
+                        .target(mount.getContainerPath())
+                        .type(StringUtils.isEmpty(mount.getVolumeName()) ? "bind" : "volume")
+                        .readOnly(mount.isReadOnly())
+                        .build();
+            }).collect(Collectors.toList()));
+        }
+
+        containerSpec.setMounts(mounts);
+
+        // Build resources
+        resources.setCpuReservation(hardware.getCpuReservation());
+        resources.setCpuLimit(hardware.getCpuLimit());
+        resources.setMemReservation(hardware.getMemoryReservation());
+        resources.setMemLimit(hardware.getMemoryLimit());
+
+        if (!hardware.getGenericResources().isEmpty()) {
+            resources.setGenericResources((hardware.getGenericResources().stream().collect(Collectors.toMap(GenericResource::getName, GenericResource::getValue))));
+        }
+        // Build placement
+        if (!hardware.getConstraints().isEmpty()) {
+            placement.getConstraints().addAll(hardware.getConstraints().stream().flatMap(constraint -> constraint.toList().stream()).collect(Collectors.toList()));
+        }
+
+        if (constraints != null && !constraints.isEmpty()) {
+            placement.getConstraints().addAll(constraints.stream().flatMap(constraint -> constraint.toList().stream()).collect(Collectors.toList()));
+        }
+
+        return taskTemplate;
+    }
 }

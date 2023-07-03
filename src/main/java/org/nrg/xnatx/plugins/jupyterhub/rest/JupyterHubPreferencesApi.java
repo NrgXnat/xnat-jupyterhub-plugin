@@ -111,36 +111,16 @@ public class JupyterHubPreferencesApi extends AbstractXapiRestController {
 
         // I think there is a bug in the preference library with caching hence the switch.
         switch (preference) {
-            case (JupyterHubPreferences.DOCKER_IMAGES_PREF_ID): {
-                value = jupyterHubPreferences.getDockerImages();
-                break;
-            }
-            case (JupyterHubPreferences.CONTAINER_SPEC_LABELS_PREF_ID): {
-                value = jupyterHubPreferences.getContainerSpecLabels();
-                break;
-            }
-            case (JupyterHubPreferences.PLACEMENT_SPEC_CONSTRAINTS_PREF_ID): {
-                value = jupyterHubPreferences.getPlacementSpecConstraints();
-                break;
-            }
-            case (JupyterHubPreferences.RESOURCE_SPEC_CPU_LIMIT_PREF_ID): {
-                value = jupyterHubPreferences.getResourceSpecCpuLimit();
-                break;
-            }
-            case (JupyterHubPreferences.RESOURCE_SPEC_CPU_RESERVATION_PREF_ID): {
-                value = jupyterHubPreferences.getResourceSpecCpuReservation();
-                break;
-            }
-            case (JupyterHubPreferences.RESOURCE_SPEC_MEM_LIMIT_PREF_ID): {
-                value = jupyterHubPreferences.getResourceSpecMemLimit();
-                break;
-            }
-            case (JupyterHubPreferences.RESOURCE_SPEC_MEM_RESERVATION_PREF_ID): {
-                value = jupyterHubPreferences.getResourceSpecMemReservation();
-                break;
-            }
             case (JupyterHubPreferences.INACTIVITY_TIMEOUT_PREF_ID): {
                 value = jupyterHubPreferences.getInactivityTimeout();
+                break;
+            }
+            case (JupyterHubPreferences.MAX_SERVER_LIFETIME_PREF_ID): {
+                value = jupyterHubPreferences.getMaxServerLifetime();
+                break;
+            }
+            case (JupyterHubPreferences.ALL_USERS_JUPYTER): {
+                value = jupyterHubPreferences.getAllUsersCanStartJupyter();
                 break;
             }
             default:

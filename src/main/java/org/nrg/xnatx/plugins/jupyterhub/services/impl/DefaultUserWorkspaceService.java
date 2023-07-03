@@ -42,6 +42,19 @@ public class DefaultUserWorkspaceService implements UserWorkspaceService {
                 log.error("Unable to create Jupyter notebook workspace for user " + user.getUsername(), e);
                 throw new RuntimeException(e);
             }
+
+            try {
+                // write a gitconfig file to the workspace
+                final Path gitconfigPath = Paths.get(userWorkspacePath.toString(), "git", "config");
+                Files.createDirectories(gitconfigPath.getParent());
+                Files.createFile(gitconfigPath);
+                final String gitconfig = "[user]\n" +
+                        "    name = " + user.getUsername() + "\n" +
+                        "    email = " + user.getEmail();
+                Files.write(gitconfigPath, gitconfig.getBytes());
+            } catch (IOException e) {
+                log.error("Unable to create gitconfig file for user " + user.getUsername(), e);
+            }
         }
 
         return userWorkspacePath;

@@ -22,6 +22,7 @@ import java.util.Map;
 public class JupyterHubPreferences extends AbstractPreferenceBean {
 
     public static final String TOOL_ID = "jupyterhub";
+    public static final String ALL_USERS_JUPYTER = "allUsersCanStartJupyter";
     public static final String DOCKER_IMAGES_PREF_ID = "dockerImages";
     public static final String CONTAINER_SPEC_LABELS_PREF_ID = "containerSpecLabels";
     public static final String PLACEMENT_SPEC_CONSTRAINTS_PREF_ID = "placementSpecConstraints";
@@ -30,6 +31,7 @@ public class JupyterHubPreferences extends AbstractPreferenceBean {
     public static final String RESOURCE_SPEC_MEM_LIMIT_PREF_ID = "resourceSpecMemLimit";
     public static final String RESOURCE_SPEC_MEM_RESERVATION_PREF_ID = "resourceSpecMemReservation";
     public static final String INACTIVITY_TIMEOUT_PREF_ID = "inactivityTimeout";
+    public static final String MAX_SERVER_LIFETIME_PREF_ID = "maxServerLifetime";
 
     @Autowired
     protected JupyterHubPreferences(NrgPreferenceService preferenceService, ConfigPaths configFolderPaths, OrderedProperties initPrefs) {
@@ -62,6 +64,7 @@ public class JupyterHubPreferences extends AbstractPreferenceBean {
         }
     }
 
+    @Deprecated
     @NrgPreference(defaultValue = "[\n   " +
             "{\"image\": \"jupyter/scipy-notebook:hub-3.0.0\", \"enabled\": \"true\"}\n   " +
             "]",
@@ -70,6 +73,7 @@ public class JupyterHubPreferences extends AbstractPreferenceBean {
         return getListValue(DOCKER_IMAGES_PREF_ID);
     }
 
+    @Deprecated
     public void setDockerImages(final List<DockerImage> dockerImages) {
         try {
             setListValue(DOCKER_IMAGES_PREF_ID, dockerImages);
@@ -131,34 +135,60 @@ public class JupyterHubPreferences extends AbstractPreferenceBean {
     }
 
     @NrgPreference(defaultValue = "")
-    public String getPathTranslationXnatPrefix() {
-        return getValue("pathTranslationXnatPrefix");
+    public String getPathTranslationArchivePrefix() {
+        return getValue("pathTranslationArchivePrefix");
     }
 
-    public void setPathTranslationXnatPrefix(final String pathTranslationXnatPrefix) {
+    public void setPathTranslationArchivePrefix(final String pathTranslationArchivePrefix) {
         try {
-            set(pathTranslationXnatPrefix, "pathTranslationXnatPrefix");
+            set(pathTranslationArchivePrefix, "pathTranslationArchivePrefix");
         } catch (InvalidPreferenceName e) {
-            log.error("Invalid preference name 'pathTranslationXnatPrefix': something is very wrong here.", e);
+            log.error("Invalid preference name 'pathTranslationArchivePrefix': something is very wrong here.", e);
         }
     }
 
     @NrgPreference(defaultValue = "")
-    public String getPathTranslationDockerPrefix() {
-        return getValue("pathTranslationDockerPrefix");
+    public String getPathTranslationArchiveDockerPrefix() {
+        return getValue("pathTranslationArchiveDockerPrefix");
     }
 
-    public void setPathTranslationDockerPrefix(final String pathTranslationDockerPrefix) {
+    public void setPathTranslationArchiveDockerPrefix(final String pathTranslationArchiveDockerPrefix) {
         try {
-            set(pathTranslationDockerPrefix, "pathTranslationDockerPrefix");
+            set(pathTranslationArchiveDockerPrefix, "pathTranslationArchiveDockerPrefix");
         } catch (InvalidPreferenceName e) {
-            log.error("Invalid preference name 'pathTranslationDockerPrefix': something is very wrong here.", e);
+            log.error("Invalid preference name 'pathTranslationArchiveDockerPrefix': something is very wrong here.", e);
         }
     }
 
     @NrgPreference(defaultValue = "/data/xnat/workspaces")
     public String getWorkspacePath() {
         return getValue("workspacePath");
+    }
+
+    @NrgPreference(defaultValue = "")
+    public String getPathTranslationWorkspacePrefix() {
+        return getValue("pathTranslationWorkspacePrefix");
+    }
+
+    public void setPathTranslationWorkspacePrefix(final String pathTranslationWorkspacePrefix) {
+        try {
+            set(pathTranslationWorkspacePrefix, "pathTranslationWorkspacePrefix");
+        } catch (InvalidPreferenceName e) {
+            log.error("Invalid preference name 'pathTranslationWorkspacePrefix': something is very wrong here.", e);
+        }
+    }
+
+    @NrgPreference(defaultValue = "")
+    public String getPathTranslationWorkspaceDockerPrefix() {
+        return getValue("pathTranslationWorkspaceDockerPrefix");
+    }
+
+    public void setPathTranslationWorkspaceDockerPrefix(final String pathTranslationWorkspaceDockerPrefix) {
+        try {
+            set(pathTranslationWorkspaceDockerPrefix, "pathTranslationWorkspaceDockerPrefix");
+        } catch (InvalidPreferenceName e) {
+            log.error("Invalid preference name 'pathTranslationWorkspaceDockerPrefix': something is very wrong here.", e);
+        }
     }
 
     public void setWorkspacePath(final String workspacePath) {
@@ -169,11 +199,13 @@ public class JupyterHubPreferences extends AbstractPreferenceBean {
         }
     }
 
+    @Deprecated
     @NrgPreference(defaultValue = "")
     public Map<String, String> getContainerSpecLabels() {
         return getMapValue(CONTAINER_SPEC_LABELS_PREF_ID);
     }
 
+    @Deprecated
     public void setContainerSpecLabels(final Map<String, String> containerSpecLabels) {
         try {
             setMapValue(CONTAINER_SPEC_LABELS_PREF_ID, containerSpecLabels);
@@ -182,11 +214,13 @@ public class JupyterHubPreferences extends AbstractPreferenceBean {
         }
     }
 
+    @Deprecated
     @NrgPreference(defaultValue = "[]")
     public List<String> getPlacementSpecConstraints() {
         return getListValue(PLACEMENT_SPEC_CONSTRAINTS_PREF_ID);
     }
 
+    @Deprecated
     public void setPlacementSpecConstraints(List<String> placementSpecConstraints) {
         try {
             setListValue(PLACEMENT_SPEC_CONSTRAINTS_PREF_ID, placementSpecConstraints);
@@ -195,11 +229,13 @@ public class JupyterHubPreferences extends AbstractPreferenceBean {
         }
     }
 
+    @Deprecated
     @NrgPreference(defaultValue = "0")
     public Double getResourceSpecCpuLimit() {
         return getDoubleValue(RESOURCE_SPEC_CPU_LIMIT_PREF_ID);
     }
 
+    @Deprecated
     public void setResourceSpecCpuLimit(final Double resourceSpecCpuLimit) {
         try {
             setDoubleValue(resourceSpecCpuLimit, RESOURCE_SPEC_CPU_LIMIT_PREF_ID);
@@ -208,11 +244,13 @@ public class JupyterHubPreferences extends AbstractPreferenceBean {
         }
     }
 
+    @Deprecated
     @NrgPreference(defaultValue = "0")
     public Double getResourceSpecCpuReservation() {
         return getDoubleValue(RESOURCE_SPEC_CPU_RESERVATION_PREF_ID);
     }
 
+    @Deprecated
     public void setResourceSpecCpuReservation(final Double resourceSpecCpuReservation) {
         try {
             setDoubleValue(resourceSpecCpuReservation, RESOURCE_SPEC_CPU_RESERVATION_PREF_ID);
@@ -221,11 +259,13 @@ public class JupyterHubPreferences extends AbstractPreferenceBean {
         }
     }
 
+    @Deprecated
     @NrgPreference(defaultValue = "")
     public String getResourceSpecMemLimit() {
         return getValue(RESOURCE_SPEC_MEM_LIMIT_PREF_ID);
     }
 
+    @Deprecated
     public void setResourceSpecMemLimit(final String resourceSpecMemLimit) {
         try {
             set(resourceSpecMemLimit, RESOURCE_SPEC_MEM_LIMIT_PREF_ID);
@@ -234,11 +274,13 @@ public class JupyterHubPreferences extends AbstractPreferenceBean {
         }
     }
 
+    @Deprecated
     @NrgPreference(defaultValue = "")
     public String getResourceSpecMemReservation() {
         return getValue(RESOURCE_SPEC_MEM_RESERVATION_PREF_ID);
     }
 
+    @Deprecated
     public void setResourceSpecMemReservation(final String resourceSpecMemReservation) {
         try {
             set(resourceSpecMemReservation, RESOURCE_SPEC_MEM_RESERVATION_PREF_ID);
@@ -247,6 +289,7 @@ public class JupyterHubPreferences extends AbstractPreferenceBean {
         }
     }
 
+    // Inactivity timeout in minutes
     @NrgPreference(defaultValue = "60")
     public long getInactivityTimeout() {
         return getLongValue(INACTIVITY_TIMEOUT_PREF_ID);
@@ -257,6 +300,33 @@ public class JupyterHubPreferences extends AbstractPreferenceBean {
             setLongValue(inactivityTimeout, INACTIVITY_TIMEOUT_PREF_ID);
         } catch (InvalidPreferenceName e) {
             log.error("Invalid preference name 'inactivityTimeout': something is very wrong here.", e);
+        }
+    }
+
+    // Max server lifetime in hours
+    @NrgPreference(defaultValue = "48")
+    public long getMaxServerLifetime() {
+        return getLongValue(MAX_SERVER_LIFETIME_PREF_ID);
+    }
+
+    public void setMaxServerLifetime(final long maxServerLifetime) {
+        try {
+            setLongValue(maxServerLifetime, MAX_SERVER_LIFETIME_PREF_ID);
+        } catch (InvalidPreferenceName e) {
+            log.error("Invalid preference name 'maxServerLifetime': something is very wrong here.", e);
+        }
+    }
+
+    @NrgPreference(defaultValue = "false")
+    public boolean getAllUsersCanStartJupyter() {
+        return getBooleanValue(ALL_USERS_JUPYTER);
+    }
+
+    public void setAllUsersCanStartJupyter(final boolean allUsersCanStartJupyter) {
+        try {
+            setBooleanValue(allUsersCanStartJupyter, ALL_USERS_JUPYTER);
+        } catch (InvalidPreferenceName e) {
+            log.error("Invalid preference name 'allUsersCanStartJupyter': something is very wrong here.", e);
         }
     }
 

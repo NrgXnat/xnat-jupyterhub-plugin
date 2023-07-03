@@ -3,15 +3,15 @@
  */
 plugins {
     id "java"
-    id "org.nrg.xnat.build.xnat-data-builder" version "1.8.6"
+    id "org.nrg.xnat.build.xnat-data-builder" version "1.8.8"
     id "io.freefair.lombok" version "6.0.0-m2"
     id "com.palantir.git-version" version "0.12.1"
     id "jacoco"
 }
 
 group "org.nrg.xnatx.plugins"
-version "0.3.0"
-description "JupyterHub Plugin for XNAT 1.8.6"
+version "1.0.0"
+description "JupyterHub Plugin for XNAT"
 
 repositories {
     maven { url "https://nrgxnat.jfrog.io/nrgxnat/libs-release" }
@@ -28,7 +28,7 @@ configurations {
 }
 
 dependencies {
-    xnatProvided platform("org.nrg:parent:1.8.6")
+    xnatProvided platform("org.nrg:parent:1.8.8.1")
     xnatProvided "org.nrg:framework"
     xnatProvided "org.nrg.xnat:xnat-data-models"
     xnatProvided "org.nrg.xnat:web"
@@ -41,10 +41,15 @@ dependencies {
     implementation 'org.projectlombok:lombok:1.18.24'
     testImplementation "com.fasterxml.jackson.datatype:jackson-datatype-guava"
     testImplementation "junit:junit"
+    testImplementation "com.h2database:h2"
+    testImplementation "org.hamcrest:hamcrest-library"
     testImplementation 'org.mockito:mockito-core:4.8.0'
     testImplementation "org.springframework:spring-test"
     testImplementation "org.springframework.security:spring-security-test"
     testImplementation "org.springframework.security:spring-security-config"
+    testImplementation "org.springframework:spring-jdbc"
+    testImplementation "org.springframework:spring-orm"
+    testImplementation "org.apache.commons:commons-dbcp2"
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
 }
 
@@ -139,4 +144,10 @@ jar {
             it.isDirectory() ? it : zipTree(it)
         }
     }
+}
+
+tasks.register('deploy-jar', Copy) {
+    description = "Copies the JAR file to a specified location. Requires the 'filePath' property to be set. Example: ./gradlew clean jar deploy-jar -PfilePath=/path/to/destination"
+    from jar
+    into project.findProperty('filePath')
 }

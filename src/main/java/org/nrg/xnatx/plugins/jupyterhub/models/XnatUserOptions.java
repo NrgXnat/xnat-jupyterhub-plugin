@@ -5,9 +5,7 @@ import io.swagger.annotations.ApiModel;
 import lombok.*;
 import lombok.extern.slf4j.Slf4j;
 import org.nrg.xnatx.plugins.jupyterhub.client.models.UserOptions;
-
-import java.util.List;
-import java.util.Map;
+import org.nrg.xnatx.plugins.jupyterhub.models.docker.TaskTemplate;
 
 @Data
 @Builder
@@ -26,11 +24,6 @@ public class XnatUserOptions implements UserOptions {
     private String projectId;
     private String eventTrackingId;
 
-    @JsonProperty("environment-variables") private Map<String, String> environmentVariables; // Extra environment variables to set for the single-user server’s process.
-    @JsonProperty("mounts") private List<BindMount> bindMounts;
-
-    @JsonProperty("container-spec") private ContainerSpec containerSpec;
-    @JsonProperty("placement-spec") private PlacementSpec placementSpec;
-    @JsonProperty("resource-spec") private ResourceSpec resourceSpec;
+    @JsonProperty("task_template") private TaskTemplate taskTemplate;
 
 }

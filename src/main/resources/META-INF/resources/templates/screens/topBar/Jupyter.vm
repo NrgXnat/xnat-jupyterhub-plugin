@@ -1,6 +1,12 @@
 <!-- Sequence: 58 -->
-<li><a href="#!" id="jupyter-topnav">Jupyter</a>
+<li><a href="#!" id="jupyter-topnav" style="display: none">Jupyter</a>
     <ul>
         #addGlobalCustomScreens("topBar/Jupyter")
     </ul>
 </li>
+
+<script type="text/javascript">
+    XNAT.plugin.jupyterhub.users.authorization.isAuthorized().then(authorized => {
+        document.getElementById("jupyter-topnav").style.display = authorized ? '' : 'none';
+    })
+</script>
