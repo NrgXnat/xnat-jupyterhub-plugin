@@ -2,7 +2,6 @@ package org.nrg.xnatx.plugins.jupyterhub;
 
 import lombok.extern.slf4j.Slf4j;
 import org.nrg.framework.annotations.XnatPlugin;
-import org.nrg.xnat.compute.config.ComputeConfig;
 import org.nrg.xdat.security.helpers.UserHelper;
 import org.nrg.xdat.security.services.SearchHelperServiceI;
 import org.nrg.xnatx.plugins.jupyterhub.client.DefaultJupyterHubClient;
@@ -20,7 +19,7 @@ import java.util.concurrent.TimeUnit;
 @XnatPlugin(value = "jupyterHubPlugin",
             name  = "XNAT JupyterHub Plugin",
             logConfigurationFile = "jupyterhub-logback.xml",
-            entityPackages = {"org.nrg.xnatx.plugins.jupyterhub.entities", "org.nrg.xnat.compute.entities"})
+            entityPackages = {"org.nrg.xnatx.plugins.jupyterhub.entities"})
 @ComponentScan({"org.nrg.xnatx.plugins.jupyterhub.preferences",
                 "org.nrg.xnatx.plugins.jupyterhub.client",
                 "org.nrg.xnatx.plugins.jupyterhub.rest",
@@ -32,7 +31,6 @@ import java.util.concurrent.TimeUnit;
                 "org.nrg.xnatx.plugins.jupyterhub.utils",
                 "org.nrg.xnatx.plugins.jupyterhub.authorization",
                 "org.nrg.xnatx.plugins.jupyterhub.initialize"})
-@Import({ComputeConfig.class})
 @Slf4j
 public class JupyterHubPlugin {
 

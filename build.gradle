@@ -14,9 +14,9 @@ version "1.1.0-SNAPSHOT"
 description "JupyterHub Plugin for XNAT"
 
 repositories {
+    mavenLocal()
     maven { url "https://nrgxnat.jfrog.io/nrgxnat/libs-release" }
     maven { url "https://nrgxnat.jfrog.io/nrgxnat/libs-snapshot" }
-    mavenLocal()
     mavenCentral()
     maven { url "https://www.dcm4che.org/maven2" }
 }
@@ -28,7 +28,7 @@ configurations {
 }
 
 dependencies {
-    xnatProvided platform("org.nrg:parent:1.8.8.1")
+    xnatProvided platform("org.nrg:parent:1.8.10-SNAPSHOT")
     xnatProvided "org.nrg:framework"
     xnatProvided "org.nrg.xnat:xnat-data-models"
     xnatProvided "org.nrg.xnat:web"

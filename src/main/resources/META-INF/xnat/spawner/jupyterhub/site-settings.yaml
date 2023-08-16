@@ -179,9 +179,9 @@ jupyterEnvironments:
     computeEnvironmentConfigsTable:
       tag: "div#jupyterhub-compute-environment-configs-table"
     computeEnvironmentConfigsScript:
-      tag: script|src="~/scripts/xnat/plugin/compute/compute-environment-configs.js"
+      tag: script|src="~/scripts/xnat/compute/compute-environment-configs.js"
     hardwareConfigsScript:
-      tag: script|src="~/scripts/xnat/plugin/compute/hardware-configs.js"
+      tag: script|src="~/scripts/xnat/compute/hardware-configs.js"
     renderComputeEnvironmentConfigsTable:
       tag: script
       content: >
@@ -203,7 +203,7 @@ hardwareConfigs:
       hardwareConfigsTable:
         tag: "div#jupyterhub-hardware-configs-table"
       hardwareConfigsScript:
-        tag: script|src="~/scripts/xnat/plugin/compute/hardware-configs.js"
+        tag: script|src="~/scripts/xnat/compute/hardware-configs.js"
       renderHardwareConfigsTable:
         tag: script
         content: >
@@ -225,7 +225,7 @@ constraints:
     constraintsTable:
       tag: "div#jupyterhub-constraints-table"
     constraintsScript:
-      tag: script|src="~/scripts/xnat/plugin/compute/constraint-configs.js"
+      tag: script|src="~/scripts/xnat/compute/constraint-configs.js"
     renderConstraintsTable:
       tag: script
       content: >
