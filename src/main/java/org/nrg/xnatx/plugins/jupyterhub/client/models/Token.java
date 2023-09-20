@@ -27,10 +27,10 @@ public class Token {
     private String oauth_client;
     private String session_id;
 
-    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSSSSX", timezone = "UTC") private ZonedDateTime expires_at;
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss[.SSSSSS]X", timezone = "UTC") private ZonedDateTime expires_at;
     private int expires_in; // lifetime (in seconds) after which the requested token will expire
 
-    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSSSSX", timezone = "UTC") private ZonedDateTime created;
-    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSSSSX", timezone = "UTC") private ZonedDateTime last_activity;
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss[.SSSSSS]X", timezone = "UTC") private ZonedDateTime created;
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss[.SSSSSS]X", timezone = "UTC") private ZonedDateTime last_activity;
 
 }

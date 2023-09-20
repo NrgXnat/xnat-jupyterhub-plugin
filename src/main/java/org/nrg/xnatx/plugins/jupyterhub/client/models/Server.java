@@ -23,6 +23,6 @@ public class Server {
     private String url;
     private String progress_url;
     private Map<String, String> user_options;
-    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSSSSX", timezone = "UTC") private ZonedDateTime started;
-    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSSSSX", timezone = "UTC") private ZonedDateTime last_activity;
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss[.SSSSSS]X", timezone = "UTC") private ZonedDateTime started;
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss[.SSSSSS]X", timezone = "UTC") private ZonedDateTime last_activity;
 }
