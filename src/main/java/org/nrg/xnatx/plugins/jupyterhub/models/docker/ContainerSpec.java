@@ -21,6 +21,7 @@ import static com.fasterxml.jackson.annotation.JsonInclude.Include.ALWAYS;
 public class ContainerSpec {
 
     private String image;
+    private String command;
     private Map<String, String> env;
     private Map<String, String> labels;
     private List<Mount> mounts;
