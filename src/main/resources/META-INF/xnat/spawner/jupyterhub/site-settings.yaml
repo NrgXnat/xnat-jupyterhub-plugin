@@ -7,13 +7,53 @@ workspacePath:
     The directory (as it appears to XNAT) containing user namespaced subdirectories (workspaces). JupyterHub is 
     responsible for mounting a user's workspace directory to the container running their Jupyter notebook server.
 
+jupyterHubHostUrl:
+  kind: panel.element
+  label: JupyterHub Host URL
+  info: >
+    <p>The JupyterHub Host URL is used by XNAT to construct links to a user's Jupyter notebook server. 
+       This is typically the same as your XNAT site URL but could be different depending on your XNAT deployment,
+       how you have configured JupyterHub, and how you have configured your reverse proxy.</p>
+    <p>Include the protocol (http or https), hostname, and port number (if necessary).</p> 
+    <p>Exclude any trailing /jupyterhub path. JupyterHub will provide the path to the user's notebook server.</p>
+    <p>Examples:</p>
+    <ul>
+      <li>http://localhost</li>
+      <li>http://localhost:8081</li>
+      <li>https://xnat.myorg.com</li>
+    </ul>
+  contents:
+    jupyterHubHostUrlInput:
+        kind: input.text
+        name: jupyterHubHostUrl
+        after: >
+          <p class="description">
+            The JupyterHub Host URL is used by XNAT to construct links to a user's Jupyter notebook server. Typically 
+            this is the same as your XNAT site URL.
+          </p>
+
 jupyterhubApiUrl:
-  kind: panel.input.text
-  id: jupyterHubApiUrl
-  name: jupyterHubApiUrl
+  kind: panel.element
   label: JupyterHub API URL
-  description: >
-    The URL for the JupyterHub API
+  info: >
+    <p>The JupyterHub API URL is used by XNAT to communicate with JupyterHub.</p>
+    <p>Include the protocol (http or https), hostname, and port number (if necessary).</p> 
+    <p>Also include the path to the JupyterHub API, i.e. /jupyterhub/hub/api.</p>
+    <p>Examples:</p>
+    <ul>
+      <li>http://172.17.0.1/jupyterhub/hub/api</li>
+      <li>http://host.docker.internal/jupyterhub/hub/api</li>
+      <li>http://proxy-public/jupyterhub/hub/api</li>
+      <li>https://xnat.myorg.com/jupyterhub/hub/api</li>
+    </ul>
+  contents:
+    jupyterHubApiUrlInput:
+        kind: input.text
+        name: jupyterHubApiUrl
+        after: >
+          <p class="description">
+            The URL for the JupyterHub API. Used by XNAT to communicate with JupyterHub.
+          </p>
 
 jupyterHubToken:
   kind: panel.input.password
@@ -239,6 +279,7 @@ jupyterhubPreferences:
   contentType: json
   url: /xapi/jupyterhub/preferences
   contents:
+    ${jupyterHubHostUrl}
     ${jupyterhubApiUrl}
     ${jupyterHubToken}
     ${startTimeout}
