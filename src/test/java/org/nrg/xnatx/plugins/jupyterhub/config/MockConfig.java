@@ -19,6 +19,7 @@ import org.nrg.xnatx.plugins.jupyterhub.preferences.JupyterHubPreferences;
 import org.nrg.xnatx.plugins.jupyterhub.services.*;
 import org.nrg.xnatx.plugins.jupyterhub.utils.JupyterHubServiceAccountHelper;
 import org.nrg.xnatx.plugins.jupyterhub.utils.PermissionsHelper;
+import org.nrg.xnatx.plugins.jupyterhub.utils.SystemHelper;
 import org.nrg.xnatx.plugins.jupyterhub.utils.XFTManagerHelper;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
@@ -91,6 +92,11 @@ public class MockConfig {
     @Bean
     public PermissionsHelper mockPermissionsHelper() {
         return Mockito.mock(PermissionsHelper.class);
+    }
+
+    @Bean
+    public SystemHelper mockSystemHelper() {
+        return Mockito.mock(SystemHelper.class);
     }
 
     @Bean
