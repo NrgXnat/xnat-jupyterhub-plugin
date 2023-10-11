@@ -22,6 +22,7 @@ import java.util.Map;
 public class JupyterHubPreferences extends AbstractPreferenceBean {
 
     public static final String TOOL_ID = "jupyterhub";
+    public static final String JUPYTERHUB_HOST_URL = "jupyterHubHostUrl";
     public static final String ALL_USERS_JUPYTER = "allUsersCanStartJupyter";
     public static final String DOCKER_IMAGES_PREF_ID = "dockerImages";
     public static final String CONTAINER_SPEC_LABELS_PREF_ID = "containerSpecLabels";
@@ -36,6 +37,19 @@ public class JupyterHubPreferences extends AbstractPreferenceBean {
     @Autowired
     protected JupyterHubPreferences(NrgPreferenceService preferenceService, ConfigPaths configFolderPaths, OrderedProperties initPrefs) {
         super(preferenceService, configFolderPaths, initPrefs);
+    }
+
+    @NrgPreference(defaultValue = "")
+    public String getJupyterHubHostUrl() {
+        return getValue(JUPYTERHUB_HOST_URL);
+    }
+
+    public void setJupyterHubHostUrl(final String jupyterHubHostUrl) {
+        try {
+            set(jupyterHubHostUrl, JUPYTERHUB_HOST_URL);
+        } catch (InvalidPreferenceName e) {
+            log.error("Invalid preference name " + JUPYTERHUB_HOST_URL + ": something is very wrong here.", e);
+        }
     }
 
     @NrgPreference(defaultValue = "http://172.17.0.1/jupyterhub/hub/api")

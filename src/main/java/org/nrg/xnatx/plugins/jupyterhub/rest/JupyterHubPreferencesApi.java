@@ -123,6 +123,10 @@ public class JupyterHubPreferencesApi extends AbstractXapiRestController {
                 value = jupyterHubPreferences.getAllUsersCanStartJupyter();
                 break;
             }
+            case (JupyterHubPreferences.JUPYTERHUB_HOST_URL): {
+                value = jupyterHubPreferences.getJupyterHubHostUrl();
+                break;
+            }
             default:
                 value = jupyterHubPreferences.get(preference);
         }
