@@ -10,6 +10,7 @@ import java.util.Optional;
 public interface UserOptionsService {
 
     Map<String, String> getProjectPaths(UserI user, List<String> projectIds);
+    Map<String, String> getProjectPaths(UserI user, List<String> projectIds, String eventTrackingId);
     Map<String, String> getSubjectPaths(UserI user, String subjectId);
     Map<String, String> getSubjectPaths(UserI user, List<String> subjectIds);
     Map<String, String> getExperimentPath(UserI user, String experimentId);

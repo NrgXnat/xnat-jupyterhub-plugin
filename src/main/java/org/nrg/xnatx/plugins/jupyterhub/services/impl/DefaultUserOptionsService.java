@@ -4,6 +4,7 @@ import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.constants.Scope;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.entities.AliasToken;
 import org.nrg.xdat.model.XnatSubjectassessordataI;
 import org.nrg.xdat.om.*;
@@ -12,6 +13,7 @@ import org.nrg.xdat.om.base.auto.AutoXnatProjectdata;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.services.SearchHelperServiceI;
 import org.nrg.xdat.services.AliasTokenService;
+import org.nrg.xft.exception.DBPoolException;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
@@ -19,6 +21,7 @@ import org.nrg.xft.security.UserI;
 import org.nrg.xnat.compute.models.*;
 import org.nrg.xnat.compute.services.JobTemplateService;
 import org.nrg.xnat.exceptions.InvalidArchiveStructure;
+import org.nrg.xnat.utils.FileUtils;
 import org.nrg.xnatx.plugins.jupyterhub.entities.UserOptionsEntity;
 import org.nrg.xnatx.plugins.jupyterhub.models.XnatUserOptions;
 import org.nrg.xnatx.plugins.jupyterhub.models.docker.Mount;
@@ -32,9 +35,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Nullable;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.sql.SQLException;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -70,30 +75,53 @@ public class DefaultUserOptionsService implements UserOptionsService {
         this.jobTemplateService = jobTemplateService;
     }
 
-    @Override
     public Map<String, String> getProjectPaths(final UserI user, final List<String> projectIds) {
+        return getProjectPaths(user, projectIds, null);
+    }
+    @Override
+    public Map<String, String> getProjectPaths(final UserI user, final List<String> projectIds, @Nullable String eventTrackingId) {
         Map<String, String> projectPaths = new HashMap<>();
 
         projectIds.forEach(projectId -> {
             XnatProjectdata xnatProjectdata = XnatProjectdata.getXnatProjectdatasById(projectId, user, false);
 
             if (xnatProjectdata != null) {
-                // Experiments
-                final Path projectDirectory = Paths.get(xnatProjectdata.getRootArchivePath() + xnatProjectdata.getCurrentArc());
-                if (Files.exists(projectDirectory)) {
-                    projectPaths.put("/data/projects/" + projectId + "/experiments", projectDirectory.toString());
-                }
+                //In this case we're creating a directory for both shared and standard data for a project as one folder
+                //should always be the case for basic project based needs not used for stored searches etc.
+                if (eventTrackingId != null) {
+                    try {
+                        Map<Path, Path> allSharedPaths = FileUtils.getAllSharedPaths(projectId, user, true, true, true, true);
+                        if (allSharedPaths.isEmpty()) {
+                            final Path projectDirectory = Paths.get(xnatProjectdata.getRootArchivePath() + xnatProjectdata.getCurrentArc());
+                            if (Files.exists(projectDirectory)) {
+                                projectPaths.put("/data/projects/" + projectId + "/experiments", projectDirectory.toString());
+                            }
+                        } else {
+                            Path sharedLinksDirectory = Paths.get(JupyterHubPreferences.SHARED_PROJECT_STRING, eventTrackingId);
+                            projectPaths.put("/data/projects/" + projectId, String.valueOf(FileUtils.createDirectoryForSharedData(allSharedPaths, sharedLinksDirectory)));
+                        }
+                    } catch (Exception e) {
+                        log.error("Unable to access shared data for the current project", e);
+                    }
+                } else {
+                    //here we're working with stored searches and the like
+                    // Experiments
+                    final Path projectDirectory = Paths.get(xnatProjectdata.getRootArchivePath() + xnatProjectdata.getCurrentArc());
+                    if (Files.exists(projectDirectory)) {
+                        projectPaths.put("/data/projects/" + projectId + "/experiments", projectDirectory.toString());
+                    }
 
-                // Project resources
-                final Path resourceDirectory = Paths.get(xnatProjectdata.getRootArchivePath() + "/resources");
-                if (Files.exists(resourceDirectory)) {
-                    projectPaths.put("/data/projects/" + projectId + "/resources", resourceDirectory.toString());
-                }
+                    // Project resources
+                    final Path resourceDirectory = Paths.get(xnatProjectdata.getRootArchivePath() + "/resources");
+                    if (Files.exists(resourceDirectory)) {
+                        projectPaths.put("/data/projects/" + projectId + "/resources", resourceDirectory.toString());
+                    }
 
-                // Subject resources
-                final Path subjectResourceDirectory = Paths.get(xnatProjectdata.getRootArchivePath() + "/subjects");
-                if (Files.exists(subjectResourceDirectory)) {
-                    projectPaths.put("/data/projects/" + projectId + "/subjects", subjectResourceDirectory.toString());
+                    // Subject resources
+                    final Path subjectResourceDirectory = Paths.get(xnatProjectdata.getRootArchivePath() + "/subjects");
+                    if (Files.exists(subjectResourceDirectory)) {
+                        projectPaths.put("/data/projects/" + projectId + "/subjects", subjectResourceDirectory.toString());
+                    }
                 }
 
             }
@@ -304,7 +332,7 @@ public class DefaultUserOptionsService implements UserOptionsService {
 
         switch (xsiType) {
             case (XnatProjectdata.SCHEMA_ELEMENT_NAME): {
-                paths.putAll(getProjectPaths(user, Collections.singletonList(id)));
+                paths.putAll(getProjectPaths(user, Collections.singletonList(id), eventTrackingId));
                 break;
             }
             case (XnatSubjectdata.SCHEMA_ELEMENT_NAME): {

@@ -7,6 +7,7 @@ import org.nrg.xnatx.plugins.jupyterhub.client.models.Token;
 import org.nrg.xnatx.plugins.jupyterhub.client.models.User;
 import org.nrg.xnatx.plugins.jupyterhub.models.ServerStartRequest;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 
@@ -25,5 +26,6 @@ public interface JupyterHubService {
     Token createToken(UserI user, String note, Integer expiresIn);
     void cullInactiveServers();
     void cullLongRunningServers();
+    void cleanupOrphanedSharedDataDirs();
 
 }

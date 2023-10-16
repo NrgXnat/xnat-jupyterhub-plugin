@@ -1,13 +1,16 @@
 package org.nrg.xnatx.plugins.jupyterhub.services.impl;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.constants.Scope;
 import org.nrg.framework.services.NrgEventServiceI;
+import org.nrg.xdat.XDAT;
 import org.nrg.xnat.compute.services.JobTemplateService;
 import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.nrg.xdat.security.user.exceptions.UserInitException;
 import org.nrg.xft.security.UserI;
+import org.nrg.xnat.utils.FileUtils;
 import org.nrg.xnatx.plugins.jupyterhub.client.JupyterHubClient;
 import org.nrg.xnatx.plugins.jupyterhub.client.exceptions.ResourceAlreadyExistsException;
 import org.nrg.xnatx.plugins.jupyterhub.client.exceptions.UserNotFoundException;
@@ -27,11 +30,18 @@ import org.nrg.xnatx.plugins.jupyterhub.utils.PermissionsHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @SuppressWarnings("BusyWait")
 @Service
@@ -405,6 +415,11 @@ public class DefaultJupyterHubService implements JupyterHubService {
                                                                       JupyterServerEventI.Operation.Stop, 50,
                                                                       "Sending stop request to JupyterHub."));
 
+                Optional<Server> serverForFolderDeletion = jupyterHubClient.getServer(user.getUsername(), servername);
+                if (serverForFolderDeletion.isPresent()) {
+                    Server deletionServer = serverForFolderDeletion.get();
+                    FileUtils.removeCombinedFolder(Paths.get(JupyterHubPreferences.SHARED_PROJECT_STRING, deletionServer.getUser_options().get("eventTrackingId")));
+                }
                 jupyterHubClient.stopServer(user.getUsername(), servername);
 
                 int time = 0;
@@ -428,7 +443,7 @@ public class DefaultJupyterHubService implements JupyterHubService {
                 eventService.triggerEvent(JupyterServerEvent.failed(eventTrackingId, user.getID(),
                                                                     JupyterServerEventI.Operation.Stop,
                                                                     "Failed to stop Jupyter Server."));
-            } catch (RuntimeException | InterruptedException e) {
+            } catch (RuntimeException | InterruptedException | IOException e) {
                 eventService.triggerEvent(JupyterServerEvent.failed(eventTrackingId, user.getID(),
                                                                     JupyterServerEventI.Operation.Stop,
                                                                     "Failed to stop Jupyter Server."));
@@ -530,6 +545,27 @@ public class DefaultJupyterHubService implements JupyterHubService {
         } catch (Exception e) {
             log.error("Failed to cull long running Jupyter notebook servers");
         }
+    }
+
+    /**
+     * Removes shared data associated with jupyter servers created for projects. This method will be called once per day
+     * to check whether any servers have closed unexpectedly resulting in hanging data within the archive. If so, this
+     * method will delete that data.
+     */
+    public void cleanupOrphanedSharedDataDirs() {
+        List<String> eventTrackingIds = jupyterHubClient.getUsers().stream().flatMap(user -> user.getServers().values()
+                .stream().map(server -> server.getUser_options().get("eventTrackingId"))).collect(Collectors.toList());
+        Path baseDir = Paths.get(XDAT.getSiteConfigPreferences().getArchivePath(), FileUtils.SHARED_PROJECT_DIRECTORY_STRING,
+                JupyterHubPreferences.SHARED_PROJECT_STRING);
+        try {
+            List<Path> directories = Files.list(baseDir).filter(f -> !eventTrackingIds.contains(f.getFileName().toString())).collect(Collectors.toList());
+            for (Path directory : directories) {
+                    FileUtils.removeCombinedFolder(Paths.get(JupyterHubPreferences.SHARED_PROJECT_STRING, String.valueOf(directory.getFileName())));
+            }
+        } catch (IOException e) {
+        log.error("Could not remove outdated directories: ", e);
+        }
+
     }
 
     private Integer inMilliSec(Integer seconds) {
