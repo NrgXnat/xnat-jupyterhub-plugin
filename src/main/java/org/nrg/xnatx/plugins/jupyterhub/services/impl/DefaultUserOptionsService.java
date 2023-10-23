@@ -102,6 +102,7 @@ public class DefaultUserOptionsService implements UserOptionsService {
                         }
                     } catch (Exception e) {
                         log.error("Unable to access shared data for the current project", e);
+                        throw new RuntimeException(e);
                     }
                 } else {
                     //here we're working with stored searches and the like
