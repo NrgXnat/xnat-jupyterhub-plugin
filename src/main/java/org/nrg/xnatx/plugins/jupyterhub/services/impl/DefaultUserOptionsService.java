@@ -75,21 +75,20 @@ public class DefaultUserOptionsService implements UserOptionsService {
         this.jobTemplateService = jobTemplateService;
     }
 
-    public Map<String, String> getProjectPaths(final UserI user, final List<String> projectIds) {
+    public Map<String, String> getProjectPaths(final UserI user, final List<String> projectIds) throws BaseXnatExperimentdata.UnknownPrimaryProjectException, DBPoolException, SQLException, InvalidArchiveStructure, IOException {
         return getProjectPaths(user, projectIds, null);
     }
     @Override
-    public Map<String, String> getProjectPaths(final UserI user, final List<String> projectIds, @Nullable String eventTrackingId) {
+    public Map<String, String> getProjectPaths(final UserI user, final List<String> projectIds, @Nullable String eventTrackingId) throws BaseXnatExperimentdata.UnknownPrimaryProjectException, DBPoolException, SQLException, InvalidArchiveStructure, IOException {
         Map<String, String> projectPaths = new HashMap<>();
 
-        projectIds.forEach(projectId -> {
+        for (String projectId: projectIds) {
             XnatProjectdata xnatProjectdata = XnatProjectdata.getXnatProjectdatasById(projectId, user, false);
 
             if (xnatProjectdata != null) {
                 //In this case we're creating a directory for both shared and standard data for a project as one folder
                 //should always be the case for basic project based needs not used for stored searches etc.
                 if (eventTrackingId != null) {
-                    try {
                         Map<Path, Path> allSharedPaths = FileUtils.getAllSharedPaths(projectId, user, true, true, true, true);
                         if (allSharedPaths.isEmpty()) {
                             final Path projectDirectory = Paths.get(xnatProjectdata.getRootArchivePath() + xnatProjectdata.getCurrentArc());
@@ -100,10 +99,6 @@ public class DefaultUserOptionsService implements UserOptionsService {
                             Path sharedLinksDirectory = Paths.get(JupyterHubPreferences.SHARED_PROJECT_STRING, eventTrackingId);
                             projectPaths.put("/data/projects/" + projectId, String.valueOf(FileUtils.createDirectoryForSharedData(allSharedPaths, sharedLinksDirectory)));
                         }
-                    } catch (Exception e) {
-                        log.error("Unable to access shared data for the current project", e);
-                        throw new RuntimeException(e);
-                    }
                 } else {
                     //here we're working with stored searches and the like
                     // Experiments
@@ -126,8 +121,7 @@ public class DefaultUserOptionsService implements UserOptionsService {
                 }
 
             }
-        });
-
+        }
         return projectPaths;
     }
 
@@ -237,7 +231,7 @@ public class DefaultUserOptionsService implements UserOptionsService {
     }
 
     @Override
-    public Map<String, String> getStoredSearchPaths(UserI user, String storedSearchId, @Nullable String projectId) {
+    public Map<String, String> getStoredSearchPaths(UserI user, String storedSearchId, @Nullable String projectId) throws BaseXnatExperimentdata.UnknownPrimaryProjectException, DBPoolException, SQLException, InvalidArchiveStructure, IOException {
         Map<String, String> storedSearchPaths = new HashMap<>();
         XdatStoredSearch storedSearch;
 
@@ -308,7 +302,7 @@ public class DefaultUserOptionsService implements UserOptionsService {
 
     @Override
     public void storeUserOptions(UserI user, String servername, String xsiType, String id, String projectId,
-                                 Long computeEnvironmentConfigId, Long hardwareConfigId, String eventTrackingId) {
+                                 Long computeEnvironmentConfigId, Long hardwareConfigId, String eventTrackingId) throws BaseXnatExperimentdata.UnknownPrimaryProjectException, DBPoolException, SQLException, InvalidArchiveStructure, IOException {
         log.debug("Storing user options for user '{}' server '{}' xsiType '{}' id '{}' projectId '{}'",
                   user.getUsername(), servername, xsiType, id, projectId);
 
