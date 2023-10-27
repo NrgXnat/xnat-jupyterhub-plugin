@@ -6,4 +6,8 @@ public interface SystemHelper {
         return System.getenv(name);
     }
 
+    default String getOrDefault(String name, String defaultValue) {
+        return System.getenv().getOrDefault(name, defaultValue);
+    }
+
 }

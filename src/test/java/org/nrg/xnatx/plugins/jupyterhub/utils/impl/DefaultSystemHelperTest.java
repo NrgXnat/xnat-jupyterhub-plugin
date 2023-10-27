@@ -21,8 +21,13 @@ public class DefaultSystemHelperTest {
     }
 
     @Test
-    public void test() {
+    public void test_get() {
         systemHelper.getEnv("PATH");
+    }
+
+    @Test
+    public void test_getOrDefault(){
+        systemHelper.getOrDefault("PATH", "default");
     }
 
 }

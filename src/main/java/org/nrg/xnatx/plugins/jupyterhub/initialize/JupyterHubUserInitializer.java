@@ -11,6 +11,7 @@ import org.nrg.xft.security.UserI;
 import org.nrg.xnat.initialization.tasks.AbstractInitializingTask;
 import org.nrg.xnat.initialization.tasks.InitializingTaskException;
 import org.nrg.xnat.services.XnatAppInfo;
+import org.nrg.xnatx.plugins.jupyterhub.utils.SystemHelper;
 import org.nrg.xnatx.plugins.jupyterhub.utils.XFTManagerHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -26,16 +27,19 @@ public class JupyterHubUserInitializer extends AbstractInitializingTask {
     private final RoleHolder roleHolder;
     private final XFTManagerHelper xftManagerHelper;
     private final XnatAppInfo appInfo;
+    private final SystemHelper systemHelper;
 
     @Autowired
     public JupyterHubUserInitializer(final UserManagementServiceI userManagementService,
                                      final RoleHolder roleHolder,
                                      final XFTManagerHelper xftManagerHelper,
-                                     final XnatAppInfo appInfo) {
+                                     final XnatAppInfo appInfo,
+                                     final SystemHelper systemHelper) {
         this.userManagementService = userManagementService;
         this.roleHolder = roleHolder;
         this.xftManagerHelper = xftManagerHelper;
         this.appInfo = appInfo;
+        this.systemHelper = systemHelper;
     }
 
     @Override
@@ -62,18 +66,22 @@ public class JupyterHubUserInitializer extends AbstractInitializingTask {
             throw new InitializingTaskException(InitializingTaskException.Level.RequiresInitialization);
         }
 
-        if (userManagementService.exists("jupyterhub")) {
-            log.info("`jupyterhub` user account already exists, skipping creation.");
+        final String username = systemHelper.getOrDefault("JH_XNAT_USERNAME", "jupyterhub");
+        final String password = systemHelper.getOrDefault("JH_XNAT_PASSWORD", "jupyterhub");
+        final boolean enabled = systemHelper.getOrDefault("JH_XNAT_SERVICE_USER_ENABLED", "false").equals("true");
+
+        if (userManagementService.exists(username)) {
+            log.info("`jupyterhub` user account {} already exists, skipping creation.", username);
             return;
         }
 
         final UserI jupyterhubUser = userManagementService.createUser();
-        jupyterhubUser.setLogin("jupyterhub");
+        jupyterhubUser.setLogin(username);
         jupyterhubUser.setEmail("jupyterhub@jupyterhub.jupyterhub");
         jupyterhubUser.setFirstname("jupyterhub");
         jupyterhubUser.setLastname("jupyterhub");
-        jupyterhubUser.setPassword("jupyterhub");
-        jupyterhubUser.setEnabled(false);
+        jupyterhubUser.setPassword(password);
+        jupyterhubUser.setEnabled(enabled);
         jupyterhubUser.setVerified(true);
 
         String errorMessage = "Unable to create the `jupyterhub` user account. " +
@@ -108,7 +116,8 @@ public class JupyterHubUserInitializer extends AbstractInitializingTask {
             throw new InitializingTaskException(InitializingTaskException.Level.Error, errorMessage, e);
         }
 
-        log.info("Successfully created `jupyterhub` user account.");
+        log.info("Successfully created `jupyterhub` user account: username={}, password=HIDDEN, enabled={}",
+                 username, enabled);
     }
 
     @Override
