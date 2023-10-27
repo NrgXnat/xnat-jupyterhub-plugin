@@ -4,6 +4,7 @@ import org.nrg.xdat.security.services.RoleHolder;
 import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.nrg.xnat.services.XnatAppInfo;
 import org.nrg.xnatx.plugins.jupyterhub.initialize.JupyterHubUserInitializer;
+import org.nrg.xnatx.plugins.jupyterhub.utils.SystemHelper;
 import org.nrg.xnatx.plugins.jupyterhub.utils.XFTManagerHelper;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -17,11 +18,15 @@ public class JupyterHubUserInitializerConfig {
     public JupyterHubUserInitializer defaultJupyterHubUserInitializer(final UserManagementServiceI mockUserManagementService,
                                                                       final RoleHolder mockRoleHolder,
                                                                       final XFTManagerHelper mockXFTManagerHelper,
-                                                                      final XnatAppInfo mockXnatAppInfo) {
-        return new JupyterHubUserInitializer(mockUserManagementService,
-                                             mockRoleHolder,
-                                             mockXFTManagerHelper,
-                                             mockXnatAppInfo);
+                                                                      final XnatAppInfo mockXnatAppInfo,
+                                                                      final SystemHelper mockSystemHelper) {
+        return new JupyterHubUserInitializer(
+                mockUserManagementService,
+                mockRoleHolder,
+                mockXFTManagerHelper,
+                mockXnatAppInfo,
+                mockSystemHelper
+        );
     }
 
 }
