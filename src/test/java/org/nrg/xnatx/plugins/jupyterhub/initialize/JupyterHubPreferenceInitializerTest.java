@@ -91,20 +91,7 @@ public class JupyterHubPreferenceInitializerTest {
     }
 
     @Test
-    public void callImpl_initialized() throws Exception {
-        // Setup
-        when(mockXFTManagerHelper.isInitialized()).thenReturn(true);
-        when(mockXnatAppInfo.isInitialized()).thenReturn(true);
-
-        // Test
-        jupyterHubPreferenceInitializer.callImpl();
-
-        // Verify
-        verify(mockJupyterHubPreferences, times(1)).setJupyterHubHostUrl(any());
-    }
-
-    @Test
-    public void callImpl_initialized_alreadySet() throws Exception {
+    public void callImpl_jhHostUrlAlreadySet() throws Exception {
         // Setup
         when(mockXFTManagerHelper.isInitialized()).thenReturn(true);
         when(mockXnatAppInfo.isInitialized()).thenReturn(true);
@@ -117,16 +104,12 @@ public class JupyterHubPreferenceInitializerTest {
         verify(mockJupyterHubPreferences, never()).setJupyterHubHostUrl(any());
     }
 
-
     @Test
-    public void callImpl_initialized_envSet() throws Exception {
+    public void callImpl_jhHostUrlSetToSiteUrl() throws Exception {
         // Setup
         when(mockXFTManagerHelper.isInitialized()).thenReturn(true);
         when(mockXnatAppInfo.isInitialized()).thenReturn(true);
-        when(mockJupyterHubPreferences.getJupyterHubHostUrl()).thenReturn("");
-
-        when(mockSystemHelper.getEnv("JH_HOST_URL")).thenReturn("https://my-xnat.com");
-        when(mockSiteConfigPreferences.getSiteUrl()).thenReturn("https://another-xnat.com");
+        when(mockSiteConfigPreferences.getSiteUrl()).thenReturn("https://my-xnat.com");
 
         // Test
         jupyterHubPreferenceInitializer.callImpl();
@@ -136,20 +119,116 @@ public class JupyterHubPreferenceInitializerTest {
     }
 
     @Test
-    public void callImpl_initialized_envNotSet() throws Exception {
+    public void callImpl_initialized_envSet() throws Exception {
         // Setup
         when(mockXFTManagerHelper.isInitialized()).thenReturn(true);
         when(mockXnatAppInfo.isInitialized()).thenReturn(true);
-        when(mockJupyterHubPreferences.getJupyterHubHostUrl()).thenReturn("");
 
-        when(mockSystemHelper.getEnv("JH_HOST_URL")).thenReturn("");
-        when(mockSiteConfigPreferences.getSiteUrl()).thenReturn("https://another-xnat.com");
+        when(mockSystemHelper.getEnv("JH_XNAT_JUPYTERHUB_HOST_URL")).thenReturn("https://my-xnat.com");
+        when(mockSystemHelper.getEnv("JH_XNAT_JUPYTERHUB_API_URL")).thenReturn("https://my-xnat.com/jupyterhub/hub/api");
+        when(mockSystemHelper.getEnv("JH_XNAT_SERVICE_TOKEN")).thenReturn("secret-token");
+        when(mockSystemHelper.getEnv("JH_XNAT_START_TIMEOUT")).thenReturn("60");
+        when(mockSystemHelper.getEnv("JH_XNAT_STOP_TIMEOUT")).thenReturn("60");
+        when(mockSystemHelper.getEnv("JH_XNAT_PT_ARCHIVE_PREFIX")).thenReturn("/data/xnat/archive");
+        when(mockSystemHelper.getEnv("JH_XNAT_PT_ARCHIVE_DOCKER_PREFIX")).thenReturn("/home/andy/xnat-docker-compose/xnat-data/archive");
+        when(mockSystemHelper.getEnv("JH_XNAT_PT_WORKSPACE_PREFIX")).thenReturn("/data/xnat/workspaces");
+        when(mockSystemHelper.getEnv("JH_XNAT_PT_WORKSPACE_DOCKER_PREFIX")).thenReturn("/home/andy/xnat-docker-compose/xnat-data/workspaces");
+        when(mockSystemHelper.getEnv("JH_XNAT_WORKSPACE_PATH")).thenReturn("/data/xnat/workspaces");
+        when(mockSystemHelper.getEnv("JH_XNAT_INACTIVITY_TIMEOUT")).thenReturn("24");
+        when(mockSystemHelper.getEnv("JH_XNAT_MAX_SERVER_LIFETIME")).thenReturn("48");
+        when(mockSystemHelper.getEnv("JH_XNAT_ALL_USERS_CAN_START_JUPYTER")).thenReturn("true");
 
         // Test
         jupyterHubPreferenceInitializer.callImpl();
 
         // Verify
-        verify(mockJupyterHubPreferences).setJupyterHubHostUrl("https://another-xnat.com");
+        verify(mockJupyterHubPreferences).setJupyterHubHostUrl("https://my-xnat.com");
+        verify(mockJupyterHubPreferences).setJupyterHubApiUrl("https://my-xnat.com/jupyterhub/hub/api");
+        verify(mockJupyterHubPreferences).setJupyterHubToken("secret-token");
+        verify(mockJupyterHubPreferences).setStartTimeout(60);
+        verify(mockJupyterHubPreferences).setStopTimeout(60);
+        verify(mockJupyterHubPreferences).setPathTranslationArchivePrefix("/data/xnat/archive");
+        verify(mockJupyterHubPreferences).setPathTranslationArchiveDockerPrefix("/home/andy/xnat-docker-compose/xnat-data/archive");
+        verify(mockJupyterHubPreferences).setPathTranslationWorkspacePrefix("/data/xnat/workspaces");
+        verify(mockJupyterHubPreferences).setPathTranslationWorkspaceDockerPrefix("/home/andy/xnat-docker-compose/xnat-data/workspaces");
+        verify(mockJupyterHubPreferences).setWorkspacePath("/data/xnat/workspaces");
+        verify(mockJupyterHubPreferences).setInactivityTimeout(24L);
+        verify(mockJupyterHubPreferences).setMaxServerLifetime(48L);
+    }
+
+    @Test
+    public void callImpl_initialized_envNotSet() throws Exception {
+        // Setup
+        when(mockXFTManagerHelper.isInitialized()).thenReturn(true);
+        when(mockXnatAppInfo.isInitialized()).thenReturn(true);
+
+        when(mockSystemHelper.getEnv("JH_XNAT_JUPYTERHUB_HOST_URL")).thenReturn("");
+        when(mockSystemHelper.getEnv("JH_XNAT_JUPYTERHUB_API_URL")).thenReturn("");
+        when(mockSystemHelper.getEnv("JH_XNAT_SERVICE_TOKEN")).thenReturn("");
+        when(mockSystemHelper.getEnv("JH_XNAT_START_TIMEOUT")).thenReturn("");
+        when(mockSystemHelper.getEnv("JH_XNAT_STOP_TIMEOUT")).thenReturn("");
+        when(mockSystemHelper.getEnv("JH_XNAT_PT_ARCHIVE_PREFIX")).thenReturn("");
+        when(mockSystemHelper.getEnv("JH_XNAT_PT_ARCHIVE_DOCKER_PREFIX")).thenReturn("");
+        when(mockSystemHelper.getEnv("JH_XNAT_PT_WORKSPACE_PREFIX")).thenReturn("");
+        when(mockSystemHelper.getEnv("JH_XNAT_PT_WORKSPACE_DOCKER_PREFIX")).thenReturn("");
+        when(mockSystemHelper.getEnv("JH_XNAT_WORKSPACE_PATH")).thenReturn("");
+        when(mockSystemHelper.getEnv("JH_XNAT_INACTIVITY_TIMEOUT")).thenReturn("");
+        when(mockSystemHelper.getEnv("JH_XNAT_MAX_SERVER_LIFETIME")).thenReturn("");
+        when(mockSystemHelper.getEnv("JH_XNAT_ALL_USERS_CAN_START_JUPYTER")).thenReturn("");
+
+        // Test
+        jupyterHubPreferenceInitializer.callImpl();
+
+        // Verify
+        verify(mockJupyterHubPreferences, never()).setJupyterHubHostUrl(any());
+        verify(mockJupyterHubPreferences, never()).setJupyterHubApiUrl(any());
+        verify(mockJupyterHubPreferences, never()).setJupyterHubToken(any());
+        verify(mockJupyterHubPreferences, never()).setStartTimeout(anyInt());
+        verify(mockJupyterHubPreferences, never()).setStopTimeout(anyInt());
+        verify(mockJupyterHubPreferences, never()).setPathTranslationArchivePrefix(any());
+        verify(mockJupyterHubPreferences, never()).setPathTranslationArchiveDockerPrefix(any());
+        verify(mockJupyterHubPreferences, never()).setPathTranslationWorkspacePrefix(any());
+        verify(mockJupyterHubPreferences, never()).setPathTranslationWorkspaceDockerPrefix(any());
+        verify(mockJupyterHubPreferences, never()).setWorkspacePath(any());
+        verify(mockJupyterHubPreferences, never()).setInactivityTimeout(anyLong());
+        verify(mockJupyterHubPreferences, never()).setMaxServerLifetime(anyLong());
+    }
+
+    @Test
+    public void callImpl_initialized_envNotSet2() throws Exception {
+        // Setup
+        when(mockXFTManagerHelper.isInitialized()).thenReturn(true);
+        when(mockXnatAppInfo.isInitialized()).thenReturn(true);
+
+        when(mockSystemHelper.getEnv("JH_XNAT_JUPYTERHUB_HOST_URL")).thenReturn(null);
+        when(mockSystemHelper.getEnv("JH_XNAT_JUPYTERHUB_API_URL")).thenReturn(null);
+        when(mockSystemHelper.getEnv("JH_XNAT_SERVICE_TOKEN")).thenReturn(null);
+        when(mockSystemHelper.getEnv("JH_XNAT_START_TIMEOUT")).thenReturn(null);
+        when(mockSystemHelper.getEnv("JH_XNAT_STOP_TIMEOUT")).thenReturn(null);
+        when(mockSystemHelper.getEnv("JH_XNAT_PT_ARCHIVE_PREFIX")).thenReturn(null);
+        when(mockSystemHelper.getEnv("JH_XNAT_PT_ARCHIVE_DOCKER_PREFIX")).thenReturn(null);
+        when(mockSystemHelper.getEnv("JH_XNAT_PT_WORKSPACE_PREFIX")).thenReturn(null);
+        when(mockSystemHelper.getEnv("JH_XNAT_PT_WORKSPACE_DOCKER_PREFIX")).thenReturn(null);
+        when(mockSystemHelper.getEnv("JH_XNAT_WORKSPACE_PATH")).thenReturn(null);
+        when(mockSystemHelper.getEnv("JH_XNAT_INACTIVITY_TIMEOUT")).thenReturn(null);
+        when(mockSystemHelper.getEnv("JH_XNAT_MAX_SERVER_LIFETIME")).thenReturn(null);
+
+        // Test
+        jupyterHubPreferenceInitializer.callImpl();
+
+        // Verify
+        verify(mockJupyterHubPreferences, never()).setJupyterHubHostUrl(any());
+        verify(mockJupyterHubPreferences, never()).setJupyterHubApiUrl(any());
+        verify(mockJupyterHubPreferences, never()).setJupyterHubToken(any());
+        verify(mockJupyterHubPreferences, never()).setStartTimeout(anyInt());
+        verify(mockJupyterHubPreferences, never()).setStopTimeout(anyInt());
+        verify(mockJupyterHubPreferences, never()).setPathTranslationArchivePrefix(any());
+        verify(mockJupyterHubPreferences, never()).setPathTranslationArchiveDockerPrefix(any());
+        verify(mockJupyterHubPreferences, never()).setPathTranslationWorkspacePrefix(any());
+        verify(mockJupyterHubPreferences, never()).setPathTranslationWorkspaceDockerPrefix(any());
+        verify(mockJupyterHubPreferences, never()).setWorkspacePath(any());
+        verify(mockJupyterHubPreferences, never()).setInactivityTimeout(anyLong());
+        verify(mockJupyterHubPreferences, never()).setMaxServerLifetime(anyLong());
     }
 
 }

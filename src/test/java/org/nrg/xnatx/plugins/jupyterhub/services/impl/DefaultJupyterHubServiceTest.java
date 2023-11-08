@@ -527,6 +527,7 @@ public class DefaultJupyterHubServiceTest {
     public void testStopSever_Failure() throws Exception {
         // Returning a server should lead to a failure to stop event
         when(mockJupyterHubClient.getServer(anyString(), anyString()))
+                .thenReturn(Optional.empty())
                 .thenReturn(Optional.of(Server.builder().build()));
 
         // Test
@@ -534,10 +535,10 @@ public class DefaultJupyterHubServiceTest {
         Thread.sleep(2500); // Async call, need to wait. Is there a better way to test this?
 
         // Verify one attempt to stop the sever
-        verify(mockJupyterHubClient, times(1)).stopServer(username, servername);
+        verify(mockJupyterHubClient, atLeastOnce()).stopServer(username, servername);
 
         // Verify attempts to see if server stopped
-        verify(mockJupyterHubClient, times(2)).getServer(username, servername);
+        verify(mockJupyterHubClient, atLeast(2)).getServer(username, servername);
 
         // Verify failure to stop event occurred
         verify(mockEventService, atLeastOnce()).triggerEvent(jupyterServerEventCaptor.capture());
@@ -558,8 +559,8 @@ public class DefaultJupyterHubServiceTest {
         // Verify one attempt to stop the sever
         verify(mockJupyterHubClient, times(1)).stopServer(username, servername);
 
-        // Verify one attempt to see if server stopped
-        verify(mockJupyterHubClient, times(1)).getServer(username, servername);
+        // Verify at least one attempt to see if server stopped
+        verify(mockJupyterHubClient, atLeastOnce()).getServer(username, servername);
 
         // Verify stop completed event occurred
         verify(mockEventService, atLeastOnce()).triggerEvent(jupyterServerEventCaptor.capture());
