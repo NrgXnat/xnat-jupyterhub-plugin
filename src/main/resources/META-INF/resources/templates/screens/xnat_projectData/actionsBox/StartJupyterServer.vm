@@ -4,8 +4,15 @@
     </a>
 </li>
 
+<li class="yuimenuitem">
+    <a class="yuimenuitemlabel" id="start-dashboard" style="display: none" onclick="XNAT.plugin.jupyterhub.servers.startDashboardForProject()">
+        Start Dashboard
+    </a>
+</li>
+
 <script type="text/javascript">
     XNAT.plugin.jupyterhub.users.authorization.isAuthorized().then(authorized => {
         document.getElementById("start-jupyter-server").style.display = authorized ? '' : 'none';
+        document.getElementById("start-dashboard").style.display = authorized ? '' : 'none';
     })
 </script>

@@ -11,6 +11,8 @@ XNAT.plugin = getObject(XNAT.plugin || {});
 XNAT.plugin.jupyterhub = getObject(XNAT.plugin.jupyterhub || {});
 XNAT.plugin.jupyterhub.servers = getObject(XNAT.plugin.jupyterhub.servers || {});
 XNAT.plugin.jupyterhub.servers.user_options = getObject(XNAT.plugin.jupyterhub.servers.user_options || {});
+XNAT.compute = getObject(XNAT.compute || {});
+XNAT.compute.computeEnvironmentConfigs = getObject(XNAT.compute.computeEnvironmentConfigs || {});
 
 (function(factory) {
     if (typeof define === 'function' && define.amd) {
@@ -77,6 +79,16 @@ XNAT.plugin.jupyterhub.servers.user_options = getObject(XNAT.plugin.jupyterhub.s
                                                             eventTrackingId = generateEventTrackingId()) {
         console.debug(`jupyterhub-servers.js: XNAT.plugin.jupyterhub.servers.startServerForProject`);
         startServer(username, servername, xsiType, itemId, projectId, projectId, eventTrackingId)
+    }
+
+    XNAT.plugin.jupyterhub.servers.startDashboardForProject = function(username = window.username,
+                                                                       servername = XNAT.data.context.projectID,
+                                                                       xsiType = XNAT.data.context.xsiType,
+                                                                       itemId = XNAT.data.context.projectID,
+                                                                       projectId = XNAT.data.context.projectID,
+                                                                       eventTrackingId = generateEventTrackingId()) {
+        console.debug(`jupyterhub-servers.js: XNAT.plugin.jupyterhub.servers.startDashboardForProject`);
+        startDashboard(username, servername, xsiType, itemId, projectId, projectId, eventTrackingId);
     }
 
     XNAT.plugin.jupyterhub.servers.startServerForSubject = function(username = window.username,
@@ -372,6 +384,176 @@ XNAT.plugin.jupyterhub.servers.user_options = getObject(XNAT.plugin.jupyterhub.s
                 buttons: buttons
             });
         });
+    }
+
+    let startDashboard = XNAT.plugin.jupyterhub.servers.startDashboard = function(username, servername, xsiType, itemId, itemLabel, projectId, eventTrackingId) {
+        console.debug(`jupyterhub-servers.js: XNAT.plugin.jupyterhub.servers.startDashboard`);
+        console.debug(`Launching jupyter server. User: ${username}, Server Name: ${servername}, XSI Type: ${xsiType}, ID: ${itemId}, Label: ${itemLabel}, Project ID: ${projectId}, eventTrackingId: ${eventTrackingId}`);
+
+        const executionScope = {
+            'site': 'XNAT',
+            'user': username,
+            'prj': projectId,
+        }
+
+        XNAT.compute.computeEnvironmentConfigs.available("GENERAL", executionScope).then(computeEnvironmentConfigs => {
+            const cancelButton = {
+                label: 'Cancel',
+                isDefault: false,
+                close: true,
+            }
+
+            const startButton = {
+                label: 'Start',
+                isDefault: true,
+                close: false,
+                action: function(obj) {
+                    const computeEnvironmentConfigId = document.querySelector('select#compute-environment-config').value;
+                    const hardwareConfigId = document.querySelector('select#hardware-config').value;
+
+                    if (!computeEnvironmentConfigId) {
+                        XNAT.dialog.open({
+                            width: 450,
+                            title: "Error",
+                            content: "Please select a Dashboard.",
+                            buttons: [
+                                {
+                                    label: 'OK',
+                                    isDefault: true,
+                                    close: true,
+                                }
+                            ]
+                        });
+
+                        return;
+                    }
+
+                    if (!hardwareConfigId) {
+                        XNAT.dialog.open({
+                            width: 450,
+                            title: "Error",
+                            content: "Please select a hardware configuration.",
+                            buttons: [
+                                {
+                                    label: 'OK',
+                                    isDefault: true,
+                                    close: true,
+                                }
+                            ]
+                        });
+
+                        return;
+                    }
+
+                    const serverStartRequest = {
+                        'username': username,
+                        'servername': '', // Not supported yet
+                        'xsiType': xsiType,
+                        'itemId': itemId,
+                        'itemLabel': itemLabel,
+                        'projectId': projectId,
+                        'eventTrackingId': eventTrackingId,
+                        'computeEnvironmentConfigId': computeEnvironmentConfigId,
+                        'hardwareConfigId': hardwareConfigId,
+                    }
+
+                    XNAT.xhr.ajax({
+                        url: newServerUrl(username, servername),
+                        method: 'POST',
+                        contentType: 'application/json',
+                        data: JSON.stringify(serverStartRequest),
+                        beforeSend: function () {
+                            XNAT.app.activityTab.start(
+                                'Start Dashboard' +
+                                `<div class="actions"><a id="open-nb-${eventTrackingId}" class="icn open" style="display: none;"><i class="fa fa-book"></i></a>`,
+                                eventTrackingId,
+                                'XNAT.plugin.jupyterhub.servers.activityTabCallback', 1000);
+                        },
+                        fail: function (error) {
+                            console.error(`Failed to send Jupyter server request: ${error}`)
+                        }
+                    });
+
+                    xmodal.closeAll();
+                    XNAT.ui.dialog.closeAll();
+                }
+            }
+
+            const buttons = (computeEnvironmentConfigs.length === 0) ? [cancelButton] : [cancelButton, startButton];
+
+            XNAT.dialog.open({
+                title: 'Start Dashboard',
+                content: spawn('form#server-start-request-form'),
+                maxBtn: true,
+                width: 500,
+                beforeShow: function(obj) {
+                    const form = document.getElementById('server-start-request-form');
+                    form.classList.add('panel');
+
+                    if (computeEnvironmentConfigs.length === 0) {
+                        obj.$modal.find('.xnat-dialog-content').html('<div class="error">No dashboards are available. Please contact your administrator.</div>');
+                        return;
+                    }
+
+                    let computeEnvironmentConfigSelect = spawn('div', { style : { marginTop: '20px', marginBottom: '20px', } }, [
+                        spawn('select#compute-environment-config', { style: { marginBottom: '8px'} }, [
+                            spawn('option', {value: ''}, 'Select a Dashboard'),
+                            ...computeEnvironmentConfigs.map(c => spawn('option', {value: c['id']}, c['computeEnvironment']['name'])),
+                        ]),
+                        spawn('p.description', 'Select from the list of dashboards available to you.')
+                    ]);
+
+                    let hardwareConfigSelect = spawn('div#hardware-config-div', { style : { marginTop: '20px', marginBottom: '40px', display: 'none' } }, [
+                        spawn('h2', 'Hardware'),
+                        spawn('p.description', 'Select from the list of available Hardware. This determines the memory, CPU and other hardware resources available to your dashboard.'),
+                        spawn('select#hardware-config', [
+                            spawn('option', {value: ''}, 'Select Hardware'),
+                        ])]
+                    );
+
+                    form.appendChild(spawn('!', [
+                        computeEnvironmentConfigSelect,
+                        hardwareConfigSelect
+                    ]));
+
+                    computeEnvironmentConfigSelect.querySelector('select').addEventListener('change', () => {
+                        let hardwareSelect = document.getElementById('hardware-config');
+                        hardwareSelect.innerHTML = '';
+                        hardwareSelect.appendChild(spawn('option', {value: ''}, 'Select Hardware'));
+                        let computeEnvironmentConfig = computeEnvironmentConfigs.filter(c => c['id'].toString() === computeEnvironmentConfigSelect.querySelector('select').value)[0];
+                        let hardwareConfigs = computeEnvironmentConfig['hardwareOptions']['hardwareConfigs'];
+
+                        hardwareConfigs.forEach((h, i) => {
+                            hardwareSelect.appendChild(new Option(h['hardware']['name'], h['id'], false, i === 0));
+                        });
+
+                        if (hardwareConfigs.length > 1) {
+                            document.querySelector('div#hardware-config-div').style.display = 'block';
+                        }
+                    });
+
+                    form.style.marginLeft = '30px';
+                    form.style.marginRight = '30px';
+
+                    form.querySelectorAll('p.description').forEach(p => {
+                        p.style.marginTop = '0';
+                        p.style.marginBottom = '15px';
+                        p.style.color = '#777';
+                    });
+
+                    form.querySelectorAll('h2').forEach(h => {
+                        h.style.marginTop = '0';
+                        h.style.marginBottom = '5px';
+                        h.style.color = '#222';
+                    });
+
+                    form.querySelectorAll('select').forEach(s => {
+                        s.style.width = '100%';
+                    });
+                },
+                buttons: buttons
+            });
+        })
     }
 
     let activityTabCallback = XNAT.plugin.jupyterhub.servers.activityTabCallback = function(itemDivId, detailsTag, jsonobj, lastProgressIdx) {
