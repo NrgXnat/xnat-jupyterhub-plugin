@@ -420,7 +420,7 @@ public class DefaultJupyterHubServiceTest {
     }
 
     @Test(timeout = 4000)
-    public void testStartServer_Timeout() throws UserNotFoundException, ResourceAlreadyExistsException, InterruptedException {
+    public void testStartServer_Timeout() throws Exception {
         // Grant permissions
         when(mockPermissionsHelper.canRead(any(), anyString(), anyString(), anyString())).thenReturn(true);
 
