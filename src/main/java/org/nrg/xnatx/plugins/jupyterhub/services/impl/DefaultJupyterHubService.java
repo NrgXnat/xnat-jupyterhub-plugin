@@ -25,6 +25,7 @@ import org.nrg.xnatx.plugins.jupyterhub.services.UserOptionsService;
 import org.nrg.xnatx.plugins.jupyterhub.utils.JupyterHubServiceAccountHelper;
 import org.nrg.xnatx.plugins.jupyterhub.utils.PermissionsHelper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
 import java.time.ZoneId;
@@ -54,7 +55,7 @@ public class DefaultJupyterHubService implements JupyterHubService {
                                     final UserOptionsService userOptionsService,
                                     final JupyterHubPreferences jupyterHubPreferences,
                                     final UserManagementServiceI userManagementService,
-                                    final JobTemplateService jobTemplateService,
+                                    @Qualifier("defaultJobTemplateService") final JobTemplateService jobTemplateService,
                                     final JupyterHubServiceAccountHelper jupyterHubServiceAccountHelper) {
         this.jupyterHubClient = jupyterHubClient;
         this.eventService = eventService;
@@ -159,6 +160,7 @@ public class DefaultJupyterHubService implements JupyterHubService {
         final String eventTrackingId = startRequest.getEventTrackingId();
         final Long computeEnvironmentConfigId = startRequest.getComputeEnvironmentConfigId();
         final Long hardwareConfigId = startRequest.getHardwareConfigId();
+        final Long dashboardConfigId = startRequest.getDashboardConfigId();
 
         eventService.triggerEvent(JupyterServerEvent.progress(eventTrackingId, user.getID(), xsiType, itemId,
                                                               JupyterServerEventI.Operation.Start, 0,
@@ -234,7 +236,7 @@ public class DefaultJupyterHubService implements JupyterHubService {
                                                                       JupyterServerEventI.Operation.Start, 20,
                                                                       "Building notebook server container configuration."));
 
-                userOptionsService.storeUserOptions(user, servername, xsiType, itemId, projectId, computeEnvironmentConfigId, hardwareConfigId, eventTrackingId);
+                userOptionsService.storeUserOptions(user, servername, xsiType, itemId, projectId, computeEnvironmentConfigId, hardwareConfigId, dashboardConfigId, eventTrackingId);
 
                 eventService.triggerEvent(JupyterServerEvent.progress(eventTrackingId, user.getID(), xsiType, itemId,
                                                                       JupyterServerEventI.Operation.Start, 30,

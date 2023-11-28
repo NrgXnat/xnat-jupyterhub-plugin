@@ -313,9 +313,9 @@ jupyterHubUserActivity:
       content: >
         XNAT.plugin.jupyterhub.users.activity.init('jupyterhub-user-activity-table');
 
-jupyterHubDashboards:
+dashboards:
   kind: panel
-  name: jupyterHubDashboards
+  name: dashboards
   label: Dashboards
   contents:
     description:
@@ -323,9 +323,14 @@ jupyterHubDashboards:
       element:
         style: "margin-bottom: 20px;"
       contents:
-        "You can configure Dashboards that can be launched using JupyterHub......"
+        "Dashboards are a way to deploy Jupyter notebooks (and other tools) as interactive web applications using JupyterHub.
+         Create a dashboard configuration for each dashboard you want to deploy. They are configured to launch in a
+         specific JupyterHub environment and can be associated with a specific Hardware configuration. You can also
+         specify which data types are supported by the dashboard. See the documentation for more information."
     dashboardConfigsTable:
-      tag: "div#jupyterhub-dashboard-configs-table"
+      tag: "div#jupyterhub-dashboards-table"
+    dashboardScripts:
+      tag: script|src="~/scripts/xnat/plugin/jupyterhub/jupyterhub-dashboards.js"
     computeEnvironmentConfigsScript:
       tag: script|src="~/scripts/xnat/compute/compute-environment-configs.js"
     hardwareConfigsScript:
@@ -333,7 +338,7 @@ jupyterHubDashboards:
     renderDashboardConfigsTable:
       tag: script
       content: >
-        XNAT.compute.computeEnvironmentConfigs.manager('jupyterhub-dashboard-configs-table', 'GENERAL');
+        XNAT.plugin.jupyterhub.dashboards.configs.table('div#jupyterhub-dashboards-table', 'Site');
 
 #################################################
 ####  Root Site Admin Spawner Config Object  ####
@@ -360,6 +365,14 @@ siteSettings:
         ${jupyterEnvironments}
         ${hardwareConfigs}
         ${constraints}
+    jupyterhubDashboardsTab:
+      kind: tab
+      name: jupyterhubDashboardsTab
+      label: Dashboards
+      group: jupyterhubTabGroup
+      active: true
+      contents:
+        ${dashboards}
     jupyterhubUserActivityTab:
       kind: tab
       name: jupyterhubUserActivityTab
@@ -368,11 +381,4 @@ siteSettings:
       active: true
       contents:
         ${jupyterHubUserActivity}
-    jupyterhubDashboardsTab:
-        kind: tab
-        name: jupyterhubDashboardsTab
-        label: Dashboards
-        group: jupyterhubTabGroup
-        active: true
-        contents:
-            ${jupyterHubDashboards}
+

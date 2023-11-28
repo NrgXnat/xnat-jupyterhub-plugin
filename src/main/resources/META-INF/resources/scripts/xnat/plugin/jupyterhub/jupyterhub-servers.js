@@ -121,6 +121,39 @@ XNAT.compute.computeEnvironmentConfigs = getObject(XNAT.compute.computeEnvironme
         }
     }
 
+    XNAT.plugin.jupyterhub.servers.startDashboardForSubject = function(username = window.username,
+                                                                       servername = XNAT.data.context.ID,
+                                                                       xsiType = XNAT.data.context.xsiType,
+                                                                       itemId = XNAT.data.context.ID,
+                                                                       projectId = XNAT.data.context.projectID,
+                                                                       eventTrackingId = generateEventTrackingId()) {
+        console.debug(`jupyterhub-servers.js: XNAT.plugin.jupyterhub.servers.startServerForSubject`);
+
+        if (XNAT.plugin.jupyterhub.isSharedItem()) {
+            XNAT.dialog.open({
+                width: 450,
+                title: "Unsupported Operation",
+                content: "Cannot start a dashboard on a shared subject.",
+                buttons: [
+                    {
+                        label: 'OK',
+                        isDefault: true,
+                        close: true,
+                        action: function() {
+                            xmodal.closeAll();
+                        }
+                    }
+                ]
+            });
+        } else {
+            getSubjectLabel(itemId).then(subjectLabel => {
+                startDashboard(username, servername, xsiType, itemId, subjectLabel, projectId, eventTrackingId)
+            }).catch(e => {
+                console.error(`Error getting subject label: ${e}`);
+            });
+        }
+    }
+
     XNAT.plugin.jupyterhub.servers.startServerForExperiment = function(username = window.username,
                                                                servername = XNAT.data.context.ID,
                                                                xsiType = "xnat:experimentData",
@@ -148,6 +181,39 @@ XNAT.compute.computeEnvironmentConfigs = getObject(XNAT.compute.computeEnvironme
         } else {
             getExperimentLabel(itemId).then(experimentLabel => startServer(username, servername, xsiType, itemId,
                                                                            experimentLabel, projectId, eventTrackingId))
+        }
+    }
+
+    XNAT.plugin.jupyterhub.servers.startDashboardForExperiment = function(username = window.username,
+                                                                          servername = XNAT.data.context.ID,
+                                                                          xsiType = XNAT.data.context.xsiType,
+                                                                          itemId = XNAT.data.context.ID,
+                                                                          projectId = XNAT.data.context.projectID,
+                                                                          eventTrackingId = generateEventTrackingId()) {
+        console.debug(`jupyterhub-servers.js: XNAT.plugin.jupyterhub.servers.startDashboardForExperiment`);
+
+        if (XNAT.plugin.jupyterhub.isSharedItem()) {
+            XNAT.dialog.open({
+                width: 450,
+                title: "Unsupported Operation",
+                content: "Cannot start a dashboard on a shared experiment.",
+                buttons: [
+                    {
+                        label: 'OK',
+                        isDefault: true,
+                        close: true,
+                        action: function() {
+                            xmodal.closeAll();
+                        }
+                    }
+                ]
+            });
+        } else {
+            getExperimentLabel(itemId).then(experimentLabel => {
+                startDashboard(username, servername, xsiType, itemId, experimentLabel, projectId, eventTrackingId)
+            }).catch(e => {
+                console.error(`Error getting experiment label: ${e}`);
+            });
         }
     }
 
@@ -388,15 +454,16 @@ XNAT.compute.computeEnvironmentConfigs = getObject(XNAT.compute.computeEnvironme
 
     let startDashboard = XNAT.plugin.jupyterhub.servers.startDashboard = function(username, servername, xsiType, itemId, itemLabel, projectId, eventTrackingId) {
         console.debug(`jupyterhub-servers.js: XNAT.plugin.jupyterhub.servers.startDashboard`);
-        console.debug(`Launching jupyter server. User: ${username}, Server Name: ${servername}, XSI Type: ${xsiType}, ID: ${itemId}, Label: ${itemLabel}, Project ID: ${projectId}, eventTrackingId: ${eventTrackingId}`);
+        console.debug(`Starting dashboard. User: ${username}, Server Name: ${servername}, XSI Type: ${xsiType}, ID: ${itemId}, Label: ${itemLabel}, Project ID: ${projectId}, eventTrackingId: ${eventTrackingId}`);
 
         const executionScope = {
             'site': 'XNAT',
             'user': username,
             'prj': projectId,
+            'datatype': xsiType,
         }
 
-        XNAT.compute.computeEnvironmentConfigs.available("GENERAL", executionScope).then(computeEnvironmentConfigs => {
+        XNAT.plugin.jupyterhub.dashboards.configs.available(executionScope).then(dashboardConfigs => {
             const cancelButton = {
                 label: 'Cancel',
                 isDefault: false,
@@ -408,31 +475,15 @@ XNAT.compute.computeEnvironmentConfigs = getObject(XNAT.compute.computeEnvironme
                 isDefault: true,
                 close: false,
                 action: function(obj) {
-                    const computeEnvironmentConfigId = document.querySelector('select#compute-environment-config').value;
-                    const hardwareConfigId = document.querySelector('select#hardware-config').value;
+                    const dashboardConfigId = document.querySelector('#dashboard-config').value;
+                    const computeEnvironmentConfigId = document.querySelector('#compute-environment-config').value;
+                    const hardwareConfigId = document.querySelector('#hardware-config').value;
 
-                    if (!computeEnvironmentConfigId) {
+                    if (!dashboardConfigId) {
                         XNAT.dialog.open({
                             width: 450,
                             title: "Error",
                             content: "Please select a Dashboard.",
-                            buttons: [
-                                {
-                                    label: 'OK',
-                                    isDefault: true,
-                                    close: true,
-                                }
-                            ]
-                        });
-
-                        return;
-                    }
-
-                    if (!hardwareConfigId) {
-                        XNAT.dialog.open({
-                            width: 450,
-                            title: "Error",
-                            content: "Please select a hardware configuration.",
                             buttons: [
                                 {
                                     label: 'OK',
@@ -453,6 +504,7 @@ XNAT.compute.computeEnvironmentConfigs = getObject(XNAT.compute.computeEnvironme
                         'itemLabel': itemLabel,
                         'projectId': projectId,
                         'eventTrackingId': eventTrackingId,
+                        'dashboardConfigId': dashboardConfigId,
                         'computeEnvironmentConfigId': computeEnvironmentConfigId,
                         'hardwareConfigId': hardwareConfigId,
                     }
@@ -479,76 +531,66 @@ XNAT.compute.computeEnvironmentConfigs = getObject(XNAT.compute.computeEnvironme
                 }
             }
 
-            const buttons = (computeEnvironmentConfigs.length === 0) ? [cancelButton] : [cancelButton, startButton];
+            const buttons = (dashboardConfigs.length === 0) ? [cancelButton] : [cancelButton, startButton];
 
             XNAT.dialog.open({
                 title: 'Start Dashboard',
                 content: spawn('form#server-start-request-form'),
                 maxBtn: true,
-                width: 500,
+                width: 400,
+                height: 200,
                 beforeShow: function(obj) {
                     const form = document.getElementById('server-start-request-form');
                     form.classList.add('panel');
 
-                    if (computeEnvironmentConfigs.length === 0) {
+                    if (dashboardConfigs.length === 0) {
                         obj.$modal.find('.xnat-dialog-content').html('<div class="error">No dashboards are available. Please contact your administrator.</div>');
                         return;
                     }
 
-                    let computeEnvironmentConfigSelect = spawn('div', { style : { marginTop: '20px', marginBottom: '20px', } }, [
-                        spawn('select#compute-environment-config', { style: { marginBottom: '8px'} }, [
-                            spawn('option', {value: ''}, 'Select a Dashboard'),
-                            ...computeEnvironmentConfigs.map(c => spawn('option', {value: c['id']}, c['computeEnvironment']['name'])),
+                    let dashboardConfigSelect = spawn('div', [
+                        spawn('div.form-group', [
+                            spawn('select#dashboard-config', [
+                                spawn('option', {value: '', disabled: true, selected: true}, 'Select a dashboard'),
+                                ...dashboardConfigs.map(c => spawn('option', {value: c['id']}, c['dashboard']['name'])),
+                            ]),
+                            spawn('div#dashboard-description.description', '')
                         ]),
-                        spawn('p.description', 'Select from the list of dashboards available to you.')
+                        spawn('input#hardware-config', {type: 'hidden', value: ''}),
+                        spawn('input#compute-environment-config', {type: 'hidden', value: ''}),
+                        spawn('style', {type: 'text/css'}, `
+                        
+                            div.form-group {
+                                display: flex;
+                                flex-direction: column;
+                                align-items: flex-start;
+                                justify-content: flex-start;
+                                gap: 10px;
+                            }
+                            
+                            div.form-group select {
+                                width: 100%;
+                                font-size: 1.1em;
+                            }
+                            
+                            div.form-group div.description {
+                                font-size: .9em;
+                                color: #777;
+                            }
+                            
+                            `)
                     ]);
 
-                    let hardwareConfigSelect = spawn('div#hardware-config-div', { style : { marginTop: '20px', marginBottom: '40px', display: 'none' } }, [
-                        spawn('h2', 'Hardware'),
-                        spawn('p.description', 'Select from the list of available Hardware. This determines the memory, CPU and other hardware resources available to your dashboard.'),
-                        spawn('select#hardware-config', [
-                            spawn('option', {value: ''}, 'Select Hardware'),
-                        ])]
-                    );
-
                     form.appendChild(spawn('!', [
-                        computeEnvironmentConfigSelect,
-                        hardwareConfigSelect
+                        dashboardConfigSelect
                     ]));
 
-                    computeEnvironmentConfigSelect.querySelector('select').addEventListener('change', () => {
-                        let hardwareSelect = document.getElementById('hardware-config');
-                        hardwareSelect.innerHTML = '';
-                        hardwareSelect.appendChild(spawn('option', {value: ''}, 'Select Hardware'));
-                        let computeEnvironmentConfig = computeEnvironmentConfigs.filter(c => c['id'].toString() === computeEnvironmentConfigSelect.querySelector('select').value)[0];
-                        let hardwareConfigs = computeEnvironmentConfig['hardwareOptions']['hardwareConfigs'];
-
-                        hardwareConfigs.forEach((h, i) => {
-                            hardwareSelect.appendChild(new Option(h['hardware']['name'], h['id'], false, i === 0));
-                        });
-
-                        if (hardwareConfigs.length > 1) {
-                            document.querySelector('div#hardware-config-div').style.display = 'block';
-                        }
-                    });
-
-                    form.style.marginLeft = '30px';
-                    form.style.marginRight = '30px';
-
-                    form.querySelectorAll('p.description').forEach(p => {
-                        p.style.marginTop = '0';
-                        p.style.marginBottom = '15px';
-                        p.style.color = '#777';
-                    });
-
-                    form.querySelectorAll('h2').forEach(h => {
-                        h.style.marginTop = '0';
-                        h.style.marginBottom = '5px';
-                        h.style.color = '#222';
-                    });
-
-                    form.querySelectorAll('select').forEach(s => {
-                        s.style.width = '100%';
+                    dashboardConfigSelect.querySelector('select').addEventListener('change', () => {
+                        const dashboardConfig = dashboardConfigs.filter(c => c['id'].toString() === dashboardConfigSelect.querySelector('select').value)[0];
+                        const dashboard = dashboardConfig['dashboard'];
+                        document.getElementById('hardware-config').value = dashboardConfig['hardwareConfig']['id'];
+                        document.getElementById('compute-environment-config').value = dashboardConfig['computeEnvironmentConfig']['id'];
+                        document.getElementById('dashboard-description').innerHTML = dashboard['description'];
                     });
                 },
                 buttons: buttons

@@ -34,6 +34,9 @@ public class JupyterHubPreferences extends AbstractPreferenceBean {
     public static final String INACTIVITY_TIMEOUT_PREF_ID = "inactivityTimeout";
     public static final String MAX_SERVER_LIFETIME_PREF_ID = "maxServerLifetime";
 
+    // Dashboard preferences
+    public static final String DASHBOARD_FRAMEWORK_PORTS_PREF_ID = "dashboardFrameworkPorts";
+
     @Autowired
     protected JupyterHubPreferences(NrgPreferenceService preferenceService, ConfigPaths configFolderPaths, OrderedProperties initPrefs) {
         super(preferenceService, configFolderPaths, initPrefs);
@@ -344,6 +347,19 @@ public class JupyterHubPreferences extends AbstractPreferenceBean {
             setBooleanValue(allUsersCanStartJupyter, ALL_USERS_JUPYTER);
         } catch (InvalidPreferenceName e) {
             log.error("Invalid preference name 'allUsersCanStartJupyter': something is very wrong here.", e);
+        }
+    }
+
+    @NrgPreference(defaultValue = "{\"streamlit\": \"8501\", \"panel\": \"5006\", \"dash\": \"8050\", \"voila\": \"8866\"}")
+    public Map<String, String> getDashboardFrameworkPorts() {
+        return getMapValue(DASHBOARD_FRAMEWORK_PORTS_PREF_ID);
+    }
+
+    public void setDashboardFrameworkPorts(final Map<String, String> dashboardFrameworkPorts) {
+        try {
+            setMapValue(DASHBOARD_FRAMEWORK_PORTS_PREF_ID, dashboardFrameworkPorts);
+        } catch (InvalidPreferenceName e) {
+            log.error("Invalid preference name 'dashboardFrameworkPorts': something is very wrong here.", e);
         }
     }
 

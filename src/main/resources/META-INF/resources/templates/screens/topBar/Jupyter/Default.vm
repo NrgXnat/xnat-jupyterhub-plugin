@@ -14,3 +14,4 @@
 <script src="$content.getURI("/scripts/xnat/plugin/jupyterhub/jupyterhub-topnav.js")"></script>
 <script src="$content.getURI("/scripts/xnat/compute/compute-environment-configs.js")"></script>
 <script src="$content.getURI("/scripts/xnat/compute/hardware-configs.js")"></script>
+<script src="$content.getURI("/scripts/xnat/plugin/jupyterhub/jupyterhub-dashboards.js")"></script>

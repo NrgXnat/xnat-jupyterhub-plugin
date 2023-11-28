@@ -4,8 +4,28 @@
     </a>
 </li>
 
+<li class="yuimenuitem">
+    <a class="yuimenuitemlabel" id="start-dashboard" style="display: none" onclick="XNAT.plugin.jupyterhub.servers.startDashboardForSubject()">
+        Start Dashboard
+    </a>
+</li>
+
 <script type="text/javascript">
+    // For Jupyter, we need to check if the user is authorized to start a server
     XNAT.plugin.jupyterhub.users.authorization.isAuthorized().then(authorized => {
         document.getElementById("start-jupyter-server").style.display = authorized ? '' : 'none';
     })
+
+    // For dashboards, we need to check what dashboards are available for the given execution scope
+    const executionScope = {
+        'site': 'XNAT',
+        'user': window.username,
+        'prj': XNAT.data.context.projectID,
+        'datatype': XNAT.data.context.xsiType,
+    };
+
+    XNAT.plugin.jupyterhub.dashboards.configs.available(executionScope).then(configs => {
+        // If there are dashboards available, show the menu item
+        document.getElementById("start-dashboard").style.display = configs.length > 0 ? '' : 'none';
+    });
 </script>

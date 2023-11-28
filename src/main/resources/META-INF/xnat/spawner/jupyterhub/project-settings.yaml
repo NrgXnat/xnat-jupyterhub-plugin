@@ -1,0 +1,41 @@
+dashboardsPrj:
+  kind: panel
+  name: dashboards
+  label: Dashboards
+  contents:
+    description:
+      tag: div.message
+      element:
+        style: "margin-bottom: 20px;"
+      contents:
+        "Dashboards are a way to deploy Jupyter notebooks (and other tools) as interactive web applications. Enable the dashboards you want to use in this project."
+    dashboardConfigsTable:
+      tag: "div#jupyterhub-dashboards-table"
+    dashboardScripts:
+      tag: script|src="~/scripts/xnat/plugin/jupyterhub/jupyterhub-dashboards.js"
+    renderDashboardConfigsTable:
+      tag: script
+      content: >
+        XNAT.plugin.jupyterhub.dashboards.configs.table('div#jupyterhub-dashboards-table', 'Project');
+
+#######################################################
+####  Root Project Settings Spawner Config Object  ####
+#######################################################
+
+projectSettings:
+  kind: tabs
+  name: jupyterhubProjectSettings
+  label: JupyterHub
+  meta:
+    tabGroups:
+      jupyterhubTabGroupPrj: JupyterHub
+  contains: tabs
+  tabs:
+    dashboardSettingsTabPrj:
+      kind: tab
+      name: dashboardSettingsTabPrj
+      label: Dashboards
+      group: jupyterhubTabGroupPrj
+      active: true
+      contents:
+        ${dashboardsPrj}
