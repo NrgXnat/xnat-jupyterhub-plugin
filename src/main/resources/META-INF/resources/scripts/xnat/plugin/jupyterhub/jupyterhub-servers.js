@@ -538,7 +538,7 @@ XNAT.compute.computeEnvironmentConfigs = getObject(XNAT.compute.computeEnvironme
                 content: spawn('form#server-start-request-form'),
                 maxBtn: true,
                 width: 400,
-                height: 200,
+                height: 400,
                 beforeShow: function(obj) {
                     const form = document.getElementById('server-start-request-form');
                     form.classList.add('panel');
@@ -548,13 +548,50 @@ XNAT.compute.computeEnvironmentConfigs = getObject(XNAT.compute.computeEnvironme
                         return;
                     }
 
+                    let xnatData = spawn('div.xnat-data', {
+                        style: {
+                            marginTop: '10px',
+                            marginBottom: '40px',
+                        }
+                    }, [
+                        spawn('h2', 'XNAT Data'),
+                        spawn('p.xnat-data-row.description', 'The following data will be available to your dashboard.'),
+                        spawn('p.xnat-data-row.project', [
+                            spawn('strong', 'Project '), projectId,
+                        ]),
+                        spawn('p.xnat-data-row.subject', [
+                            spawn('strong', 'Subject '), itemLabel,
+                        ]),
+                        spawn('p.xnat-data-row.experiment', [
+                            spawn('strong', 'Experiment '), itemLabel,
+                        ]),
+                    ]);
+
+                    xnatData.querySelectorAll('strong').forEach(s => {
+                        s.style.display = 'inline-block';
+                        s.style.width = '90px';
+                    });
+
+                    if (xsiType === 'xnat:projectData') {
+                        xnatData.querySelector('p.subject').remove();
+                        xnatData.querySelector('p.experiment').remove();
+                    } else if (xsiType === 'xnat:subjectData') {
+                        xnatData.querySelector('p.project').remove();
+                        xnatData.querySelector('p.experiment').remove();
+                    } else { // xsiType is an xnat:experimentData
+                        xnatData.querySelector('p.project').remove();
+                        xnatData.querySelector('p.subject').remove();
+                    }
+
                     let dashboardConfigSelect = spawn('div', [
+                        spawn('h2', 'Dashboard'),
+                        spawn('p.description', 'Select from the list of available dashboards.'),
                         spawn('div.form-group', [
                             spawn('select#dashboard-config', [
                                 spawn('option', {value: '', disabled: true, selected: true}, 'Select a dashboard'),
                                 ...dashboardConfigs.map(c => spawn('option', {value: c['id']}, c['dashboard']['name'])),
                             ]),
-                            spawn('div#dashboard-description.description', '')
+                            spawn('div#dashboard-description.description', ''),
                         ]),
                         spawn('input#hardware-config', {type: 'hidden', value: ''}),
                         spawn('input#compute-environment-config', {type: 'hidden', value: ''}),
@@ -574,6 +611,12 @@ XNAT.compute.computeEnvironmentConfigs = getObject(XNAT.compute.computeEnvironme
                             }
                             
                             div.form-group div.description {
+                                font-size: 1em;
+                                color: #555;
+                                font-weight: bold;
+                            }
+                            
+                            p.description {
                                 font-size: .9em;
                                 color: #777;
                             }
@@ -582,6 +625,7 @@ XNAT.compute.computeEnvironmentConfigs = getObject(XNAT.compute.computeEnvironme
                     ]);
 
                     form.appendChild(spawn('!', [
+                        xnatData,
                         dashboardConfigSelect
                     ]));
 
