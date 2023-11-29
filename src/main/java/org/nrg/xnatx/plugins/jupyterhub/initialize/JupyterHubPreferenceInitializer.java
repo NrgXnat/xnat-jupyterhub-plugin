@@ -12,6 +12,9 @@ import org.nrg.xnatx.plugins.jupyterhub.utils.XFTManagerHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.util.Collections;
+import java.util.Map;
+
 /**
  * This class is used to initialize JupyterHub plugin preferences.
  */
@@ -71,6 +74,7 @@ public class JupyterHubPreferenceInitializer extends AbstractInitializingTask {
         initializeInactivityTimeoutFromEnv();
         initializeMaxServerLifetimeFromEnv();
         initializeAllUsersCanStartJupyterFromEnv();
+        initializeDashboardFrameworks();
     }
 
     /**
@@ -291,6 +295,67 @@ public class JupyterHubPreferenceInitializer extends AbstractInitializingTask {
         } else {
             log.debug("JupyterHub All Users Can Start Jupyter environment variable not set. Skipping initialization.");
         }
+    }
+
+    protected void initializeDashboardFrameworks() {
+        Map<String, String> dashboardFrameworks = jupyterHubPreferences.getDashboardFrameworks();
+
+        if (!dashboardFrameworks.containsKey("Panel")) {
+            dashboardFrameworks.putAll(getPanelConfig());
+        }
+
+        if (!dashboardFrameworks.containsKey("Voila")) {
+            dashboardFrameworks.putAll(getVoilaConfig());
+        }
+
+        if (!dashboardFrameworks.containsKey("Streamlit")) {
+            dashboardFrameworks.putAll(getStreamlitConfig());
+        }
+
+        if (!dashboardFrameworks.containsKey("Dash")) {
+            dashboardFrameworks.putAll(getDashConfig());
+        }
+
+        jupyterHubPreferences.setDashboardFrameworks(dashboardFrameworks);
+    }
+
+    protected Map<String, String> getPanelConfig() {
+        return Collections.singletonMap("Panel", "jhsingle-native-proxy --port 8888 " +
+                "--destport 5006 " +
+                "--repo {repo} " +
+                "--repobranch {repobranch} " +
+                "--repofolder /home/jovyan/dashboards " +
+                "python3 {-}m bokeh_root_cmd.main /home/jovyan/dashboards/{mainFilePath} " +
+                "{--}port={port} {--}allow-websocket-origin={origin_host} " +
+                "{--}prefix={base_url} {--}server=panel " +
+                "--ready-check-path=/ready-check");
+    }
+
+    protected Map<String, String> getVoilaConfig() {
+        return Collections.singletonMap("Voila", "python3 -m jhsingle_native_proxy.main --destport 0 " +
+                "--repo {repo} " +
+                "--repobranch {repobranch} " +
+                "--repofolder /home/jovyan/dashboards " +
+                "python3 {-}m voila /home/jovyan/dashboards/{mainFilePath} {--}port {port} {--}no-browser " +
+                "{--}Voila.base_url={base_url}/ {--}Voila.server_url=/ {--}Voila.ip=0.0.0.0 " +
+                "{--}Voila.tornado_settings allow_origin={origin_host} --progressive");
+    }
+
+    protected Map<String, String> getStreamlitConfig() {
+        return Collections.singletonMap("Streamlit", "jhsingle-native-proxy --destport 8505 " +
+                "--repo {repo} " +
+                "--repobranch {repobranch} " +
+                "--repofolder /home/jovyan/dashboards streamlit run /home/jovyan/dashboards/{mainFilePath} " +
+                "{--}server.port {port} {--}server.headless True {--}server.fileWatcherType none");
+    }
+
+    protected Map<String, String> getDashConfig() {
+        return Collections.singletonMap("Dash", "jhsingle-native-proxy --port=8888 --destport=8050 " +
+                "--repo={repo} " +
+                "--repobranch={repobranch} " +
+                "--repofolder=/home/jovyan/dashboards " +
+                "plotlydash-tornado-cmd /home/jovyan/dashboards/{mainFilePath} " +
+                "{--}port={port} {--}ip 0.0.0.0");
     }
 
 }

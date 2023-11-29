@@ -296,6 +296,7 @@ public class DefaultUserOptionsService implements UserOptionsService {
         Map<Scope, String> executionScope = new HashMap<>();
         executionScope.put(Scope.Project, projectId);
         executionScope.put(Scope.User, user.getUsername());
+        executionScope.put(Scope.DataType, xsiType);
 
         JobTemplate jobTemplate;
 

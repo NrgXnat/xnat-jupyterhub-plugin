@@ -11,6 +11,7 @@ import org.nrg.xnat.compute.services.ConstraintConfigService;
 import org.nrg.xnat.compute.services.HardwareConfigService;
 import org.nrg.xnat.compute.services.impl.DefaultJobTemplateService;
 import org.nrg.xnatx.plugins.jupyterhub.models.DashboardConfig;
+import org.nrg.xnatx.plugins.jupyterhub.preferences.JupyterHubPreferences;
 import org.nrg.xnatx.plugins.jupyterhub.services.DashboardConfigService;
 import org.nrg.xnatx.plugins.jupyterhub.services.DashboardJobTemplateService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,15 +25,18 @@ public class DefaultDashboardJobTemplateService extends DefaultJobTemplateServic
 
     private final DashboardConfigService dashboardConfigService;
     private final ComputeEnvironmentConfigService computeEnvironmentConfigService;
+    private final JupyterHubPreferences jupyterHubPreferences;
 
     @Autowired
     public DefaultDashboardJobTemplateService(final ComputeEnvironmentConfigService computeEnvironmentConfigService,
                                               final HardwareConfigService hardwareConfigService,
                                               final ConstraintConfigService constraintConfigService,
-                                              final DashboardConfigService dashboardConfigService) {
+                                              final DashboardConfigService dashboardConfigService,
+                                              final JupyterHubPreferences jupyterHubPreferences) {
         super(computeEnvironmentConfigService, hardwareConfigService, constraintConfigService);
         this.dashboardConfigService = dashboardConfigService;
         this.computeEnvironmentConfigService = computeEnvironmentConfigService;
+        this.jupyterHubPreferences = jupyterHubPreferences;
     }
 
     @Override
@@ -108,9 +112,27 @@ public class DefaultDashboardJobTemplateService extends DefaultJobTemplateServic
         DashboardConfig dashboardConfig = dashboardConfigService.retrieve(dashboardConfigId).orElse(null);
 
         if (dashboardConfig != null &&
-            dashboardConfig.getDashboard() != null &&
-            StringUtils.isNotBlank(dashboardConfig.getDashboard().getCommand())) {
-            jobTemplate.getComputeEnvironment().setCommand(dashboardConfig.getDashboard().getCommand());
+            dashboardConfig.getDashboard() != null) {
+            final String framework = dashboardConfig.getDashboard().getFramework();
+            String command;
+
+            if (framework.equalsIgnoreCase("custom")) {
+                command = dashboardConfig.getDashboard().getCommand();
+            } else {
+                command = jupyterHubPreferences.getDashboardFrameworks().get(framework);
+                if (StringUtils.isBlank(command)) {
+                    log.error("Dashboard framework command not found for framework {}", framework);
+                    throw new RuntimeException("Dashboard framework command not found for framework " + framework);
+                }
+            }
+
+            command = command.replaceAll("\\{repo\\}", dashboardConfig.getDashboard().getGitRepoUrl())
+                             .replaceAll("\\{repobranch\\}", dashboardConfig.getDashboard().getGitRepoBranch())
+                             .replaceAll("\\{mainFilePath\\}", dashboardConfig.getDashboard().getMainFilePath());
+
+            if (!StringUtils.isBlank(command)) {
+                jobTemplate.getComputeEnvironment().setCommand(command);
+            }
         }
 
         return jobTemplate;
