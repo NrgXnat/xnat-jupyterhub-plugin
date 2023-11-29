@@ -70,7 +70,9 @@ XNAT.plugin.jupyterhub.dashboards.dataTypes = getObject(XNAT.plugin.jupyterhub.d
             });
 
             if (response.ok) {
-                return response.json();
+                const dashboardConfigs = await response.json();
+                dashboardConfigs.sort((a, b) => a.dashboard.name.localeCompare(b.dashboard.name));
+                return dashboardConfigs;
             } else {
                 throw new Error(`Failed to get dashboard configs`);
             }
@@ -765,7 +767,7 @@ XNAT.plugin.jupyterhub.dashboards.dataTypes = getObject(XNAT.plugin.jupyterhub.d
                         th: { className: 'left' },
                         apply: function () {
                             return spawn('div.left', [
-                                spawn('span', {}, `<b>${this.dashboard?.name}</b>: ${this.dashboard?.description}`)
+                                spawn('span', {}, `<b>${this.dashboard?.name}</b><br/>${this.dashboard?.description}`)
                             ]);
                         }
                     },
