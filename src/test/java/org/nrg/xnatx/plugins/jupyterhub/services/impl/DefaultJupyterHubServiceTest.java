@@ -439,7 +439,7 @@ public class DefaultJupyterHubServiceTest {
         // Verify user options are stored
         verify(mockUserOptionsService, times(1)).storeUserOptions(eq(user), eq(""), eq(XnatProjectdata.SCHEMA_ELEMENT_NAME),
                                                                   eq(projectId), eq(projectId), eq(computeEnvironmentConfigId),
-                                                                  eq(hardwareConfigId), , eq(eventTrackingId), );
+                                                                  eq(hardwareConfigId), isNull(), eq(eventTrackingId));
 
         // Verify JupyterHub start server request sent
         verify(mockJupyterHubClient, times(1)).startServer(eq(username), eq(""), any(UserOptions.class));
@@ -474,7 +474,7 @@ public class DefaultJupyterHubServiceTest {
         // Verify user options are stored
         verify(mockUserOptionsService, times(1)).storeUserOptions(eq(user), eq(""), eq(XnatProjectdata.SCHEMA_ELEMENT_NAME),
                                                                   eq(projectId), eq(projectId), eq(computeEnvironmentConfigId),
-                                                                  eq(hardwareConfigId), , eq(eventTrackingId), );
+                                                                  eq(hardwareConfigId), isNull(), eq(eventTrackingId));
 
         // Verify JupyterHub start server request sent
         verify(mockJupyterHubClient, times(1)).startServer(eq(username), eq(""), any(UserOptions.class));
@@ -511,7 +511,7 @@ public class DefaultJupyterHubServiceTest {
         // Verify user options are stored
         verify(mockUserOptionsService, times(1)).storeUserOptions(eq(user), eq(""), eq(XnatProjectdata.SCHEMA_ELEMENT_NAME),
                                                                   eq(projectId), eq(projectId), eq(computeEnvironmentConfigId),
-                                                                  eq(hardwareConfigId), , eq(eventTrackingId), );
+                                                                  eq(hardwareConfigId), isNull(), eq(eventTrackingId));
 
         // Verify JupyterHub start server request sent
         verify(mockJupyterHubClient, times(1)).startServer(eq(username), eq(""), any(UserOptions.class));

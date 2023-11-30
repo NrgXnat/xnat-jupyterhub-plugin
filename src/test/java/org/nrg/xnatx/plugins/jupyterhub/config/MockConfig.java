@@ -6,6 +6,7 @@ import org.nrg.framework.services.NrgEventServiceI;
 import org.nrg.framework.services.SerializerService;
 import org.nrg.framework.utilities.OrderedProperties;
 import org.nrg.xnat.compute.services.ComputeEnvironmentConfigService;
+import org.nrg.xnat.compute.services.ConstraintConfigService;
 import org.nrg.xnat.compute.services.HardwareConfigService;
 import org.nrg.xnat.compute.services.JobTemplateService;
 import org.nrg.prefs.services.NrgPreferenceService;
@@ -162,6 +163,11 @@ public class MockConfig {
     }
 
     @Bean
+    public ConstraintConfigService mockConstraintConfigService() {
+        return Mockito.mock(ConstraintConfigService.class);
+    }
+
+    @Bean
     public JobTemplateService mockJobTemplateService() {
         return Mockito.mock(JobTemplateService.class);
     }
@@ -169,5 +175,20 @@ public class MockConfig {
     @Bean
     public JupyterHubServiceAccountHelper mockJupyterHubServiceAccountHelper() {
         return Mockito.mock(JupyterHubServiceAccountHelper.class);
+    }
+
+    @Bean
+    public DashboardJobTemplateService mockDashboardJobTemplateService() {
+        return Mockito.mock(DashboardJobTemplateService.class);
+    }
+
+    @Bean
+    public DashboardFrameworkService mockDashboardFrameworkService() {
+        return Mockito.mock(DashboardFrameworkService.class);
+    }
+
+    @Bean
+    public DashboardConfigService mockDashboardConfigService() {
+        return Mockito.mock(DashboardConfigService.class);
     }
 }

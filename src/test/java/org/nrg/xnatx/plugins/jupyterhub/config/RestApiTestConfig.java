@@ -28,6 +28,7 @@ import static org.mockito.Mockito.when;
 @Configuration
 @Import({ObjectMapperConfig.class})
 public class RestApiTestConfig extends WebMvcConfigurerAdapter {
+
     @Bean
     @Qualifier("mockXnatAppInfo")
     public XnatAppInfo mockAppInfo() {

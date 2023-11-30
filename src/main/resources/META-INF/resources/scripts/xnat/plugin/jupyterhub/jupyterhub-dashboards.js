@@ -1,6 +1,7 @@
 /**
  * JupyterHub Dashboard Functions
  */
+console.debug('Loading jupyterhub-dashboards.js');
 
 var XNAT = getObject(XNAT || {});
 XNAT.app = getObject(XNAT.app || {});
@@ -10,6 +11,7 @@ XNAT.plugin.jupyterhub = getObject(XNAT.plugin.jupyterhub || {});
 XNAT.plugin.jupyterhub.dashboards = getObject(XNAT.plugin.jupyterhub.dashboards || {});
 XNAT.plugin.jupyterhub.dashboards.configs = getObject(XNAT.plugin.jupyterhub.dashboards.configs || {});
 XNAT.plugin.jupyterhub.dashboards.dataTypes = getObject(XNAT.plugin.jupyterhub.dashboards.dataTypes || {});
+XNAT.plugin.jupyterhub.dashboards.frameworks = getObject(XNAT.plugin.jupyterhub.dashboards.frameworks || {});
 
 (function(factory) {
     if (typeof define === 'function' && define.amd) {
@@ -328,6 +330,7 @@ XNAT.plugin.jupyterhub.dashboards.dataTypes = getObject(XNAT.plugin.jupyterhub.d
                                             })
                                         }
                                     }, [
+                                    //     TODO - Call API to get available frameworks
                                     spawn('option', { value: '', disabled: true, selected: true }, 'Select a dashboard framework'),
                                     spawn('option', { value: 'Voila', selected: framework.toLowerCase() === 'voila' }, 'Voila'),
                                     spawn('option', { value: 'Dash', selected: framework.toLowerCase() === 'dash' }, 'Dash'),
@@ -850,4 +853,362 @@ XNAT.plugin.jupyterhub.dashboards.dataTypes = getObject(XNAT.plugin.jupyterhub.d
             }
         }
     }
+
+    XNAT.plugin.jupyterhub.dashboards.frameworks = {
+        url: `/xapi/jupyterhub/dashboards/frameworks`,
+        get: async function (name) {
+            const url = XNAT.url.csrfUrl(`${this.url}/${name}`);
+
+            const response = await fetch(url, {
+                method: 'GET',
+                headers: {'Content-Type': 'application/json'}
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error getting dashboard framework ${name}: ${response.status}`);
+            }
+
+            return response.json();
+        },
+        getAll: async function () {
+            const url = XNAT.url.csrfUrl(this.url);
+
+            const response = await fetch(url, {
+                method: 'GET',
+                headers: {'Content-Type': 'application/json'}
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error getting dashboard frameworks: ${response.status}`);
+            }
+
+            let frameworks = await response.json();
+            frameworks.sort((a, b) => a.name.localeCompare(b.name));
+            return frameworks;
+        },
+        create: async function (framework) {
+            const url = XNAT.url.csrfUrl(this.url);
+
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(framework)
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error creating dashboard framework: ${response.status}`);
+            }
+
+            return response.json();
+        },
+        update: async function (name, framework) {
+            name = encodeURIComponent(name);
+            const url = XNAT.url.csrfUrl(`${this.url}/${name}`);
+
+            const response = await fetch(url, {
+                method: 'PUT',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(framework)
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error updating dashboard framework ${name}: ${response.status}`);
+            }
+
+            return response.json();
+        },
+        delete: async function (name) {
+            name = encodeURIComponent(name);
+            const url = XNAT.url.csrfUrl(`${this.url}/${name}`);
+
+            const response = await fetch(url, {
+                method: 'DELETE',
+                headers: {'Content-Type': 'application/json'}
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error deleting dashboard framework ${name}: ${response.status}`);
+            }
+        },
+        editor: async function(framework, action, onSaved) {
+            let isNew  = action === 'create',
+                isCopy = action === 'copy',
+                isEdit = action === 'edit',
+                title  = isNew || isCopy ? 'Add Dashboard Framework' : 'Edit Dashboard Framework';
+
+            XNAT.dialog.open({
+                title: title,
+                content: spawn('div.dashboard-framework-editor'),
+                width: 750,
+                maxBtn: true,
+                beforeShow: () => {
+                    // Create form
+                    const formContainer = document.querySelector(`.dashboard-framework-editor`);
+                    formContainer.classList.add('panel');
+
+                    framework = framework ? framework : {};
+
+                    let id = isNew || isCopy ? '' : framework?.id ?? '',
+                        name = isCopy ? '' : framework?.name ?? '',
+                        commandTemplate = framework?.commandTemplate ?? '';
+
+                    let form = spawn('form.dashboard-framework-edit-form', [
+                        spawn('style|type=text/css', `
+                            .panel .panel-element input[type="text"],
+                            .panel .panel-element select,
+                            .panel .panel-element textarea,
+                            .panel .panel-element .description  {
+                                width: 400px;
+                            }
+                            
+                            .panel .panel-element select[multiple] {
+                                max-width: 400px;
+                                height: 150px;
+                            }
+                            
+                            code {
+                                white-space: pre-wrap;
+                            }
+                        `),
+                        spawn('input#id', { type: 'hidden', value: id }),
+                        spawn('div.panel-element|data-name=name', [
+                            spawn('label.element-label|for=name', 'Name'),
+                            spawn('div.element-wrapper', [
+                                spawn(`input#name|type=text`, { value: name }),
+                                spawn('div.description', 'The name of the dashboard framework')
+                            ]),
+                            spawn('div.clear')
+                        ]),
+                        spawn('div.panel-element|data-name=command-template', [
+                            spawn('label.element-label|for=command-template', 'Command Template'),
+                            spawn('div.element-wrapper', [
+                                spawn(
+                                    `textarea#command-template|rows=10`,
+                                    { style: { fontFamily: 'sans-serif' } },
+                                    commandTemplate
+                                ),
+                                spawn('div.description',
+                                    'Enter a template for the command that will be executed to start the dashboard container. ' +
+                                    'Use the following placeholders to insert values into the command: ' +
+                                    '<ul><li><b>{repo}</b> - The URL of the Git repository</li><li><b>{repobranch}</b> - ' +
+                                    'The branch of the Git repository</li><li><b>{mainFilePath}</b> - The path to the' +
+                                    ' main file in the Git repository</li></ul>' +
+                                    'Use the <code>jh-single-native-proxy</code> command to start the dashboard. ' +
+                                    '</br></br>' +
+                                    'Example:</br>' +
+                                    '<code>' +
+                                    'jhsingle-native-proxy\n' +
+                                    '\t--destport 8505\n' +
+                                    '\t--repo {repo}\n' +
+                                    '\t--repobranch {repobranch}\n' +
+                                    '\t--repofolder /home/jovyan/dashboards\n' +
+                                    'streamlit run\n' +
+                                    '\t/home/jovyan/dashboards/{mainFilePath}\n' +
+                                    '\t{--}server.port {port}\n' +
+                                    '\t{--}server.headless True\n' +
+                                    '\t{--}server.fileWatcherType none' +
+                                    '</code>')
+                            ]),
+                            spawn('div.clear')
+                        ]),
+                    ]);
+
+                    formContainer.appendChild(form);
+                },
+                buttons: [
+                    {
+                        label: 'Cancel',
+                        isDefault: false,
+                        close: false,
+                        action: function () {
+                            XNAT.dialog.closeAll();
+                        }
+                    },
+                    {
+                        label: isNew || isCopy ? 'Add Framework' : 'Save Framework',
+                        isDefault: true,
+                        close: false,
+                        action: function (obj) {
+                            let form = document.querySelector('.dashboard-framework-edit-form');
+
+                            const validators = [];
+
+                            validators.push(
+                                XNAT.validate(form.querySelector('#name'))
+                                    .reset().chain()
+                                    .required()
+                                    .is('notEmpty')
+                                    .failure('Name is required')
+                            );
+
+                            validators.push(
+                                XNAT.validate(form.querySelector('#command-template'))
+                                    .reset().chain()
+                                    .required()
+                                    .is('notEmpty')
+                                    .failure('Command template is required')
+                            );
+
+                            let errorMessages = [];
+
+                            validators.forEach((validator) => {
+                                if (!validator.check()) {
+                                    validator.messages.forEach(message => errorMessages.push(message));
+                                }
+                            });
+
+                            if (errorMessages.length > 0) {
+                                XNAT.dialog.open({
+                                    title: 'Error',
+                                    width: 400,
+                                    content: '<ul><li>' + errorMessages.join('</li><li>') + '</li></ul>',
+                                })
+                                return;
+                            }
+
+                            const frameworkToSave = {
+                                id: form.querySelector('#id').value,
+                                name: form.querySelector('#name').value,
+                                commandTemplate: form.querySelector('#command-template').value
+                            };
+
+                            let response;
+                            if (isNew || isCopy) {
+                                response = XNAT.plugin.jupyterhub.dashboards.frameworks.create(frameworkToSave);
+                            } else if (isEdit) {
+                                response = XNAT.plugin.jupyterhub.dashboards.frameworks.update(framework['name'], frameworkToSave);
+                            }
+
+                            response.then(() => {
+                                XNAT.ui.banner.top(2000, 'Dashboard framework saved.');
+                                obj.close();
+                                if (onSaved) {
+                                    onSaved();
+                                }
+                            }).catch((error) => {
+                                XNAT.ui.banner.top(2000, 'Failed to save dashboard framework');
+                                console.error(error);
+                            });
+                        }
+                    }
+                ],
+            });
+        },
+        table: async function(querySelector) {
+            let container, footer;
+
+            const init = (querySelector) => {
+                container = document.querySelector(querySelector);
+                container.innerHTML = '<div class="loading"><i class="fa fa-spinner fa-spin"></i> Loading...</div>'
+
+                container.style.display = 'flex';
+                container.style.flexDirection = 'row';
+                container.style.justifyContent = 'center';
+
+                footer = container.closest('.panel').querySelector('.panel-footer');
+                footer.innerHTML = '';
+                footer.appendChild(newButton());
+
+                refresh();
+            }
+
+            const clear = () => {
+                container.innerHTML = '';
+            }
+
+            const refresh = async () => {
+                const frameworks = await XNAT.plugin.jupyterhub.dashboards.frameworks.getAll();
+
+                clear();
+
+                if (Object.keys(frameworks).length === 0) {
+                    container.innerHTML = `<div class="loading">No frameworks found</div>`;
+                } else {
+                    return table(frameworks);
+                }
+            }
+
+            const newButton = () => {
+                return  spawn('div', [
+                    spawn('div.pull-right', [
+                        spawn('button.btn.btn-sm', { html: 'Add Framework' , onclick: () => XNAT.plugin.jupyterhub.dashboards.frameworks.editor(null, 'create', refresh)}),
+                    ]),
+                    spawn('div.clear.clearFix')
+                ]);
+            }
+
+            const remove = async (name) => {
+                XNAT.dialog.open({
+                    title: 'Confirm',
+                    content: 'Are you sure you want to delete this dashboard framework?',
+                    width: 400,
+                    buttons: [
+                        {
+                            label: 'Cancel',
+                            isDefault: false,
+                            close: false,
+                            action: function () {
+                                XNAT.dialog.closeAll();
+                            }
+                        },
+                        {
+                            label: 'Delete',
+                            isDefault: true,
+                            close: false,
+                            action: function (obj) {
+                                XNAT.plugin.jupyterhub.dashboards.frameworks.delete(name).then(() => {
+                                    XNAT.ui.banner.top(2000, 'Dashboard framework deleted.', 'success');
+                                    refresh();
+                                    XNAT.dialog.closeAll();
+                                }).catch((error) => {
+                                    XNAT.ui.banner.top(2000, 'Failed to delete dashboard framework', 'error',);
+                                    console.error(error);
+                                });
+                            }
+                        }
+                    ]
+                });
+            }
+
+            const table = async (frameworks) => {
+                const tableColumns = {
+                    name: {
+                        label: 'Name',
+                        filter: true,
+                        th: { className: 'left' },
+                        apply: function () {
+                            return spawn('div.left', [
+                                spawn('span', {}, this['name'])
+                            ]);
+                        }
+                    },
+                    actions: {
+                        label: 'Actions',
+                        th: { style: { width: '150px' } },
+                        apply: function() {
+                            return spawn('div.center', [
+                                spawn('button.btn.btn-sm', { onclick: () => XNAT.plugin.jupyterhub.dashboards.frameworks.editor(this, 'edit', refresh) }, '<i class="fa fa-pencil" title="Edit"></i>'),
+                                spawn('span', { style: { display: 'inline-block', width: '4px' } }),
+                                spawn('button.btn.btn-sm', { onclick: () => XNAT.plugin.jupyterhub.dashboards.frameworks.editor(this, 'copy', refresh) }, '<i class="fa fa-clone" title="Duplicate"></i>'),
+                                spawn('span', { style: { display: 'inline-block', width: '4px' } }),
+                                spawn('button.btn.btn-sm', { onclick: () => remove(this['name'])}, '<i class="fa fa-trash" title="Delete"></i>')
+                            ]);
+                        }
+                    }
+                };
+
+                const table = XNAT.table.dataTable(frameworks, {
+                    header: true,
+                    sortable: 'name',
+                    columns: tableColumns
+                });
+
+                clear()
+                table.render(`${querySelector}`);
+            }
+
+            init(querySelector);
+        }
+    }
+
 }));

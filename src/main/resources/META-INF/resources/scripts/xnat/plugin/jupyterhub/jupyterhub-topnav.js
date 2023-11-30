@@ -123,7 +123,7 @@ XNAT.plugin.jupyterhub.topnav = getObject(XNAT.plugin.jupyterhub.topnav || {});
                             const eventTrackingId = XNAT.plugin.jupyterhub.servers.generateEventTrackingId()
                             XNAT.plugin.jupyterhub.servers.stopServer(window.username, server['name'], eventTrackingId).then(() => {
                                 XNAT.app.activityTab.start(
-                                    'Stop Jupyter Notebook Server',
+                                    'Stop Jupyter Notebook Server', // TODO - Stop Jupyter Notebook Server vs Stop Dashboard
                                     eventTrackingId,
                                     'XNAT.plugin.jupyterhub.servers.activityTabCallback',
                                     2000);

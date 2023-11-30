@@ -10,35 +10,49 @@ import org.nrg.xnat.compute.services.ComputeEnvironmentConfigService;
 import org.nrg.xnat.compute.services.ConstraintConfigService;
 import org.nrg.xnat.compute.services.HardwareConfigService;
 import org.nrg.xnat.compute.services.impl.DefaultJobTemplateService;
+import org.nrg.xnatx.plugins.jupyterhub.models.Dashboard;
 import org.nrg.xnatx.plugins.jupyterhub.models.DashboardConfig;
-import org.nrg.xnatx.plugins.jupyterhub.preferences.JupyterHubPreferences;
 import org.nrg.xnatx.plugins.jupyterhub.services.DashboardConfigService;
+import org.nrg.xnatx.plugins.jupyterhub.services.DashboardFrameworkService;
 import org.nrg.xnatx.plugins.jupyterhub.services.DashboardJobTemplateService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.Map;
 
+/**
+ * This works in conjunction with the JobTemplateService to resolve a job template for a dashboard config. Dashboards
+ * availability is handled separately from compute environment and hardware availability checks. Any compute environment
+ * and hardware can be used for a dashboard as long as the dashboard config is available to the given execution scope.
+ */
 @Service
 @Slf4j
 public class DefaultDashboardJobTemplateService extends DefaultJobTemplateService implements DashboardJobTemplateService {
 
     private final DashboardConfigService dashboardConfigService;
     private final ComputeEnvironmentConfigService computeEnvironmentConfigService;
-    private final JupyterHubPreferences jupyterHubPreferences;
+    private final DashboardFrameworkService dashboardFrameworkService;
 
     @Autowired
     public DefaultDashboardJobTemplateService(final ComputeEnvironmentConfigService computeEnvironmentConfigService,
                                               final HardwareConfigService hardwareConfigService,
                                               final ConstraintConfigService constraintConfigService,
                                               final DashboardConfigService dashboardConfigService,
-                                              final JupyterHubPreferences jupyterHubPreferences) {
+                                              final DashboardFrameworkService dashboardFrameworkService) {
         super(computeEnvironmentConfigService, hardwareConfigService, constraintConfigService);
         this.dashboardConfigService = dashboardConfigService;
         this.computeEnvironmentConfigService = computeEnvironmentConfigService;
-        this.jupyterHubPreferences = jupyterHubPreferences;
+        this.dashboardFrameworkService = dashboardFrameworkService;
     }
 
+    /**
+     * Override the availability check for a compute environment and hardware config. They are always available for a
+     * dashboard config.
+     * @param computeEnvironmentConfigId the compute environment config id
+     * @param hardwareConfigId           the hardware config id
+     * @param executionScope             the execution scope to verify the compute environment config and hardware are
+     * @return True if the compute environment and hardware are available, false otherwise
+     */
     @Override
     public boolean isAvailable(Long computeEnvironmentConfigId, Long hardwareConfigId, Map<Scope, String> executionScope) {
         // For dashboard, availability is stored in the dashboard config. Override the compute environment and hardware
@@ -47,12 +61,28 @@ public class DefaultDashboardJobTemplateService extends DefaultJobTemplateServic
         return true;
     }
 
+    /**
+     * Resolve a job template for a dashboard config. The command is taken from the dashboard config. The variables
+     * @param computeEnvironmentConfigId the compute environment config id
+     * @param hardwareConfigId           the hardware config id
+     * @param executionScope             the execution scope to verify the compute environment config and hardware are
+     *                                   available
+     * @return
+     */
     @Override
     public JobTemplate resolve(Long computeEnvironmentConfigId, Long hardwareConfigId, Map<Scope, String> executionScope) {
         // Should resolve the job template and override the compute environment and hardware availability checks.
         return super.resolve(computeEnvironmentConfigId, hardwareConfigId, executionScope);
     }
 
+    /**
+     * Check if a dashboard config is available given the execution scope (site, project, datatype,  ...). The dashboard config
+     * @param dashboardConfigId The ID of the dashboard config to check availability for
+     * @param computeEnvironmentConfigId The ID of the compute environment config to check availability for
+     * @param hardwareConfigId The ID of the hardware config to check availability for
+     * @param executionScope The execution scope to check availability for
+     * @return True if the dashboard config is available, false otherwise
+     */
     @Override
     public boolean isAvailable(Long dashboardConfigId, Long computeEnvironmentConfigId, Long hardwareConfigId, Map<Scope, String> executionScope) {
         // Check if the dashboard config is available given the execution scope (site, project, ...)
@@ -70,7 +100,7 @@ public class DefaultDashboardJobTemplateService extends DefaultJobTemplateServic
             dashboardConfig.getComputeEnvironmentConfig().getId() == null ||
             dashboardConfig.getHardwareConfig() == null ||
             dashboardConfig.getHardwareConfig().getId() == null) {
-            return false;
+            throw new IllegalArgumentException("DashboardConfig, ComputeEnvironmentConfig, and/or HardwareConfig ids must be specified");
         }
 
         boolean isComputeEnvironmentConfigAvailable = dashboardConfig.getComputeEnvironmentConfig().getId().equals(computeEnvironmentConfigId);
@@ -95,6 +125,14 @@ public class DefaultDashboardJobTemplateService extends DefaultJobTemplateServic
                                        .anyMatch(id -> id.equals(hardwareConfigId));
     }
 
+    /**
+     * Resolve a job template for a dashboard config. The command is taken from the dashboard config. The variables
+     * @param dashboardConfigId The ID of the dashboard config to resolve the job template for
+     * @param computeEnvironmentConfigId The ID of the compute environment config to resolve the job template for
+     * @param hardwareConfigId The ID of the hardware config to resolve the job template for
+     * @param executionScope The execution scope to resolve the job template for
+     * @return The resolved job template
+     */
     @Override
     public JobTemplate resolve(Long dashboardConfigId, Long computeEnvironmentConfigId, Long hardwareConfigId, Map<Scope, String> executionScope) {
         if (dashboardConfigId == null || computeEnvironmentConfigId == null || hardwareConfigId == null) {
@@ -105,30 +143,16 @@ public class DefaultDashboardJobTemplateService extends DefaultJobTemplateServic
             throw new IllegalArgumentException("DashboardConfig, ComputeEnvironmentConfig, and HardwareConfig are not available");
         }
 
-        // Use the super resolve method to resolve the job template
-        JobTemplate jobTemplate = super.resolve(computeEnvironmentConfigId, hardwareConfigId, executionScope);
+        JobTemplate jobTemplate = resolve(computeEnvironmentConfigId, hardwareConfigId, executionScope);
 
         // Override the command in the job template with the command from the dashboard config
         DashboardConfig dashboardConfig = dashboardConfigService.retrieve(dashboardConfigId).orElse(null);
 
         if (dashboardConfig != null &&
             dashboardConfig.getDashboard() != null) {
-            final String framework = dashboardConfig.getDashboard().getFramework();
-            String command;
 
-            if (framework.equalsIgnoreCase("custom")) {
-                command = dashboardConfig.getDashboard().getCommand();
-            } else {
-                command = jupyterHubPreferences.getDashboardFrameworks().get(framework);
-                if (StringUtils.isBlank(command)) {
-                    log.error("Dashboard framework command not found for framework {}", framework);
-                    throw new RuntimeException("Dashboard framework command not found for framework " + framework);
-                }
-            }
-
-            command = command.replaceAll("\\{repo\\}", dashboardConfig.getDashboard().getGitRepoUrl())
-                             .replaceAll("\\{repobranch\\}", dashboardConfig.getDashboard().getGitRepoBranch())
-                             .replaceAll("\\{mainFilePath\\}", dashboardConfig.getDashboard().getMainFilePath());
+            Dashboard dashboard = dashboardConfig.getDashboard();
+            String command = dashboardFrameworkService.resolveCommand(dashboard);
 
             if (!StringUtils.isBlank(command)) {
                 jobTemplate.getComputeEnvironment().setCommand(command);
