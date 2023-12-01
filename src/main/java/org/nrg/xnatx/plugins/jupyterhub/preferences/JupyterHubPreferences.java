@@ -33,10 +33,6 @@ public class JupyterHubPreferences extends AbstractPreferenceBean {
     public static final String RESOURCE_SPEC_MEM_RESERVATION_PREF_ID = "resourceSpecMemReservation";
     public static final String INACTIVITY_TIMEOUT_PREF_ID = "inactivityTimeout";
     public static final String MAX_SERVER_LIFETIME_PREF_ID = "maxServerLifetime";
-    public static final String DASHBOARD_FRAMEWORKS_PREF_ID = "dashboardFrameworks";
-
-    // Dashboard preferences
-    public static final String DASHBOARD_FRAMEWORK_PORTS_PREF_ID = "dashboardFrameworkPorts";
 
     @Autowired
     protected JupyterHubPreferences(NrgPreferenceService preferenceService, ConfigPaths configFolderPaths, OrderedProperties initPrefs) {
@@ -348,36 +344,6 @@ public class JupyterHubPreferences extends AbstractPreferenceBean {
             setBooleanValue(allUsersCanStartJupyter, ALL_USERS_JUPYTER);
         } catch (InvalidPreferenceName e) {
             log.error("Invalid preference name 'allUsersCanStartJupyter': something is very wrong here.", e);
-        }
-    }
-
-    @NrgPreference(defaultValue = "{\"streamlit\": \"8501\", \"panel\": \"5006\", \"dash\": \"8050\", \"voila\": \"8866\"}")
-    public Map<String, String> getDashboardFrameworkPorts() {
-        return getMapValue(DASHBOARD_FRAMEWORK_PORTS_PREF_ID);
-    }
-
-    public void setDashboardFrameworkPorts(final Map<String, String> dashboardFrameworkPorts) {
-        try {
-            setMapValue(DASHBOARD_FRAMEWORK_PORTS_PREF_ID, dashboardFrameworkPorts);
-        } catch (InvalidPreferenceName e) {
-            log.error("Invalid preference name 'dashboardFrameworkPorts': something is very wrong here.", e);
-        }
-    }
-
-    /**
-     * Map from framework name to framework start command
-     * @return
-     */
-    @NrgPreference(defaultValue = "")
-    public Map<String, String> getDashboardFrameworks() {
-        return getMapValue(DASHBOARD_FRAMEWORKS_PREF_ID);
-    }
-
-    public void setDashboardFrameworks(final Map<String, String> dashboardFrameworks) {
-        try {
-            setMapValue(DASHBOARD_FRAMEWORKS_PREF_ID, dashboardFrameworks);
-        } catch (InvalidPreferenceName e) {
-            log.error("Invalid preference name 'dashboardFrameworks': something is very wrong here.", e);
         }
     }
 

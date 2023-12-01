@@ -127,10 +127,6 @@ public class JupyterHubPreferencesApi extends AbstractXapiRestController {
                 value = jupyterHubPreferences.getJupyterHubHostUrl();
                 break;
             }
-            case (JupyterHubPreferences.DASHBOARD_FRAMEWORK_PORTS_PREF_ID): {
-                value = jupyterHubPreferences.getDashboardFrameworkPorts();
-                break;
-            }
             default:
                 value = jupyterHubPreferences.get(preference);
         }
