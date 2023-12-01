@@ -14,7 +14,6 @@ public class Dashboard {
     private String name;
     private String description;
     private String framework;
-    private Integer port; // TODO - DELETE THIS
     private String command;
     private String fileSource;
     private String gitRepoUrl;

@@ -12,9 +12,6 @@ import org.nrg.xnatx.plugins.jupyterhub.utils.XFTManagerHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.util.Collections;
-import java.util.Map;
-
 /**
  * This class is used to initialize JupyterHub plugin preferences.
  */
