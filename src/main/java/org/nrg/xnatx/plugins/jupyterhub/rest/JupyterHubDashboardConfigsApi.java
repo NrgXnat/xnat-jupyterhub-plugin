@@ -34,7 +34,7 @@ public class JupyterHubDashboardConfigsApi extends AbstractXapiRestController {
     private final DashboardConfigService dashboardConfigService;
 
     @Autowired
-    protected JupyterHubDashboardConfigsApi(final UserManagementServiceI userManagementService,
+    public JupyterHubDashboardConfigsApi(final UserManagementServiceI userManagementService,
                                      final RoleHolder roleHolder,
                                      final DashboardConfigService dashboardConfigService) {
         super(userManagementService, roleHolder);
