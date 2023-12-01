@@ -27,7 +27,7 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 @Api("JupyterHub Dashboard Configs API")
 @XapiRestController
-@RequestMapping("/jupyterhub/dashboard-configs")
+@RequestMapping("/jupyterhub/dashboards/configs")
 @Slf4j
 public class JupyterHubDashboardConfigsApi extends AbstractXapiRestController {
 

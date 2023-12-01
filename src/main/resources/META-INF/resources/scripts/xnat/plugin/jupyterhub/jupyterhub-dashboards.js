@@ -42,7 +42,7 @@ XNAT.plugin.jupyterhub.dashboards.frameworks = getObject(XNAT.plugin.jupyterhub.
     }
 
     XNAT.plugin.jupyterhub.dashboards.configs = {
-        url: `/xapi/jupyterhub/dashboard-configs`,
+        url: `/xapi/jupyterhub/dashboards/configs`,
         get: async function (id) {
             const url = XNAT.url.csrfUrl(`${this.url}/${id}`);
 
