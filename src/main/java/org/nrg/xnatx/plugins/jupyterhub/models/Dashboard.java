@@ -11,7 +11,6 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class Dashboard {
 
-    private Long id;
     private String name;
     private String description;
     private String framework;

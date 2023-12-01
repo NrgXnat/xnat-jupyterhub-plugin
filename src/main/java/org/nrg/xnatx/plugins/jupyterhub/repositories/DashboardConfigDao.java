@@ -2,6 +2,7 @@ package org.nrg.xnatx.plugins.jupyterhub.repositories;
 
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.Hibernate;
+import org.hibernate.SessionFactory;
 import org.nrg.framework.orm.hibernate.AbstractHibernateDAO;
 import org.nrg.xnat.compute.repositories.ComputeEnvironmentConfigDao;
 import org.nrg.xnat.compute.repositories.HardwareConfigDao;
@@ -16,6 +17,15 @@ public class DashboardConfigDao extends AbstractHibernateDAO<DashboardConfigEnti
 
     private final ComputeEnvironmentConfigDao computeEnvironmentConfigDao;
     private final HardwareConfigDao hardwareConfigDao;
+
+    // For testing
+    public DashboardConfigDao(final SessionFactory sessionFactory,
+                              final ComputeEnvironmentConfigDao computeEnvironmentConfigDao,
+                              final HardwareConfigDao hardwareConfigDao) {
+        super(sessionFactory);
+        this.computeEnvironmentConfigDao = computeEnvironmentConfigDao;
+        this.hardwareConfigDao = hardwareConfigDao;
+    }
 
     @Autowired
     public DashboardConfigDao(final ComputeEnvironmentConfigDao computeEnvironmentConfigDao,

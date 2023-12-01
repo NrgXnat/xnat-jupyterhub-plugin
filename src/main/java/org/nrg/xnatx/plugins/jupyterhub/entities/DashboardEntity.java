@@ -23,7 +23,6 @@ public class DashboardEntity extends AbstractHibernateEntity {
     private String name;
     private String description;
     private String framework;
-    private Integer port;
     private String command;
     private String fileSource;
     private String gitRepoUrl;
@@ -55,14 +54,6 @@ public class DashboardEntity extends AbstractHibernateEntity {
 
     public void setFramework(String framework) {
         this.framework = framework;
-    }
-
-    public Integer getPort() {
-        return port;
-    }
-
-    public void setPort(Integer port) {
-        this.port = port;
     }
 
     @Column(length = 4096)
@@ -124,11 +115,9 @@ public class DashboardEntity extends AbstractHibernateEntity {
 
     public Dashboard toPojo() {
         return Dashboard.builder()
-                        .id(this.getId())
                         .name(this.getName())
                         .description(this.getDescription())
                         .framework(this.getFramework())
-                        .port(this.getPort())
                         .command(this.getCommand())
                         .fileSource(this.getFileSource())
                         .gitRepoUrl(this.getGitRepoUrl())
@@ -142,7 +131,6 @@ public class DashboardEntity extends AbstractHibernateEntity {
         this.setName(pojo.getName());
         this.setDescription(pojo.getDescription());
         this.setFramework(pojo.getFramework());
-        this.setPort(pojo.getPort());
         this.setCommand(pojo.getCommand());
         this.setFileSource(pojo.getFileSource());
         this.setGitRepoUrl(pojo.getGitRepoUrl());

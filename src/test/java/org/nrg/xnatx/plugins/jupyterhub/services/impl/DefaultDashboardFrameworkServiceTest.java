@@ -188,7 +188,6 @@ public class DefaultDashboardFrameworkServiceTest {
     public void test_resolve() {
         // Setup
         Dashboard dashboard = Dashboard.builder()
-                                       .id(1L)
                                        .name("Test Dashboard")
                                        .description("Test dashboard description")
                                        .framework("Panel")

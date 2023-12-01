@@ -7,8 +7,16 @@ import org.nrg.xnatx.plugins.jupyterhub.repositories.DashboardConfigDao;
 import org.nrg.xnatx.plugins.jupyterhub.services.DashboardConfigEntityService;
 import org.springframework.stereotype.Service;
 
+import javax.transaction.Transactional;
+
 @Service
 @Slf4j
 public class HibernateDashboardConfigEntityService extends AbstractHibernateEntityService<DashboardConfigEntity, DashboardConfigDao> implements DashboardConfigEntityService {
+
+    // For testing
+    public HibernateDashboardConfigEntityService(final DashboardConfigDao dao) {
+        super();
+        setDao(dao);
+    }
 
 }

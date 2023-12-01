@@ -18,7 +18,10 @@ import org.nrg.xnatx.plugins.jupyterhub.services.DashboardConfigService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -114,10 +117,13 @@ public class DefaultDashboardConfigService implements DashboardConfigService {
     public DashboardConfig update(DashboardConfig dashboardConfig) throws NotFoundException {
         // Validate
         if (dashboardConfig == null) {
+            // Can't check ID if null
             throw new IllegalArgumentException("Dashboard config cannot be null");
         } else if (dashboardConfig.getId() == null) {
+            // ID is required for update, but not create
             throw new IllegalArgumentException("Dashboard config id cannot be null");
         } else if (!exists(dashboardConfig.getId())) {
+            // Can't update a dashboard config that doesn't exist
             throw new NotFoundException("Dashboard config not found");
         }
 
@@ -233,7 +239,7 @@ public class DefaultDashboardConfigService implements DashboardConfigService {
             throw new IllegalArgumentException("Dashboard config does not exist");
         }
 
-        // Enable the site scope
+        // Disable the site scope
         final DashboardConfig config = dashboardConfig.get();
         config.getScopes().get(Scope.Site).setEnabled(false);
 
@@ -250,7 +256,7 @@ public class DefaultDashboardConfigService implements DashboardConfigService {
             throw new IllegalArgumentException("Dashboard config does not exist");
         }
 
-        // Enable the site scope
+        // Enable for the project
         final DashboardConfig config = dashboardConfig.get();
         config.getScopes().get(Scope.Project).getIds().add(projectId);
 
@@ -267,7 +273,7 @@ public class DefaultDashboardConfigService implements DashboardConfigService {
             throw new IllegalArgumentException("Dashboard config does not exist");
         }
 
-        // Enable the site scope
+        // Disable for the project
         final DashboardConfig config = dashboardConfig.get();
         config.getScopes().get(Scope.Project).getIds().remove(projectId);
 
@@ -307,7 +313,7 @@ public class DefaultDashboardConfigService implements DashboardConfigService {
      * @param dashboard The dashboard to validate
      * @return A list of errors, if any
      */
-    private List<String> validate(final Dashboard dashboard) {
+    protected List<String> validate(final Dashboard dashboard) {
         List<String> errors = new ArrayList<>();
 
         if (dashboard == null) {
@@ -330,7 +336,7 @@ public class DefaultDashboardConfigService implements DashboardConfigService {
      *               Must contain a site, project, and data type scope
      * @return A list of errors, if any
      */
-    private List<String> validate(final Map<Scope, DashboardScope> scopes) {
+    protected List<String> validate(final Map<Scope, DashboardScope> scopes) {
         List<String> errors = new ArrayList<>();
 
         if (scopes == null) {

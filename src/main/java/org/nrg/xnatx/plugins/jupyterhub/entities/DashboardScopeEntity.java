@@ -106,7 +106,7 @@ public class DashboardScopeEntity {
         return DashboardScope.builder()
                              .scope(Scope.valueOf(this.getScope()))
                              .enabled(this.isEnabled())
-                             .ids(this.getIds())
+                             .ids(new HashSet<>(this.getIds()))
                              .build();
     }
 
