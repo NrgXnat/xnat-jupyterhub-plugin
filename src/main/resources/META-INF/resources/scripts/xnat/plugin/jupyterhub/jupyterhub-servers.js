@@ -329,7 +329,7 @@ XNAT.compute.computeEnvironmentConfigs = getObject(XNAT.compute.computeEnvironme
                         beforeSend: function () {
                             XNAT.app.activityTab.start(
                                 'Start Jupyter Notebook Server' +
-                                `<div class="actions"><a id="open-nb-${eventTrackingId}" class="icn open" style="display: none;"><i class="fa fa-book"></i></a>`,
+                                `<div class="actions"><a id="open-nb-${eventTrackingId}" class="icn open" style="display: none;"><i class="fa fa-external-link"></i></a>`,
                                 eventTrackingId,
                                 'XNAT.plugin.jupyterhub.servers.activityTabCallback', 1000);
                         },
@@ -517,7 +517,7 @@ XNAT.compute.computeEnvironmentConfigs = getObject(XNAT.compute.computeEnvironme
                         beforeSend: function () {
                             XNAT.app.activityTab.start(
                                 'Start Dashboard' +
-                                `<div class="actions"><a id="open-nb-${eventTrackingId}" class="icn open" style="display: none;"><i class="fa fa-book"></i></a>`,
+                                `<div class="actions"><a id="open-nb-${eventTrackingId}" class="icn open" style="display: none;"><i class="fa fa-external-link"></i></a>`,
                                 eventTrackingId,
                                 'XNAT.plugin.jupyterhub.servers.activityTabCallback', 1000);
                         },

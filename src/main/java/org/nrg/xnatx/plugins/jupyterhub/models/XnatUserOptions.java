@@ -23,6 +23,7 @@ public class XnatUserOptions implements UserOptions {
     private String itemLabel;
     private String projectId;
     private String eventTrackingId;
+    private Long dashboardConfigId;
 
     @JsonProperty("task_template") private TaskTemplate taskTemplate;
 

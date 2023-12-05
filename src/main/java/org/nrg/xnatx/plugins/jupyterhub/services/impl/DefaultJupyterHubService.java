@@ -252,6 +252,7 @@ public class DefaultJupyterHubService implements JupyterHubService {
                                                      .itemLabel(itemLabel)
                                                      .projectId(projectId)
                                                      .eventTrackingId(eventTrackingId)
+                                                     .dashboardConfigId(dashboardConfigId)
                                                      .build());
 
                 eventService.triggerEvent(JupyterServerEvent.progress(eventTrackingId, user.getID(), xsiType, itemId,
