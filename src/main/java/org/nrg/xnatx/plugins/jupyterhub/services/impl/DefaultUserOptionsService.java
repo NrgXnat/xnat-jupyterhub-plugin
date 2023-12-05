@@ -504,6 +504,7 @@ public class DefaultUserOptionsService implements UserOptionsService {
 
         // Build container spec for the task template
         containerSpec.setImage(computeEnvironment.getImage());
+        containerSpec.setCommand(computeEnvironment.getCommand());
 
         // Add environment variables from compute environment and hardware
         Map<String, String> environmentVariables = new HashMap<>();
