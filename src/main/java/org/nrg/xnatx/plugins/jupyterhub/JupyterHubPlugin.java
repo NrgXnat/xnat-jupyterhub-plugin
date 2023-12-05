@@ -63,4 +63,9 @@ public class JupyterHubPlugin {
         return new TriggerTask(jupyterHubService::cullLongRunningServers, new PeriodicTrigger(5, TimeUnit.MINUTES));
     }
 
+    @Bean
+    public TriggerTask cullDeadServerSharedFolders(final JupyterHubService jupyterHubService) {
+        return new TriggerTask(jupyterHubService::cleanupOrphanedSharedDataDirs, new PeriodicTrigger(1, TimeUnit.DAYS));
+    }
+
 }

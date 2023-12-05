@@ -33,6 +33,8 @@ public class JupyterHubPreferences extends AbstractPreferenceBean {
     public static final String RESOURCE_SPEC_MEM_RESERVATION_PREF_ID = "resourceSpecMemReservation";
     public static final String INACTIVITY_TIMEOUT_PREF_ID = "inactivityTimeout";
     public static final String MAX_SERVER_LIFETIME_PREF_ID = "maxServerLifetime";
+    public static final String SHARED_PROJECT_STRING = "jupyter-notebooks";
+
 
     @Autowired
     protected JupyterHubPreferences(NrgPreferenceService preferenceService, ConfigPaths configFolderPaths, OrderedProperties initPrefs) {

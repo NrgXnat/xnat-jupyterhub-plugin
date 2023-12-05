@@ -25,7 +25,7 @@ public class User {
     private String server; // Default, unnamed server
     private String pending;
 
-    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSSSSX", timezone = "UTC")
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss[.SSSSSS]X", timezone = "UTC")
     private ZonedDateTime last_activity;
 
     // Servername -> Server
