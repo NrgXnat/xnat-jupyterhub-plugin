@@ -325,8 +325,6 @@ public class DefaultDashboardConfigService implements DashboardConfigService {
             errors.add("Dashboard name cannot be blank");
         }
 
-        // TODO: Anything else to validate in the dashboard?
-
         return errors;
     }
 

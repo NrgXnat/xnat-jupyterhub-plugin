@@ -471,46 +471,12 @@ XNAT.plugin.jupyterhub.dashboards.frameworks = getObject(XNAT.plugin.jupyterhub.
                             );
 
                             validators.push(
-                                XNAT.validate(form.querySelector('#git-repo-url'))
-                                    .reset().chain()
-                                    .required()
-                                    .is('notEmpty')
-                                    .failure('Git Repo URL is required')
-                            );
-
-                            validators.push(
-                                XNAT.validate(form.querySelector('#git-repo-branch'))
-                                    .reset().chain()
-                                    .required()
-                                    .is('notEmpty')
-                                    .failure('Branch is required')
-                            );
-
-                            validators.push(
-                                XNAT.validate(form.querySelector('#main-file-path'))
-                                    .reset().chain()
-                                    .required()
-                                    .is('notEmpty')
-                                    .failure('Main File Path is required')
-                            );
-
-                            validators.push(
                                 XNAT.validate(form.querySelector('#framework'))
                                     .reset().chain()
                                     .required()
                                     .is('notEmpty')
                                     .failure('Framework is required')
                             );
-
-                            if (form.querySelector('#framework').value.toLowerCase() === 'custom') {
-                                validators.push(
-                                    XNAT.validate(form.querySelector('#command'))
-                                        .reset().chain()
-                                        .required()
-                                        .is('notEmpty')
-                                        .failure('Command is required')
-                                );
-                            }
 
                             validators.push(
                                 XNAT.validate(form.querySelector('#jupyter-environment'))
