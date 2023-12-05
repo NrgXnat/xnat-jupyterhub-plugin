@@ -126,7 +126,7 @@ public class DefaultDashboardFrameworkService implements DashboardFrameworkServi
     public String resolveCommand(Dashboard dashboard) {
         String command;
 
-        if (StringUtils.isBlank(dashboard.getFramework()) || dashboard.getFramework().equals("custom")) {
+        if (StringUtils.isBlank(dashboard.getFramework()) || dashboard.getFramework().equalsIgnoreCase("custom")) {
             command = dashboard.getCommand();
         } else {
             final DashboardFramework framework = get(dashboard.getFramework()).orElseThrow(() -> new IllegalArgumentException("DashboardFramework " + dashboard.getFramework() + " does not exist"));
