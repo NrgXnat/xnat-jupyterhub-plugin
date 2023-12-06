@@ -443,12 +443,12 @@ XNAT.plugin.jupyterhub.dashboards.frameworks = getObject(XNAT.plugin.jupyterhub.
                             option.text = 'Custom';
                             option.selected = dashboardConfig?.dashboard?.framework === 'Custom';
                             frameworksSelector.add(option);
-                        });
 
-                        // Trigger change event to populate custom command if framework is already selected (i.e. editing)
-                        if (framework) {
-                            document.querySelector('#framework').dispatchEvent(new Event('change'));
-                        }
+                            // Trigger change event to populate custom command if framework is already selected (i.e. editing)
+                            if (framework) {
+                                document.querySelector('#framework').dispatchEvent(new Event('change'));
+                            }
+                        });
 
                         // Add data types
                         let dataTypesSelector = document.querySelector('#data-types');
