@@ -332,11 +332,11 @@ XNAT.plugin.jupyterhub.dashboards.frameworks = getObject(XNAT.plugin.jupyterhub.
                                     }, [
                                     //     TODO - Call API to get available frameworks
                                     spawn('option', { value: '', disabled: true, selected: true }, 'Select a dashboard framework'),
-                                    spawn('option', { value: 'Voila', selected: framework.toLowerCase() === 'voila' }, 'Voila'),
-                                    spawn('option', { value: 'Dash', selected: framework.toLowerCase() === 'dash' }, 'Dash'),
-                                    spawn('option', { value: 'Streamlit', selected: framework.toLowerCase() === 'streamlit' }, 'Streamlit'),
-                                    spawn('option', { value: 'Panel', selected: framework.toLowerCase() === 'panel' }, 'Panel'),
-                                    spawn('option', { value: 'Custom', selected: framework.toLowerCase() === 'custom' }, 'Custom')
+                                    // spawn('option', { value: 'Voila', selected: framework.toLowerCase() === 'voila' }, 'Voila'),
+                                    // spawn('option', { value: 'Dash', selected: framework.toLowerCase() === 'dash' }, 'Dash'),
+                                    // spawn('option', { value: 'Streamlit', selected: framework.toLowerCase() === 'streamlit' }, 'Streamlit'),
+                                    // spawn('option', { value: 'Panel', selected: framework.toLowerCase() === 'panel' }, 'Panel'),
+                                    // spawn('option', { value: 'Custom', selected: framework.toLowerCase() === 'custom' }, 'Custom')
                                 ]),
                                 spawn('div.description', '')
                             ]),
@@ -425,6 +425,25 @@ XNAT.plugin.jupyterhub.dashboards.frameworks = getObject(XNAT.plugin.jupyterhub.
                         if (computeEnvironmentId) {
                             computeEnvironments.dispatchEvent(new Event('change'));
                         }
+
+                        // Add dashboard frameworks
+                        let frameworksSelector = document.querySelector('#framework');
+                        XNAT.plugin.jupyterhub.dashboards.frameworks.getAll().then((frameworks) => {
+                            frameworks.forEach((framework) => {
+                                let option = document.createElement('option');
+                                option.value = framework['name'];
+                                option.text = framework['name'];
+                                option.selected = dashboardConfig?.dashboard?.framework === framework['name'];
+                                frameworksSelector.add(option);
+                            })
+
+                            // Add Custom option
+                            let option = document.createElement('option');
+                            option.value = 'Custom';
+                            option.text = 'Custom';
+                            option.selected = dashboardConfig?.dashboard?.framework === 'Custom';
+                            frameworksSelector.add(option);
+                        });
 
                         // Trigger change event to populate custom command if framework is already selected (i.e. editing)
                         if (framework) {
