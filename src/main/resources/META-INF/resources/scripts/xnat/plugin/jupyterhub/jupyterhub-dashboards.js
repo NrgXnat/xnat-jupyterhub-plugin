@@ -765,6 +765,12 @@ XNAT.plugin.jupyterhub.dashboards.frameworks = getObject(XNAT.plugin.jupyterhub.
                         apply: function () {
                             const isGithub = this.dashboard?.gitRepoUrl.includes('github.com');
 
+                            // if no git repo url, show nothing
+                            if (!this.dashboard?.gitRepoUrl || this.dashboard?.gitRepoUrl === '') {
+                                return spawn('div.center', ['']);
+                            }
+
+                            // otherwise, show github icon or code icon with link to git repo
                             return spawn('div.center', [
                                 spawn('a', { href: this.dashboard?.gitRepoUrl ?? '', target: '_blank', style: { color: 'black' }
                                 }, isGithub ? `<i class="fa fa-github fa-lg"></i>` : `<i class="fa fa-code fa-lg"></i>`)
