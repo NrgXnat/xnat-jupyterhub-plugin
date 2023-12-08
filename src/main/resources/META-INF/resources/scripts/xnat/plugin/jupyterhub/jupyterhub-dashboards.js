@@ -555,13 +555,13 @@ XNAT.plugin.jupyterhub.dashboards.frameworks = getObject(XNAT.plugin.jupyterhub.
                                     scopes: {
                                         Site: {
                                             scope: 'Site',
-                                            enabled: dashboardConfig?.scopes?.Site?.enabled ?? true,
+                                            enabled: isEdit ? dashboardConfig?.scopes?.Site?.enabled ?? false : true,
                                             ids: dashboardConfig?.scopes?.Site?.ids ?? [],
                                         },
                                         Project: {
                                             scope: 'Project',
                                             enabled: false,
-                                            ids: dashboardConfig?.scopes?.Project?.ids ?? [],
+                                            ids: isEdit ? dashboardConfig?.scopes?.Project?.ids ?? [] : [],
                                         },
                                         DataType: {
                                             scope: 'DataType',
