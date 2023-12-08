@@ -37,8 +37,14 @@ XNAT.plugin.jupyterhub.topnav = getObject(XNAT.plugin.jupyterhub.topnav || {});
 
         // add table header row
         jupyterServerTable.tr()
+            .th({addClass: 'left', style: {width: '75px'}, html: '<b>Application</b>'})
             .th({addClass: 'left', style: {width: '200px'}, html: '<b>Context</b>'})
             .th({addClass: 'center', style: {width: '100px'}, html: '<b>Actions</b>'})
+
+        function application(server) {
+            return server['user_options']['dashboardConfigId'] != null &&
+                   server['user_options']['dashboardConfigId'] !== '' ? 'Dashboard' : 'Notebook';
+        }
 
         function xnatItem(server) {
             const userOptions = server['user_options'];
@@ -157,10 +163,10 @@ XNAT.plugin.jupyterhub.topnav = getObject(XNAT.plugin.jupyterhub.topnav || {});
 
             isEmpty(servers) ?
                 jupyterServerTable.tr()
-                    .td([ spawn('div.left', {style: {'font-size': '12px'}}, ['No running Jupyter notebooks or dashboards. Go to a project, subject, or experiment to start one.']) ])
-                    .td([ spawn('div.center', ['']) ]) :
+                    .td({colSpan: '3'}, [ spawn('div.left', {style: {'font-size': '12px'}}, ['No running Jupyter notebooks or dashboards. Go to a project, subject, or experiment to start one.']) ]):
                 Object.values(servers).forEach(server => {
                     jupyterServerTable.tr()
+                        .td([ spawn('div.left', {style: {'font-size': '12px', 'font-weight': 'bold'}}, [application(server)]) ])
                         .td([ spawn('div.left', [xnatItem(server)]) ])
                         .td([ spawn('div.center', [gotoServerButton(server), spacer(), stopServerButton(server)]) ])
                 });
