@@ -63,12 +63,11 @@ public class DashboardFrameworkInitializer extends AbstractInitializingTask {
                                              "--repo {repo} " +
                                              "--repobranch {repobranch} " +
                                              "--repofolder /home/jovyan/dashboards " +
-                                             "python3 {-}m bokeh_root_cmd.main /home/jovyan/dashboards/{mainFilePath} " +
+                                             "bokeh-root-cmd /home/jovyan/dashboards/{mainFilePath} " +
                                                  "{--}port={port} " +
                                                  "{--}allow-websocket-origin={origin_host} " +
                                                  "{--}prefix={base_url} " +
-                                                 "{--}server=panel " +
-                                                 "--ready-check-path=/ready-check"
+                                                 "{--}server=panel"
                                   ).build();
 
         streamlit = DashboardFramework.builder()
@@ -89,13 +88,13 @@ public class DashboardFrameworkInitializer extends AbstractInitializingTask {
         voila = DashboardFramework.builder()
                                   .name("Voila")
                                   .commandTemplate(
-                                        "python3 -m jhsingle_native_proxy.main " +
+                                        "jhsingle-native-proxy " +
                                             "--port 8888 " +
                                             "--destport 0 " +
                                             "--repo {repo} " +
                                             "--repobranch {repobranch} " +
                                             "--repofolder /home/jovyan/dashboards " +
-                                            "python3 {-}m voila /home/jovyan/dashboards/{mainFilePath} " +
+                                            "voila /home/jovyan/dashboards/{mainFilePath} " +
                                                 "{--}port {port} " +
                                                 "{--}no-browser " +
                                                 "{--}Voila.base_url={base_url}/ " +
