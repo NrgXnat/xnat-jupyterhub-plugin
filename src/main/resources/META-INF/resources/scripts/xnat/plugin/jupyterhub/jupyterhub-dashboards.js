@@ -153,11 +153,14 @@ XNAT.plugin.jupyterhub.dashboards.frameworks = getObject(XNAT.plugin.jupyterhub.
                 }
             });
 
-            if (response.ok) {
-                return response.json();
-            } else {
+            if (!response.ok) {
                 throw new Error(`Failed to get available dashboard configs for execution scope ${executionScope}`);
             }
+
+            // Sort by name
+            const dashboardConfigs = await response.json();
+            dashboardConfigs.sort((a, b) => a.dashboard.name.localeCompare(b.dashboard.name));
+            return dashboardConfigs;
         },
         enableForSite: async function (id) {
             const url = XNAT.url.csrfUrl(`${this.url}/${id}/scope/site`);
