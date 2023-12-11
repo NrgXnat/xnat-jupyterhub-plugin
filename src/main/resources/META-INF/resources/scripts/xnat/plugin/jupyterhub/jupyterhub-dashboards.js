@@ -621,9 +621,11 @@ XNAT.plugin.jupyterhub.dashboards.frameworks = getObject(XNAT.plugin.jupyterhub.
                 container.style.flexDirection = 'row';
                 container.style.justifyContent = 'center';
 
-                footer = container.closest('.panel').querySelector('.panel-footer');
-                footer.innerHTML = '';
-                footer.appendChild(newButton());
+                if (scope === 'Site') {
+                    footer = container.closest('.panel').querySelector('.panel-footer');
+                    footer.innerHTML = '';
+                    footer.appendChild(newButton());
+                }
 
                 refresh();
             }
