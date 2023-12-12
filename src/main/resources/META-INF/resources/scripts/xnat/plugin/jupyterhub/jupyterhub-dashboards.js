@@ -257,7 +257,8 @@ XNAT.plugin.jupyterhub.dashboards.frameworks = getObject(XNAT.plugin.jupyterhub.
                         spawn('style|type=text/css', `
                             .panel .panel-element input[type="text"],
                             .panel .panel-element select,
-                            .panel .panel-element textarea {
+                            .panel .panel-element textarea,
+                            .panel .panel-element .description  {
                                 width: 400px;
                             }
                             
@@ -275,7 +276,7 @@ XNAT.plugin.jupyterhub.dashboards.frameworks = getObject(XNAT.plugin.jupyterhub.
                             spawn('label.element-label|for=name', 'Name'),
                             spawn('div.element-wrapper', [
                                 spawn(`input#name|type=text`, { value: name }),
-                                spawn('div.description', '')
+                                spawn('div.description', 'Provide a name for the dashboard. This will be displayed to users.')
                             ]),
                             spawn('div.clear')
                         ]),
@@ -287,7 +288,7 @@ XNAT.plugin.jupyterhub.dashboards.frameworks = getObject(XNAT.plugin.jupyterhub.
                                     { style: { fontFamily: 'sans-serif' } },
                                     description
                                 ),
-                                spawn('div.description', '(Optional)')
+                                spawn('div.description', '(Optional) Provide a description for the dashboard. This will be displayed to users.')
                             ]),
                             spawn('div.clear')
                         ]),
@@ -296,7 +297,7 @@ XNAT.plugin.jupyterhub.dashboards.frameworks = getObject(XNAT.plugin.jupyterhub.
                             spawn('label.element-label|for=git-repo-url', 'Git Repo URL'),
                             spawn('div.element-wrapper', [
                                 spawn(`input#git-repo-url|type=text`, { value: gitRepoUrl }),
-                                spawn('div.description', '')
+                                spawn('div.description', 'Enter the URL of the Git repo that contains the dashboard code.')
                             ]),
                             spawn('div.clear')
                         ]),
@@ -304,7 +305,7 @@ XNAT.plugin.jupyterhub.dashboards.frameworks = getObject(XNAT.plugin.jupyterhub.
                             spawn('label.element-label|for=git-repo-branch', 'Branch'),
                             spawn('div.element-wrapper', [
                                 spawn(`input#git-repo-branch|type=text`, { value: gitRepoBranch }),
-                                spawn('div.description', '')
+                                spawn('div.description', 'Enter the branch containing the dashboard code.')
                             ]),
                             spawn('div.clear')
                         ]),
@@ -312,7 +313,7 @@ XNAT.plugin.jupyterhub.dashboards.frameworks = getObject(XNAT.plugin.jupyterhub.
                             spawn('label.element-label|for=main-file-path', 'Main File Path'),
                             spawn('div.element-wrapper', [
                                 spawn(`input#main-file-path|type=text`, { value: mainFilePath }),
-                                spawn('div.description', '')
+                                spawn('div.description', 'Enter the path to the main file in the Git repository.')
                             ]),
                             spawn('div.clear')
                         ]),
@@ -341,7 +342,7 @@ XNAT.plugin.jupyterhub.dashboards.frameworks = getObject(XNAT.plugin.jupyterhub.
                                     // spawn('option', { value: 'Panel', selected: framework.toLowerCase() === 'panel' }, 'Panel'),
                                     // spawn('option', { value: 'Custom', selected: framework.toLowerCase() === 'custom' }, 'Custom')
                                 ]),
-                                spawn('div.description', '')
+                                spawn('div.description', 'Select which dashboard framework is used to run the dashboard.')
                             ]),
                             spawn('div.clear')
                         ]),
@@ -353,7 +354,7 @@ XNAT.plugin.jupyterhub.dashboards.frameworks = getObject(XNAT.plugin.jupyterhub.
                                     { style: { fontFamily: 'sans-serif' } },
                                     command
                                 ),
-                                spawn('div.description', 'Enter the command that will be executed to start the dashboard')
+                                spawn('div.description', 'Enter the command that will be executed to start the dashboard.')
                             ]),
                             spawn('div.clear')
                         ]),
@@ -364,7 +365,7 @@ XNAT.plugin.jupyterhub.dashboards.frameworks = getObject(XNAT.plugin.jupyterhub.
                                 spawn('select#jupyter-environment', [
                                     spawn('option', { value: '', disabled: true, selected: true }, 'Select a Jupyter environment')
                                 ]),
-                                spawn('div.description', '')
+                                spawn('div.description', 'The dashboard will be started in this Jupyter environment.')
                             ]),
                             spawn('div.clear')
                         ]),
@@ -374,7 +375,7 @@ XNAT.plugin.jupyterhub.dashboards.frameworks = getObject(XNAT.plugin.jupyterhub.
                                 spawn('select#hardware', [
                                     spawn('option', { value: '', disabled: true, selected: true }, 'Select hardware')
                                 ]),
-                                spawn('div.description', '')
+                                spawn('div.description', 'The dashboard will be started with this hardware configuration.')
                             ]),
                             spawn('div.clear')
                         ]),
