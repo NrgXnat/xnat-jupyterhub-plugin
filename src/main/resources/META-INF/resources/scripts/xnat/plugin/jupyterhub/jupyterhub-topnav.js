@@ -66,12 +66,6 @@ XNAT.plugin.jupyterhub.topnav = getObject(XNAT.plugin.jupyterhub.topnav || {});
                         title: itemLabel,
                         html: itemLabel,
                     });
-                case 'xnat:experimentData':
-                    return spawn('a', {
-                        href: restUrl(`/data/experiments/${itemId}?format=html`),
-                        title: itemLabel,
-                        html: itemLabel,
-                    });
                 case 'xdat:stored_search':
                     if (itemId.startsWith('@')) {
                         if (projectId == null) {// Site wide data bundle
@@ -101,8 +95,15 @@ XNAT.plugin.jupyterhub.topnav = getObject(XNAT.plugin.jupyterhub.topnav || {});
                                 html: itemLabel,
                             });
                         }
-
                     }
+                // If not project, subject, or stored search, default to experiment
+                case 'xnat:experimentData':
+                default:
+                    return spawn('a', {
+                        href: restUrl(`/data/experiments/${itemId}?format=html`),
+                        title: itemLabel,
+                        html: itemLabel,
+                    });
             }
         }
 
