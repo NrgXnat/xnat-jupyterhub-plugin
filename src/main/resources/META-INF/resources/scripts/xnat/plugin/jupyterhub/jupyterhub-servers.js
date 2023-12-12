@@ -538,7 +538,7 @@ XNAT.compute.computeEnvironmentConfigs = getObject(XNAT.compute.computeEnvironme
                 content: spawn('form#server-start-request-form'),
                 maxBtn: true,
                 width: 400,
-                height: 475,
+                height: 500,
                 beforeShow: function(obj) {
                     const form = document.getElementById('server-start-request-form');
                     form.classList.add('panel');
