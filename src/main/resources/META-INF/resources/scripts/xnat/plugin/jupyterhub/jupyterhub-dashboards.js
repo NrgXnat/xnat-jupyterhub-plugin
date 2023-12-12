@@ -396,7 +396,7 @@ XNAT.plugin.jupyterhub.dashboards.frameworks = getObject(XNAT.plugin.jupyterhub.
                     let computeEnvironments = document.querySelector('#jupyter-environment');
                     let hardwares = document.querySelector('#hardware');
 
-                    XNAT.compute.computeEnvironmentConfigs.available("JUPYTERHUB").then((computeEnvironmentConfigs) => {
+                    XNAT.compute.computeEnvironmentConfigs.getAll("JUPYTERHUB").then((computeEnvironmentConfigs) => {
                         computeEnvironmentConfigs.forEach((config) => {
                             let option = document.createElement('option');
                             option.value = config.id;
