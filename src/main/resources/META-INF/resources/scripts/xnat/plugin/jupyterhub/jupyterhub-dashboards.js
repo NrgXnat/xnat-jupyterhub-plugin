@@ -445,13 +445,14 @@ XNAT.plugin.jupyterhub.dashboards.frameworks = getObject(XNAT.plugin.jupyterhub.
                             let option = document.createElement('option');
                             option.value = 'Custom';
                             option.text = 'Custom';
-                            option.selected = dashboardConfig?.dashboard?.framework === 'Custom';
+                            option.selected =
+                                dashboardConfig?.dashboard?.framework === 'Custom' ||
+                                dashboardConfig?.dashboard?.framework === 'custom' ||
+                                ((isEdit || isCopy) && !dashboardConfig?.dashboard?.framework);
                             frameworksSelector.add(option);
 
                             // Trigger change event to populate custom command if framework is already selected (i.e. editing)
-                            if (framework) {
-                                document.querySelector('#framework').dispatchEvent(new Event('change'));
-                            }
+                            document.querySelector('#framework').dispatchEvent(new Event('change'));
                         });
 
                         // Add data types
@@ -589,13 +590,13 @@ XNAT.plugin.jupyterhub.dashboards.frameworks = getObject(XNAT.plugin.jupyterhub.
                                 }
 
                                 response.then(() => {
-                                    XNAT.ui.banner.top(2000, 'success', 'Dashboard saved.');
+                                    XNAT.ui.banner.top(2000, 'Dashboard saved.', 'success');
                                     obj.close();
                                     if (onSaved) {
                                         onSaved();
                                     }
                                 }).catch((error) => {
-                                    XNAT.ui.banner.top(2000, 'error', 'Failed to save dashboard');
+                                    XNAT.ui.banner.top(2000, 'Failed to save dashboard', 'error',);
                                     console.error(error);
                                 });
                             })();
@@ -632,6 +633,11 @@ XNAT.plugin.jupyterhub.dashboards.frameworks = getObject(XNAT.plugin.jupyterhub.
                 }
 
                 refresh();
+
+                // Refresh table when dashboard framework is saved. Framework names may have changed.
+                document.addEventListener('dashboard-framework-saved', () => {
+                    refresh();
+                });
             }
 
             const clear = () => {
@@ -648,15 +654,18 @@ XNAT.plugin.jupyterhub.dashboards.frameworks = getObject(XNAT.plugin.jupyterhub.
             }
 
             const refresh = async () => {
-                const dashboardConfigs = await XNAT.plugin.jupyterhub.dashboards.configs.getAll();
+                XNAT.plugin.jupyterhub.dashboards.configs.getAll().then((dashboardConfigs) => {
+                    clear();
 
-                clear();
-
-                if (dashboardConfigs.length === 0) {
-                    container.innerHTML = `<div class="loading">No dashboards found</div>`;
-                } else {
-                    return table(dashboardConfigs);
-                }
+                    if (dashboardConfigs.length === 0) {
+                        container.innerHTML = `<div class="loading">No dashboards found</div>`;
+                    } else {
+                        return table(dashboardConfigs);
+                    }
+                }).catch((error) => {
+                    console.error(error);
+                    container.innerHTML = `<div class="loading">Failed to load dashboards. See console and system logs for details.</div>`;
+                });
             }
 
             const remove = async (id) => {
@@ -1077,13 +1086,16 @@ XNAT.plugin.jupyterhub.dashboards.frameworks = getObject(XNAT.plugin.jupyterhub.
                             }
 
                             response.then(() => {
-                                XNAT.ui.banner.top(2000, 'Dashboard framework saved.');
+                                XNAT.ui.banner.top(2000, 'Dashboard framework saved.', 'success');
                                 obj.close();
                                 if (onSaved) {
                                     onSaved();
                                 }
+
+                                // Dispatch event to refresh dashboard configs table
+                                document.dispatchEvent(new Event('dashboard-framework-saved'));
                             }).catch((error) => {
-                                XNAT.ui.banner.top(2000, 'Failed to save dashboard framework');
+                                XNAT.ui.banner.top(2000, 'Failed to save dashboard framework', 'error',);
                                 console.error(error);
                             });
                         }

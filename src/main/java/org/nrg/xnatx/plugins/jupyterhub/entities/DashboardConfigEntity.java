@@ -102,7 +102,7 @@ public class DashboardConfigEntity extends AbstractHibernateEntity {
 
     /**
      * Updates the entity with the values from the given pojo. Updating the compute environment config and hardware
-     * config is not supported.
+     * config is not supported. Updating the dashboard config -> dashboard -> dashboard framework relationship is not supported.
      * @param pojo The pojo from which to update the entity.
      */
     public void update(final DashboardConfig pojo) {

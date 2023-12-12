@@ -10,11 +10,13 @@ import org.nrg.xnat.compute.models.AccessScope;
 import org.nrg.xnat.compute.services.ComputeEnvironmentConfigEntityService;
 import org.nrg.xnat.compute.services.HardwareConfigEntityService;
 import org.nrg.xnatx.plugins.jupyterhub.entities.DashboardConfigEntity;
+import org.nrg.xnatx.plugins.jupyterhub.entities.DashboardFrameworkEntity;
 import org.nrg.xnatx.plugins.jupyterhub.models.Dashboard;
 import org.nrg.xnatx.plugins.jupyterhub.models.DashboardConfig;
 import org.nrg.xnatx.plugins.jupyterhub.models.DashboardScope;
 import org.nrg.xnatx.plugins.jupyterhub.services.DashboardConfigEntityService;
 import org.nrg.xnatx.plugins.jupyterhub.services.DashboardConfigService;
+import org.nrg.xnatx.plugins.jupyterhub.services.DashboardFrameworkEntityService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -31,15 +33,18 @@ public class DefaultDashboardConfigService implements DashboardConfigService {
     private final DashboardConfigEntityService dashboardConfigEntityService;
     private final ComputeEnvironmentConfigEntityService computeEnvironmentConfigEntityService;
     private final HardwareConfigEntityService hardwareConfigEntityService;
+    private final DashboardFrameworkEntityService dashboardFrameworkEntityService;
 
     @Autowired
     public DefaultDashboardConfigService(final DashboardConfigEntityService dashboardConfigEntityService,
                                          final ComputeEnvironmentConfigEntityService computeEnvironmentConfigEntityService,
-                                         final HardwareConfigEntityService hardwareConfigEntityService) {
+                                         final HardwareConfigEntityService hardwareConfigEntityService,
+                                         final DashboardFrameworkEntityService dashboardFrameworkEntityService) {
         super();
         this.dashboardConfigEntityService = dashboardConfigEntityService;
         this.computeEnvironmentConfigEntityService = computeEnvironmentConfigEntityService;
         this.hardwareConfigEntityService = hardwareConfigEntityService;
+        this.dashboardFrameworkEntityService = dashboardFrameworkEntityService;
     }
 
     /**
@@ -89,6 +94,16 @@ public class DefaultDashboardConfigService implements DashboardConfigService {
         // Then add the compute environment config and hardware config
         ComputeEnvironmentConfigEntity computeEnvironmentConfigEntity = computeEnvironmentConfigEntityService.retrieve(dashboardConfig.getComputeEnvironmentConfig().getId());
         HardwareConfigEntity hardwareConfigEntity = hardwareConfigEntityService.retrieve(dashboardConfig.getHardwareConfig().getId());
+
+        // Then add the dashboard framework if it's not custom
+        if (StringUtils.isNotBlank(dashboardConfig.getDashboard().getFramework()) &&
+            !dashboardConfig.getDashboard().getFramework().equalsIgnoreCase("custom")) {
+            DashboardFrameworkEntity dashboardFrameworkEntity = dashboardFrameworkEntityService.findFrameworkByName(dashboardConfig.getDashboard().getFramework())
+                                                                                               .orElseThrow(() -> new IllegalArgumentException("Dashboard framework does not exist"));
+            dashboardConfigEntity.getDashboard().setDashboardFramework(dashboardFrameworkEntity);
+        } else {
+            dashboardConfigEntity.getDashboard().setDashboardFramework(null);
+        }
 
         if (computeEnvironmentConfigEntity == null) {
             throw new IllegalArgumentException("Compute environment config does not exist");
@@ -140,6 +155,16 @@ public class DefaultDashboardConfigService implements DashboardConfigService {
         // Update the hardware config
         HardwareConfigEntity hardwareConfigEntity = hardwareConfigEntityService.retrieve(dashboardConfig.getHardwareConfig().getId());
         entity.setHardwareConfig(hardwareConfigEntity);
+
+        // Then add the dashboard framework if it's not custom
+        if (StringUtils.isNotBlank(dashboardConfig.getDashboard().getFramework()) &&
+            !dashboardConfig.getDashboard().getFramework().equalsIgnoreCase("custom")) {
+            DashboardFrameworkEntity dashboardFrameworkEntity = dashboardFrameworkEntityService.findFrameworkByName(dashboardConfig.getDashboard().getFramework())
+                                                                                               .orElseThrow(() -> new IllegalArgumentException("Dashboard framework does not exist"));
+            entity.getDashboard().setDashboardFramework(dashboardFrameworkEntity);
+        } else {
+            entity.getDashboard().setDashboardFramework(null);
+        }
 
         // Save the dashboard config
         dashboardConfigEntityService.update(entity);

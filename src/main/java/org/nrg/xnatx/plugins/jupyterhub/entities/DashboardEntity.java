@@ -8,7 +8,9 @@ import org.nrg.xnatx.plugins.jupyterhub.models.Dashboard;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.OneToOne;
+import javax.persistence.ManyToOne;
 import javax.persistence.Table;
+import javax.persistence.FetchType;
 
 @Entity
 @ToString
@@ -22,7 +24,6 @@ public class DashboardEntity extends AbstractHibernateEntity {
 
     private String name;
     private String description;
-    private String framework;
     private String command;
     private String fileSource;
     private String gitRepoUrl;
@@ -30,6 +31,7 @@ public class DashboardEntity extends AbstractHibernateEntity {
     private String mainFilePath;
 
     @ToString.Exclude @EqualsAndHashCode.Exclude private DashboardConfigEntity dashboardConfig;
+    @ToString.Exclude @EqualsAndHashCode.Exclude private DashboardFrameworkEntity dashboardFramework;
 
     public String getName() {
         return name;
@@ -46,14 +48,6 @@ public class DashboardEntity extends AbstractHibernateEntity {
 
     public void setDescription(String description) {
         this.description = description;
-    }
-
-    public String getFramework() {
-        return framework;
-    }
-
-    public void setFramework(String framework) {
-        this.framework = framework;
     }
 
     @Column(length = 4096)
@@ -107,6 +101,15 @@ public class DashboardEntity extends AbstractHibernateEntity {
         this.dashboardConfig = dashboardConfig;
     }
 
+    @ManyToOne(fetch = FetchType.EAGER)
+    public DashboardFrameworkEntity getDashboardFramework() {
+        return dashboardFramework;
+    }
+
+    public void setDashboardFramework(final DashboardFrameworkEntity dashboardFramework) {
+        this.dashboardFramework = dashboardFramework;
+    }
+
     public static DashboardEntity fromPojo(final Dashboard pojo) {
         final DashboardEntity entity = new DashboardEntity();
         entity.update(pojo);
@@ -114,10 +117,12 @@ public class DashboardEntity extends AbstractHibernateEntity {
     }
 
     public Dashboard toPojo() {
+        final String framework = this.getDashboardFramework() != null ? this.getDashboardFramework().getName() : null;
+
         return Dashboard.builder()
                         .name(this.getName())
                         .description(this.getDescription())
-                        .framework(this.getFramework())
+                        .framework(framework)
                         .command(this.getCommand())
                         .fileSource(this.getFileSource())
                         .gitRepoUrl(this.getGitRepoUrl())
@@ -128,9 +133,9 @@ public class DashboardEntity extends AbstractHibernateEntity {
 
     public void update(final Dashboard pojo) {
         // Don't update the ID, that's immutable
+        // DashboardFrameworkEntity must be set separately
         this.setName(pojo.getName());
         this.setDescription(pojo.getDescription());
-        this.setFramework(pojo.getFramework());
         this.setCommand(pojo.getCommand());
         this.setFileSource(pojo.getFileSource());
         this.setGitRepoUrl(pojo.getGitRepoUrl());

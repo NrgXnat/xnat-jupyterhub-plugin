@@ -43,6 +43,9 @@ public class DashboardConfigDao extends AbstractHibernateDAO<DashboardConfigEnti
         super.initialize(entity);
 
         Hibernate.initialize(entity.getDashboard());
+        if (entity.getDashboard() != null) {
+            Hibernate.initialize(entity.getDashboard().getDashboardFramework());
+        }
 
         Hibernate.initialize(entity.getScopes());
         if (entity.getScopes() != null) {

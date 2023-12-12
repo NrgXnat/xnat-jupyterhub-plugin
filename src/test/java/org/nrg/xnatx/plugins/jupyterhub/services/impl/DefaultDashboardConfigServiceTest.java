@@ -13,9 +13,13 @@ import org.nrg.xnat.compute.services.HardwareConfigService;
 import org.nrg.xnatx.plugins.jupyterhub.config.DefaultDashboardConfigServiceTestConfig;
 import org.nrg.xnatx.plugins.jupyterhub.models.Dashboard;
 import org.nrg.xnatx.plugins.jupyterhub.models.DashboardConfig;
+import org.nrg.xnatx.plugins.jupyterhub.models.DashboardFramework;
 import org.nrg.xnatx.plugins.jupyterhub.models.DashboardScope;
 import org.nrg.xnatx.plugins.jupyterhub.services.DashboardConfigEntityService;
+import org.nrg.xnatx.plugins.jupyterhub.services.DashboardFrameworkEntityService;
+import org.nrg.xnatx.plugins.jupyterhub.services.DashboardFrameworkService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
@@ -43,6 +47,7 @@ public class DefaultDashboardConfigServiceTest {
     @Autowired private ComputeEnvironmentConfigService computeEnvironmentConfigService;
     @Autowired private HardwareConfigEntityService hardwareConfigEntityService;
     @Autowired private HardwareConfigService hardwareConfigService;
+    @Autowired private DashboardFrameworkService dashboardFrameworkService;
 
     private ComputeEnvironmentConfig computeEnvironmentConfig1;
     private ComputeEnvironmentConfig computeEnvironmentConfig2;
@@ -51,6 +56,11 @@ public class DefaultDashboardConfigServiceTest {
     private HardwareConfig hardwareConfig1;
     private HardwareConfig hardwareConfig2;
     private HardwareConfig hardwareConfig3;
+
+    private DashboardFramework panel;
+    private DashboardFramework streamlit;
+    private DashboardFramework voila;
+    private DashboardFramework dash;
 
     private DashboardConfig dashboardConfig1;
     private DashboardConfig dashboardConfig2;
@@ -170,6 +180,9 @@ public class DefaultDashboardConfigServiceTest {
         // Create compute environment and hardware configs
         commitComputeEnvironmentAndHardwareConfigs();
 
+        // Commit dashboard frameworks
+        commitDashboardFrameworks();
+
         // Create dashboard config
         DashboardConfig created1 = defaultDashboardConfigService.create(dashboardConfig1);
         DashboardConfig created2 = defaultDashboardConfigService.create(dashboardConfig2);
@@ -218,6 +231,9 @@ public class DefaultDashboardConfigServiceTest {
         // Create compute environment and hardware configs
         commitComputeEnvironmentAndHardwareConfigs();
 
+        // Commit dashboard frameworks
+        commitDashboardFrameworks();
+
         // Create dashboard config
         DashboardConfig created1 = defaultDashboardConfigService.create(dashboardConfig1);
         DashboardConfig created2 = defaultDashboardConfigService.create(dashboardConfig2);
@@ -240,6 +256,9 @@ public class DefaultDashboardConfigServiceTest {
     public void test_retrieve() {
         // Create compute environment and hardware configs
         commitComputeEnvironmentAndHardwareConfigs();
+
+        // Commit dashboard frameworks
+        commitDashboardFrameworks();
 
         // Create dashboard config
         DashboardConfig created1 = defaultDashboardConfigService.create(dashboardConfig1);
@@ -279,6 +298,9 @@ public class DefaultDashboardConfigServiceTest {
         // Create compute environment and hardware configs
         commitComputeEnvironmentAndHardwareConfigs();
 
+        // Commit dashboard frameworks
+        commitDashboardFrameworks();
+
         // Create dashboard config
         DashboardConfig created1 = defaultDashboardConfigService.create(dashboardConfig1);
         DashboardConfig created2 = defaultDashboardConfigService.create(dashboardConfig2);
@@ -303,6 +325,9 @@ public class DefaultDashboardConfigServiceTest {
         // Create compute environment and hardware configs
         commitComputeEnvironmentAndHardwareConfigs();
 
+        // Commit dashboard frameworks
+        commitDashboardFrameworks();
+
         // Create dashboard config
         DashboardConfig created1 = defaultDashboardConfigService.create(dashboardConfig1);
         DashboardConfig created2 = defaultDashboardConfigService.create(dashboardConfig2);
@@ -314,7 +339,7 @@ public class DefaultDashboardConfigServiceTest {
         dashboardConfig1.setId(created1.getId());
         dashboardConfig1.getDashboard().setName("New Name");
         dashboardConfig1.getDashboard().setDescription("New Description");
-        dashboardConfig1.getDashboard().setFramework("New Framework");
+        dashboardConfig1.getDashboard().setFramework(streamlit.getName());
         dashboardConfig1.getDashboard().setCommand("New Command");
         dashboardConfig1.getDashboard().setFileSource("New File Source");
         dashboardConfig1.getDashboard().setGitRepoUrl("New Git Repo Url");
@@ -350,6 +375,9 @@ public class DefaultDashboardConfigServiceTest {
     public void test_update_updateScopes() throws Exception {
         // Create compute environment and hardware configs
         commitComputeEnvironmentAndHardwareConfigs();
+
+        // Commit dashboard frameworks
+        commitDashboardFrameworks();
 
         // Create dashboard config
         DashboardConfig created1 = defaultDashboardConfigService.create(dashboardConfig1);
@@ -393,6 +421,9 @@ public class DefaultDashboardConfigServiceTest {
     public void test_update_updateComputeEnvAndHardware() throws Exception {
         // Create compute environment and hardware configs
         commitComputeEnvironmentAndHardwareConfigs();
+
+        // Commit dashboard frameworks
+        commitDashboardFrameworks();
 
         // Create dashboard config
         DashboardConfig created1 = defaultDashboardConfigService.create(dashboardConfig1);
@@ -443,6 +474,9 @@ public class DefaultDashboardConfigServiceTest {
         // Create compute environment and hardware configs
         commitComputeEnvironmentAndHardwareConfigs();
 
+        // Commit dashboard frameworks
+        commitDashboardFrameworks();
+
         // Create dashboard config
         DashboardConfig created1 = defaultDashboardConfigService.create(dashboardConfig1);
         DashboardConfig created2 = defaultDashboardConfigService.create(dashboardConfig2);
@@ -473,6 +507,9 @@ public class DefaultDashboardConfigServiceTest {
     public void test_isAvailable() {
         // Create compute environment and hardware configs
         commitComputeEnvironmentAndHardwareConfigs();
+
+        // Commit dashboard frameworks
+        commitDashboardFrameworks();
 
         // Create dashboard config
         DashboardConfig created1 = defaultDashboardConfigService.create(dashboardConfig1);
@@ -549,6 +586,9 @@ public class DefaultDashboardConfigServiceTest {
     public void test_getAvailable() {
         // Create compute environment and hardware configs
         commitComputeEnvironmentAndHardwareConfigs();
+
+        // Commit dashboard frameworks
+        commitDashboardFrameworks();
 
         // Create dashboard configs
         DashboardConfig created1 = defaultDashboardConfigService.create(dashboardConfig1);
@@ -631,6 +671,9 @@ public class DefaultDashboardConfigServiceTest {
         // Create compute environment and hardware configs
         commitComputeEnvironmentAndHardwareConfigs();
 
+        // Commit dashboard frameworks
+        commitDashboardFrameworks();
+
         // Create dashboard configs
         DashboardConfig created1 = defaultDashboardConfigService.create(dashboardConfig1);
         DashboardConfig created2 = defaultDashboardConfigService.create(dashboardConfig2);
@@ -670,6 +713,9 @@ public class DefaultDashboardConfigServiceTest {
         // Create compute environment and hardware configs
         commitComputeEnvironmentAndHardwareConfigs();
 
+        // Commit dashboard frameworks
+        commitDashboardFrameworks();
+
         // Create dashboard configs
         DashboardConfig created1 = defaultDashboardConfigService.create(dashboardConfig1);
         DashboardConfig created2 = defaultDashboardConfigService.create(dashboardConfig2);
@@ -708,6 +754,9 @@ public class DefaultDashboardConfigServiceTest {
     public void test_enable_and_disableForProject() throws Exception {
         // Create compute environment and hardware configs
         commitComputeEnvironmentAndHardwareConfigs();
+
+        // Commit dashboard frameworks
+        commitDashboardFrameworks();
 
         // Create dashboard configs
         DashboardConfig created1 = defaultDashboardConfigService.create(dashboardConfig1);
@@ -773,6 +822,27 @@ public class DefaultDashboardConfigServiceTest {
         assertThat(retrieved3.get().getScopes().get(Scope.Project).getIds(), not(hasItems("ProjectA", "ProjectB", "ProjectC")));
     }
 
+    @Test(expected = DataIntegrityViolationException.class)
+    @DirtiesContext
+    public void testCantDeleteFrameworkInUse() throws Exception {
+        // Create compute environment and hardware configs
+        commitComputeEnvironmentAndHardwareConfigs();
+
+        // Commit dashboard frameworks
+        commitDashboardFrameworks();
+
+        // Create dashboard configs
+        defaultDashboardConfigService.create(dashboardConfig1);
+        defaultDashboardConfigService.create(dashboardConfig2);
+        defaultDashboardConfigService.create(dashboardConfig3);
+
+        commitTransaction();
+
+        // Try to delete dashboard framework in use
+        dashboardFrameworkService.delete(panel.getName());
+        commitTransaction();
+        fail("Should not be able to delete dashboard framework in use by dashboard configs");
+    }
 
     public void createDummyConfigs() {
         // Setup hardware
@@ -1087,6 +1157,28 @@ public class DefaultDashboardConfigServiceTest {
                                                             .hardwareOptions(computeEnvironmentHardwareOptions3)
                                                             .build();
 
+        // Setup dashboard frameworks
+        panel = DashboardFramework.builder()
+                                  .name("Panel")
+                                  .commandTemplate("jhsingle-native-proxy ...")
+                                  .build();
+        streamlit = DashboardFramework.builder()
+                                      .name("Streamlit")
+                                      .commandTemplate("jhsingle-native-proxy ...")
+                                      .build();
+
+        voila = DashboardFramework.builder()
+                                  .name("Voila")
+                                  .commandTemplate("jhsingle-native-proxy ...")
+                                  .build();
+
+        dash = DashboardFramework.builder()
+                                  .name("Dash")
+                                  .commandTemplate("jhsingle-native-proxy ...")
+                                  .build();
+
+        List<DashboardFramework> frameworks = Arrays.asList(panel, streamlit, voila, dash);
+
         // Setup first dashboard config
         Dashboard dashboard1 = Dashboard.builder()
                                         .name("Panel Dashboard")
@@ -1212,6 +1304,15 @@ public class DefaultDashboardConfigServiceTest {
                                           .computeEnvironmentConfig(computeEnvironmentConfig3)
                                           .hardwareConfig(hardwareConfig3)
                                           .build();
+    }
+
+    public void commitDashboardFrameworks() {
+        panel = dashboardFrameworkService.create(panel);
+        streamlit = dashboardFrameworkService.create(streamlit);
+        voila = dashboardFrameworkService.create(voila);
+        dash = dashboardFrameworkService.create(dash);
+
+        commitTransaction();
     }
 
     public void commitComputeEnvironmentAndHardwareConfigs() {
