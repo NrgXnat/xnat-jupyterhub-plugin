@@ -75,7 +75,7 @@ public class DashboardFrameworkInitializer extends AbstractInitializingTask {
                                       .commandTemplate(
                                           "jhsingle-native-proxy " +
                                                   "--port 8888 " +
-                                                  "--destport 8505 " +
+                                                  "--destport 8501 " +
                                                   "--repo {repo} " +
                                                   "--repobranch {repobranch} " +
                                                   "--repofolder /home/jovyan/dashboards " +
