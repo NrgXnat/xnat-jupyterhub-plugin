@@ -538,7 +538,7 @@ XNAT.compute.computeEnvironmentConfigs = getObject(XNAT.compute.computeEnvironme
                 content: spawn('form#server-start-request-form'),
                 maxBtn: true,
                 width: 400,
-                height: 400,
+                height: 475,
                 beforeShow: function(obj) {
                     const form = document.getElementById('server-start-request-form');
                     form.classList.add('panel');
@@ -587,8 +587,7 @@ XNAT.compute.computeEnvironmentConfigs = getObject(XNAT.compute.computeEnvironme
                         spawn('h2', 'Dashboard'),
                         spawn('p.description', 'Select from the list of available dashboards.'),
                         spawn('div.form-group', [
-                            spawn('select#dashboard-config', [
-                                spawn('option', {value: '', disabled: true, selected: true}, 'Select a dashboard'),
+                            spawn('select#dashboard-config | size=5', [
                                 ...dashboardConfigs.map(c => spawn('option', {value: c['id']}, c['dashboard']['name'])),
                             ]),
                             spawn('div#dashboard-description.description', ''),
