@@ -5,6 +5,7 @@ import org.nrg.xnat.compute.services.JobTemplateService;
 import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.nrg.xnatx.plugins.jupyterhub.client.JupyterHubClient;
 import org.nrg.xnatx.plugins.jupyterhub.preferences.JupyterHubPreferences;
+import org.nrg.xnatx.plugins.jupyterhub.services.DashboardJobTemplateService;
 import org.nrg.xnatx.plugins.jupyterhub.services.UserOptionsService;
 import org.nrg.xnatx.plugins.jupyterhub.services.impl.DefaultJupyterHubService;
 import org.nrg.xnatx.plugins.jupyterhub.utils.JupyterHubServiceAccountHelper;
@@ -25,6 +26,7 @@ public class DefaultJupyterHubServiceConfig {
                                                              final JupyterHubPreferences mockJupyterHubPreferences,
                                                              final UserManagementServiceI mockUserManagementService,
                                                              final JobTemplateService mockJobTemplateService,
+                                                             final DashboardJobTemplateService mockDashboardJobTemplateService,
                                                              final JupyterHubServiceAccountHelper mockJupyterHubServiceAccountHelper) {
         return new DefaultJupyterHubService(mockJupyterHubClient,
                                             mockNrgEventService,
@@ -33,6 +35,7 @@ public class DefaultJupyterHubServiceConfig {
                                             mockJupyterHubPreferences,
                                             mockUserManagementService,
                                             mockJobTemplateService,
+                                            mockDashboardJobTemplateService,
                                             mockJupyterHubServiceAccountHelper);
     }
 

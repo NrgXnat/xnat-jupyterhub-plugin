@@ -22,6 +22,7 @@ import org.nrg.xnatx.plugins.jupyterhub.events.JupyterServerEventI;
 import org.nrg.xnatx.plugins.jupyterhub.models.ServerStartRequest;
 import org.nrg.xnatx.plugins.jupyterhub.models.XnatUserOptions;
 import org.nrg.xnatx.plugins.jupyterhub.preferences.JupyterHubPreferences;
+import org.nrg.xnatx.plugins.jupyterhub.services.DashboardJobTemplateService;
 import org.nrg.xnatx.plugins.jupyterhub.services.JupyterHubService;
 import org.nrg.xnatx.plugins.jupyterhub.services.UserOptionsService;
 import org.nrg.xnatx.plugins.jupyterhub.utils.JupyterHubServiceAccountHelper;
@@ -53,6 +54,7 @@ public class DefaultJupyterHubService implements JupyterHubService {
     private final JupyterHubPreferences jupyterHubPreferences;
     private final UserManagementServiceI userManagementService;
     private final JobTemplateService jobTemplateService;
+    private final DashboardJobTemplateService dashboardJobTemplateService;
     private final JupyterHubServiceAccountHelper jupyterHubServiceAccountHelper;
 
     @Autowired
@@ -63,6 +65,7 @@ public class DefaultJupyterHubService implements JupyterHubService {
                                     final JupyterHubPreferences jupyterHubPreferences,
                                     final UserManagementServiceI userManagementService,
                                     @Qualifier("defaultJobTemplateService") final JobTemplateService jobTemplateService,
+                                    final DashboardJobTemplateService dashboardJobTemplateService,
                                     final JupyterHubServiceAccountHelper jupyterHubServiceAccountHelper) {
         this.jupyterHubClient = jupyterHubClient;
         this.eventService = eventService;
@@ -71,6 +74,7 @@ public class DefaultJupyterHubService implements JupyterHubService {
         this.jupyterHubPreferences = jupyterHubPreferences;
         this.userManagementService = userManagementService;
         this.jobTemplateService = jobTemplateService;
+        this.dashboardJobTemplateService = dashboardJobTemplateService;
         this.jupyterHubServiceAccountHelper = jupyterHubServiceAccountHelper;
     }
 
@@ -183,7 +187,17 @@ public class DefaultJupyterHubService implements JupyterHubService {
         Map<Scope, String> executionScope = new HashMap<>();
         executionScope.put(Scope.Project, projectId);
         executionScope.put(Scope.User, user.getUsername());
-        if (!jobTemplateService.isAvailable(computeEnvironmentConfigId, hardwareConfigId, executionScope)) {
+        executionScope.put(Scope.DataType, xsiType);
+        executionScope.put(Scope.Site, "XNAT");
+
+        if (dashboardConfigId != null) {
+            if (!dashboardJobTemplateService.isAvailable(dashboardConfigId, computeEnvironmentConfigId, hardwareConfigId, executionScope)) {
+                eventService.triggerEvent(JupyterServerEvent.failed(eventTrackingId, user.getID(), xsiType, itemId,
+                                                                    JupyterServerEventI.Operation.Start,
+                                                                    "Failed to launch Jupyter server. The dashboard is not available to the user."));
+                return;
+            }
+        } else if (!jobTemplateService.isAvailable(computeEnvironmentConfigId, hardwareConfigId, executionScope)) {
             eventService.triggerEvent(JupyterServerEvent.failed(eventTrackingId, user.getID(), xsiType, itemId,
                                                                 JupyterServerEventI.Operation.Start,
                                                                 "Failed to launch Jupyter notebook server. The compute environment or hardware configuration is not available to the user."));
