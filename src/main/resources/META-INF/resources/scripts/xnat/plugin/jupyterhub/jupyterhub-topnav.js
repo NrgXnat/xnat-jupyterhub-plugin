@@ -174,7 +174,7 @@ XNAT.plugin.jupyterhub.topnav = getObject(XNAT.plugin.jupyterhub.topnav || {});
 
         }).catch(() => {
             jupyterServerTable.tr()
-                .td([ spawn('div.left', {style: {'font-size': '12px'}}, ['Unable to connect to JupyterHub']) ])
+                .td({colSpan: '3'}, [ spawn('div.left', {style: {'font-size': '12px'}}, ['Unable to connect to JupyterHub']) ])
                 .td([ spawn('div.center', ['']) ]);
         })
 
