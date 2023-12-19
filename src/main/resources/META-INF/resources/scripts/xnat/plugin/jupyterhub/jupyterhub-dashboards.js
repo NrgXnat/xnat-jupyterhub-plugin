@@ -334,13 +334,7 @@ XNAT.plugin.jupyterhub.dashboards.frameworks = getObject(XNAT.plugin.jupyterhub.
                                             })
                                         }
                                     }, [
-                                    //     TODO - Call API to get available frameworks
                                     spawn('option', { value: '', disabled: true, selected: true }, 'Select a dashboard framework'),
-                                    // spawn('option', { value: 'Voila', selected: framework.toLowerCase() === 'voila' }, 'Voila'),
-                                    // spawn('option', { value: 'Dash', selected: framework.toLowerCase() === 'dash' }, 'Dash'),
-                                    // spawn('option', { value: 'Streamlit', selected: framework.toLowerCase() === 'streamlit' }, 'Streamlit'),
-                                    // spawn('option', { value: 'Panel', selected: framework.toLowerCase() === 'panel' }, 'Panel'),
-                                    // spawn('option', { value: 'Custom', selected: framework.toLowerCase() === 'custom' }, 'Custom')
                                 ]),
                                 spawn('div.description', 'Select which dashboard framework is used to run the dashboard.')
                             ]),
