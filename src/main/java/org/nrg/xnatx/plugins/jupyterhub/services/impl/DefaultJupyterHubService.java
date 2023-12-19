@@ -173,14 +173,16 @@ public class DefaultJupyterHubService implements JupyterHubService {
         final Long hardwareConfigId = startRequest.getHardwareConfigId();
         final Long dashboardConfigId = startRequest.getDashboardConfigId();
 
+        final String application = dashboardConfigId != null ? "dashboard" : "Jupyter notebook";
+
         eventService.triggerEvent(JupyterServerEvent.progress(eventTrackingId, user.getID(), xsiType, itemId,
                                                               JupyterServerEventI.Operation.Start, 0,
-                                                              "Starting Jupyter notebook server for user " + user.getUsername()));
+                                                              "Starting " + application + " for user " + user.getUsername() + "."));
 
         if (!permissionsHelper.canRead(user, projectId, itemId, xsiType)) {
             eventService.triggerEvent(JupyterServerEvent.failed(eventTrackingId, user.getID(), xsiType, itemId,
                                                                 JupyterServerEventI.Operation.Start,
-                                                                "Failed to launch Jupyter notebook server. Permission denied to read " + xsiType + " " + itemId + " in project " + projectId));
+                                                                "Failed to launch " + application + ". Permission denied to read " + xsiType + " " + itemId + " in project " + projectId));
             return;
         }
 
@@ -194,7 +196,7 @@ public class DefaultJupyterHubService implements JupyterHubService {
             if (!dashboardJobTemplateService.isAvailable(dashboardConfigId, computeEnvironmentConfigId, hardwareConfigId, executionScope)) {
                 eventService.triggerEvent(JupyterServerEvent.failed(eventTrackingId, user.getID(), xsiType, itemId,
                                                                     JupyterServerEventI.Operation.Start,
-                                                                    "Failed to launch Jupyter server. The dashboard is not available to the user."));
+                                                                    "Failed to start dashboard. The dashboard is not available to the user."));
                 return;
             }
         } else if (!jobTemplateService.isAvailable(computeEnvironmentConfigId, hardwareConfigId, executionScope)) {
@@ -237,7 +239,7 @@ public class DefaultJupyterHubService implements JupyterHubService {
                 // We don't want to update the user options entity if there is a running server
                 eventService.triggerEvent(JupyterServerEvent.progress(eventTrackingId, user.getID(), xsiType, itemId,
                                                                       JupyterServerEventI.Operation.Start, 0,
-                                                                      "Checking for existing Jupyter notebook servers."));
+                                                                      "Checking for existing Jupyter servers."));
 
                 boolean hasRunningServer = jupyterHubClient.getUser(user.getUsername())
                                                            .orElseGet(() -> createUser(user))
@@ -247,15 +249,15 @@ public class DefaultJupyterHubService implements JupyterHubService {
                     eventService.triggerEvent(JupyterServerEvent.failed(eventTrackingId,
                                                                         user.getID(), xsiType, itemId,
                                                                         JupyterServerEventI.Operation.Start,
-                                                                        "Failed to launch Jupyter notebook server. " +
-                                                                                "There is already one running. " +
-                                                                                "Please stop the running server before starting a new one."));
+                                                                        "Failed to launch " + application + ". " +
+                                                                                "There is already a dashboard or Jupyter notebook running. " +
+                                                                                "Please stop the running dashboard or notebook before starting a new one."));
                     return;
                 }
 
                 eventService.triggerEvent(JupyterServerEvent.progress(eventTrackingId, user.getID(), xsiType, itemId,
                                                                       JupyterServerEventI.Operation.Start, 20,
-                                                                      "Building notebook server container configuration."));
+                                                                      "Building container configuration."));
 
                 userOptionsService.storeUserOptions(user, servername, xsiType, itemId, projectId, computeEnvironmentConfigId, hardwareConfigId, dashboardConfigId, eventTrackingId);
 
@@ -278,7 +280,7 @@ public class DefaultJupyterHubService implements JupyterHubService {
 
                 eventService.triggerEvent(JupyterServerEvent.progress(eventTrackingId, user.getID(), xsiType, itemId,
                                                                       JupyterServerEventI.Operation.Start, 40,
-                                                                      "JupyterHub is spawning notebook server container."));
+                                                                      "JupyterHub is spawning container."));
 
                 // TODO consume progress api
                 int time = 0;
@@ -289,10 +291,10 @@ public class DefaultJupyterHubService implements JupyterHubService {
 
                     if (server.isPresent()) {
                         if (server.get().getReady()) {
-                            log.info("Jupyter server started for user {}", user.getUsername());
+                            log.info(StringUtils.capitalize(application) + " started for user {}", user.getUsername());
                             eventService.triggerEvent(JupyterServerEvent.completed(eventTrackingId, user.getID(), xsiType, itemId,
                                                                                    JupyterServerEventI.Operation.Start,
-                                                                                   "Jupyter notebook server is available at: " + server.get().getUrl()));
+                                                                                   StringUtils.capitalize(application) + " is available at: " + server.get().getUrl()));
                             return;
                         }
                     } else {
@@ -306,24 +308,24 @@ public class DefaultJupyterHubService implements JupyterHubService {
 
                 eventService.triggerEvent(JupyterServerEvent.failed(eventTrackingId, user.getID(), xsiType, itemId,
                                                                     JupyterServerEventI.Operation.Start,
-                                                                    "Failed to launch Jupyter notebook server. " +
+                                                                    "Failed to launch " + application + "." +
                                                                             "Timeout exceeded while waiting for JupyterHub to spawn server. " +
                                                                             "Check the XNAT and JupyterHub system logs for error messages."));
             } catch (UserNotFoundException e) {
                 eventService.triggerEvent(JupyterServerEvent.failed(eventTrackingId, user.getID(), xsiType, itemId,
                                                                     JupyterServerEventI.Operation.Start,
-                                                                    "Failed to launch Jupyter notebook server. User not found."));
+                                                                    "Failed to launch " + application + ". User not found."));
             } catch (ResourceAlreadyExistsException e) {
                 eventService.triggerEvent(JupyterServerEvent.failed(eventTrackingId, user.getID(), xsiType, itemId,
                                                                     JupyterServerEventI.Operation.Start,
-                                                                    "Failed to launch Jupyter notebook server. A server with the same name is already running."));
+                                                                    "Failed to launch " + application + ". A server with the same name is already running."));
             } catch (InterruptedException e) {
-                String msg = "Failed to launch Jupyter notebook server. Thread interrupted. Check the XNAT and JupyterHub system logs for error messages.";
+                String msg = "Failed to launch " + application + ". Thread interrupted. Check the XNAT and JupyterHub system logs for error messages.";
                 eventService.triggerEvent(JupyterServerEvent.failed(eventTrackingId, user.getID(), xsiType, itemId,
                                                                     JupyterServerEventI.Operation.Start, msg));
                 log.error(msg, e);
             } catch (Exception e) {
-                String msg = "Failed to launch Jupyter notebook server. ";
+                String msg = "Failed to launch " + application + ". ";
 
                 if (!jupyterHubServiceAccountHelper.isJupyterHubServiceAccountEnabled()) {
                     msg += "Make sure the JupyterHub service account user is enabled and provide the credentials to JupyterHub (refer to the documentation for more details). ";
@@ -421,7 +423,7 @@ public class DefaultJupyterHubService implements JupyterHubService {
     public void stopServer(final UserI user, final String servername, String eventTrackingId) {
         eventService.triggerEvent(JupyterServerEvent.progress(eventTrackingId, user.getID(),
                                                               JupyterServerEventI.Operation.Stop, 0,
-                                                              "Stopping Jupyter Notebook Server."));
+                                                              "Stopping Jupyter Server."));
 
         CompletableFuture.runAsync(() -> {
             try {
