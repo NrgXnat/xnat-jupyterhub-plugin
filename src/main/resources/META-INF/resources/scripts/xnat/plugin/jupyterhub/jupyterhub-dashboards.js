@@ -1012,7 +1012,6 @@ XNAT.plugin.jupyterhub.dashboards.frameworks = getObject(XNAT.plugin.jupyterhub.
                                     '\t/home/jovyan/dashboards/{mainFilePath}\n' +
                                     '\t{--}server.port {port}\n' +
                                     '\t{--}server.headless True\n' +
-                                    '\t{--}server.fileWatcherType none' +
                                     '</code>')
                             ]),
                             spawn('div.clear')
