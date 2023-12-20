@@ -48,7 +48,7 @@ public class JupyterHubDashboardConfigsApi extends AbstractXapiRestController {
             @ApiResponse(code = 403, message = "Not authorized."),
             @ApiResponse(code = 500, message = "Unexpected error")
     })
-    @XapiRequestMapping(value = "", produces = APPLICATION_JSON_VALUE, method = RequestMethod.GET, restrictTo = AccessLevel.Admin)
+    @XapiRequestMapping(value = "", produces = APPLICATION_JSON_VALUE, method = RequestMethod.GET, restrictTo = AccessLevel.Authenticated)
     public Iterable<DashboardConfig> getDashboardConfigs() {
         return dashboardConfigService.getAll();
     }
@@ -61,7 +61,7 @@ public class JupyterHubDashboardConfigsApi extends AbstractXapiRestController {
             @ApiResponse(code = 404, message = "Dashboard config not found."),
             @ApiResponse(code = 500, message = "Unexpected error")
     })
-    @XapiRequestMapping(value = "/{id}", produces = APPLICATION_JSON_VALUE, method = RequestMethod.GET, restrictTo = AccessLevel.Admin)
+    @XapiRequestMapping(value = "/{id}", produces = APPLICATION_JSON_VALUE, method = RequestMethod.GET, restrictTo = AccessLevel.Authenticated)
     public DashboardConfig getDashboardConfig(@PathVariable("id") final Long id) throws NotFoundException {
         return dashboardConfigService.retrieve(id).orElseThrow(() -> new NotFoundException("Dashboard config not found."));
     }
