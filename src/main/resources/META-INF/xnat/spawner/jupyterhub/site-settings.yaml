@@ -324,9 +324,10 @@ dashboards:
         style: "margin-bottom: 20px;"
       contents:
         "Dashboards are a way to deploy Jupyter notebooks (and other tools) as interactive web applications using JupyterHub.
-         Create a dashboard configuration for each dashboard you want to deploy. They are configured to launch in a
-         specific JupyterHub environment and can be associated with a specific Hardware configuration. You can also
-         specify which data types are supported by the dashboard. See the documentation for more information."
+         Create a configuration for each dashboard you want to deploy. Dashboards are configured to launch in 
+         specific Jupyter environments and are associated with a specific Hardware configuration. You can also
+         specify which data types are supported by the dashboard. After enabling a dashboard, project owners can then 
+         enable the dashboard for their projects. See the documentation for more information."
     dashboardConfigsTable:
       tag: "div#jupyterhub-dashboards-table"
     dashboardScripts:

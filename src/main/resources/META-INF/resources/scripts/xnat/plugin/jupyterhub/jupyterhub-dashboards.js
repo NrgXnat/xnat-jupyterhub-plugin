@@ -995,7 +995,8 @@ XNAT.plugin.jupyterhub.dashboards.frameworks = getObject(XNAT.plugin.jupyterhub.
                                     '<ul><li><b>{repo}</b> - The URL of the Git repository</li><li><b>{repobranch}</b> - ' +
                                     'The branch of the Git repository</li><li><b>{mainFilePath}</b> - The path to the' +
                                     ' main file in the Git repository</li></ul>' +
-                                    'Use the <code>jh-single-native-proxy</code> command to start the dashboard. ' +
+                                    'Use the <code>jh-single-native-proxy</code> python package to proxy the dashboard ' +
+                                    'container through JupyterHub.' +
                                     '</br></br>' +
                                     'Example:</br>' +
                                     '<code>' +
@@ -1006,9 +1007,12 @@ XNAT.plugin.jupyterhub.dashboards.frameworks = getObject(XNAT.plugin.jupyterhub.
                                     '\t--repofolder /home/jovyan/dashboards\n' +
                                     'streamlit run\n' +
                                     '\t/home/jovyan/dashboards/{mainFilePath}\n' +
-                                    '\t{--}server.port {port}\n' +
+                                    '\t{--}server.port 8505\n' +
                                     '\t{--}server.headless True\n' +
-                                    '</code>')
+                                    '</code>' +
+                                    '</br></br>' +
+                                    'See documentation for more details.'
+                                )
                             ]),
                             spawn('div.clear')
                         ]),
