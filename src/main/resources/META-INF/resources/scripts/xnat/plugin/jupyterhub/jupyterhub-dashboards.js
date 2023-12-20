@@ -796,7 +796,9 @@ XNAT.plugin.jupyterhub.dashboards.frameworks = getObject(XNAT.plugin.jupyterhub.
                             if (this.scopes?.DataType?.enabled) {
                                 display = 'All';
                             } else {
-                                display = this.scopes?.DataType?.ids?.join(' ') ?? '';
+                                // Sort ids alphabetically
+                                let sortedIds = this.scopes?.DataType?.ids?.sort((a, b) => a.localeCompare(b));
+                                display = sortedIds?.join(', ');
 
                                 // if display is empty, show 'None'
                                 if (display === '' || display === ' ') {
@@ -804,7 +806,7 @@ XNAT.plugin.jupyterhub.dashboards.frameworks = getObject(XNAT.plugin.jupyterhub.
                                 }
                             }
 
-                            return spawn('div.center', [
+                            return spawn('div.left', [
                                 spawn('span', {}, display)
                             ]);
                         }
