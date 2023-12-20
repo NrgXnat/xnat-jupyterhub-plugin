@@ -291,7 +291,8 @@ public class DefaultJupyterHubService implements JupyterHubService {
 
                     if (server.isPresent()) {
                         if (server.get().getReady()) {
-                            log.info(StringUtils.capitalize(application) + " started for user {}", user.getUsername());
+                            log.info("{} started for user: {}, xsiType: {}, itemId: {}, projectId: {}, computeEnvironmentConfigId: {}, hardwareConfigId: {}, dashboardConfigId: {}.",
+                                     StringUtils.capitalize(application), user.getUsername(), xsiType, itemId, projectId, computeEnvironmentConfigId, hardwareConfigId, dashboardConfigId);
                             eventService.triggerEvent(JupyterServerEvent.completed(eventTrackingId, user.getID(), xsiType, itemId,
                                                                                    JupyterServerEventI.Operation.Start,
                                                                                    StringUtils.capitalize(application) + " is available at: " + server.get().getUrl()));
