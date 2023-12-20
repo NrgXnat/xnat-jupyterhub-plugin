@@ -15,6 +15,7 @@ import org.nrg.xnatx.plugins.jupyterhub.client.models.*;
 import org.nrg.xnatx.plugins.jupyterhub.config.JupyterHubApiConfig;
 import org.nrg.xnatx.plugins.jupyterhub.models.*;
 import org.nrg.xnatx.plugins.jupyterhub.models.docker.*;
+import org.nrg.xnatx.plugins.jupyterhub.preferences.JupyterHubPreferences;
 import org.nrg.xnatx.plugins.jupyterhub.services.JupyterHubService;
 import org.nrg.xnatx.plugins.jupyterhub.services.UserOptionsService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,6 +36,7 @@ import java.time.ZonedDateTime;
 import java.util.*;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.*;
@@ -64,7 +66,6 @@ public class JupyterHubApiTest {
 
     private XnatUserOptions userOptions;
     private ServerStartRequest serverStartRequest;
-    private Long profileId;
     private Server dummyServer;
     private String servername;
     private Server dummyNamedServer;
@@ -77,6 +78,7 @@ public class JupyterHubApiTest {
     @Autowired private RoleServiceI mockRoleService;
     @Autowired private UserManagementServiceI mockUserManagementService;
     @Autowired private UserOptionsService mockUserOptionsService;
+    @Autowired private JupyterHubPreferences mockJupyterHubPreferences;
 
     @Before
     public void before() throws Exception {
@@ -139,7 +141,7 @@ public class JupyterHubApiTest {
                 .resources(resources)
                 .build();
 
-        profileId = 2L;
+        Long profileId = 2L;
 
         userOptions = XnatUserOptions.builder()
                 .userId(nonAdminId)
@@ -232,8 +234,20 @@ public class JupyterHubApiTest {
     public void after() {
         Mockito.reset(admin);
         Mockito.reset(mockJupyterHubService);
+        Mockito.reset(mockRoleService);
+        Mockito.reset(mockUserManagementService);
+        Mockito.reset(mockUserOptionsService);
+        Mockito.reset(mockJupyterHubPreferences);
     }
 
+    @Test
+    public void testWiring() {
+        assertNotNull(mockJupyterHubService);
+        assertNotNull(mockRoleService);
+        assertNotNull(mockUserManagementService);
+        assertNotNull(mockUserOptionsService);
+        assertNotNull(mockJupyterHubPreferences);
+    }
 
     @Test
     public void testGetVersion() throws Exception {
@@ -429,7 +443,93 @@ public class JupyterHubApiTest {
     }
 
     @Test
-    public void testStartServer() throws Exception {
+    public void testStartServer_AllUsers() throws Exception {
+        when(mockJupyterHubPreferences.getAllUsersCanStartJupyter()).thenReturn(true);
+        when(mockRoleService.checkRole(any(), eq("Jupyter"))).thenReturn(false);
+        when(mockRoleService.isSiteAdmin(nonAdmin)).thenReturn(false);
+
+        final MockHttpServletRequestBuilder request = MockMvcRequestBuilders
+                .post("/jupyterhub/users/" + NON_ADMIN_USERNAME + "/server")
+                .accept(JSON)
+                .contentType(JSON)
+                .content(mapper.writeValueAsString(serverStartRequest))
+                .with(authentication(NONADMIN_AUTH))
+                .with(csrf())
+                .with(testSecurityContext());
+
+        mockMvc.perform(request).andExpect(status().isOk());
+
+        verify(mockJupyterHubService, times(1)).startServer(eq(nonAdmin), eq(serverStartRequest));
+    }
+
+    @Test
+    public void testStartServer_JupyterUsersRole() throws Exception {
+        when(mockJupyterHubPreferences.getAllUsersCanStartJupyter()).thenReturn(false);
+        when(mockRoleService.checkRole(any(), eq("Jupyter"))).thenReturn(true);
+        when(mockRoleService.isSiteAdmin(nonAdmin)).thenReturn(false);
+
+        final MockHttpServletRequestBuilder request = MockMvcRequestBuilders
+                .post("/jupyterhub/users/" + NON_ADMIN_USERNAME + "/server")
+                .accept(JSON)
+                .contentType(JSON)
+                .content(mapper.writeValueAsString(serverStartRequest))
+                .with(authentication(NONADMIN_AUTH))
+                .with(csrf())
+                .with(testSecurityContext());
+
+        mockMvc.perform(request).andExpect(status().isOk());
+
+        verify(mockJupyterHubService, times(1)).startServer(eq(nonAdmin), eq(serverStartRequest));
+    }
+
+    @Test
+    public void testStartServer_Admin() throws Exception {
+        when(mockJupyterHubPreferences.getAllUsersCanStartJupyter()).thenReturn(false);
+        when(mockRoleService.checkRole(any(), eq("Jupyter"))).thenReturn(false);
+        when(mockRoleService.isSiteAdmin(admin)).thenReturn(true);
+
+        final MockHttpServletRequestBuilder request = MockMvcRequestBuilders
+                .post("/jupyterhub/users/" + ADMIN_USERNAME + "/server")
+                .accept(JSON)
+                .contentType(JSON)
+                .content(mapper.writeValueAsString(serverStartRequest))
+                .with(authentication(ADMIN_AUTH))
+                .with(csrf())
+                .with(testSecurityContext());
+
+        mockMvc.perform(request).andExpect(status().isForbidden());
+
+        verify(mockJupyterHubService, never()).startServer(eq(admin), eq(serverStartRequest));
+    }
+
+    @Test
+    public void testStartServer_InsufficientPermissions() throws Exception {
+        when(mockJupyterHubPreferences.getAllUsersCanStartJupyter()).thenReturn(false);
+        when(mockRoleService.checkRole(any(), eq("Jupyter"))).thenReturn(false);
+        when(mockRoleService.isSiteAdmin(nonAdmin)).thenReturn(false);
+
+        final MockHttpServletRequestBuilder request = MockMvcRequestBuilders
+                .post("/jupyterhub/users/" + NON_ADMIN_USERNAME + "/server")
+                .accept(JSON)
+                .contentType(JSON)
+                .content(mapper.writeValueAsString(serverStartRequest))
+                .with(authentication(NONADMIN_AUTH))
+                .with(csrf())
+                .with(testSecurityContext());
+
+        mockMvc.perform(request).andExpect(status().isForbidden());
+
+        verify(mockJupyterHubService, never()).startServer(eq(admin), eq(serverStartRequest));
+    }
+
+    @Test
+    public void testStartServer_Dashboard_nonJupyterUser() throws Exception {
+        when(mockJupyterHubPreferences.getAllUsersCanStartJupyter()).thenReturn(false);
+        when(mockRoleService.checkRole(any(), eq("Jupyter"))).thenReturn(false);
+        when(mockRoleService.isSiteAdmin(nonAdmin)).thenReturn(false);
+
+        serverStartRequest.setDashboardConfigId(1L); // All users can start dashboard servers
+
         final MockHttpServletRequestBuilder request = MockMvcRequestBuilders
                 .post("/jupyterhub/users/" + NON_ADMIN_USERNAME + "/server")
                 .accept(JSON)
