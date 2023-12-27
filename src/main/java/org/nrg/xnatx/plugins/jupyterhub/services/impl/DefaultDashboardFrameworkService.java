@@ -143,6 +143,11 @@ public class DefaultDashboardFrameworkService implements DashboardFrameworkServi
         return command;
     }
 
+    /**
+     * Replace multiple spaces with a single space
+     * @param command The command to remove extra spaces from
+     * @return The command with extra spaces removed
+     */
     protected String removeExtraSpaces(String command) {
         return command.replaceAll("\\s+", " ");
     }
