@@ -11,7 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 /**
- * Initializes the default dashboard frameworks (Panel, Streamlit, Voila, Dash).
+ * Initializes the default dashboard frameworks (Panel, Streamlit, Voilà, Dash).
  */
 @Component
 @Slf4j
@@ -40,7 +40,7 @@ public class DashboardFrameworkInitializer extends AbstractInitializingTask {
     }
 
     /**
-     * Creates the default dashboard frameworks (Panel, Streamlit, Voila, Dash) if they do not already exist.
+     * Creates the default dashboard frameworks (Panel, Streamlit, Voilà, Dash) if they do not already exist.
      * @throws InitializingTaskException When the XFTManagerHelper or XnatAppInfo is not initialized.
      */
     @Override
