@@ -34,6 +34,10 @@ public class DashboardConfigDao extends AbstractHibernateDAO<DashboardConfigEnti
         this.hardwareConfigDao = hardwareConfigDao;
     }
 
+    /**
+     * Initializes the entity, loading all collections and proxies.
+     * @param entity The entity to initialize.
+     */
     @Override
     public void initialize(final DashboardConfigEntity entity) {
         if (entity == null) {
