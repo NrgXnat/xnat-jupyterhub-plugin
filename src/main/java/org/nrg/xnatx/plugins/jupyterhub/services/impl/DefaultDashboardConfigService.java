@@ -236,6 +236,11 @@ public class DefaultDashboardConfigService implements DashboardConfigService {
         }
     }
 
+    /**
+     * Enables a dashboard config for the site
+     * @param id The id of the dashboard config to enable
+     * @throws NotFoundException If the dashboard config does not exist
+     */
     @Override
     public void enableForSite(Long id) throws NotFoundException {
         // Get the dashboard config
@@ -253,7 +258,11 @@ public class DefaultDashboardConfigService implements DashboardConfigService {
         update(config);
     }
 
-
+    /**
+     * Disables a dashboard config for the site
+     * @param id The id of the dashboard config to disable
+     * @throws NotFoundException If the dashboard config does not exist
+     */
     @Override
     public void disableForSite(Long id) throws NotFoundException {
         // Get the dashboard config
@@ -271,6 +280,12 @@ public class DefaultDashboardConfigService implements DashboardConfigService {
         update(config);
     }
 
+    /**
+     * Enables a dashboard config for the specified project
+     * @param id The id of the dashboard config to enable
+     * @param projectId The id of the project to enable the dashboard config for
+     * @throws NotFoundException If the dashboard config does not exist
+     */
     @Override
     public void enableForProject(Long id, String projectId) throws NotFoundException {
         // Get the dashboard config
@@ -288,6 +303,12 @@ public class DefaultDashboardConfigService implements DashboardConfigService {
         update(config);
     }
 
+    /**
+     * Disables a dashboard config for the specified project
+     * @param id The id of the dashboard config to disable
+     * @param projectId The id of the project to disable the dashboard config for
+     * @throws NotFoundException If the dashboard config does not exist
+     */
     @Override
     public void disableForProject(Long id, String projectId) throws NotFoundException {
         // Get the dashboard config
