@@ -40,18 +40,31 @@ public class DashboardFrameworkEntity extends AbstractHibernateEntity {
         this.commandTemplate = commandTemplate;
     }
 
+    /**
+     * Creates a new entity from the pojo representation.
+     * @param pojo The pojo representation of the entity.
+     * @return The entity representation of the pojo.
+     */
     public static DashboardFrameworkEntity fromPojo(DashboardFramework pojo) {
         final DashboardFrameworkEntity entity = new DashboardFrameworkEntity();
         entity.update(pojo);
         return entity;
     }
 
+    /**
+     * Updates the entity with the pojo representation. Does not update the ID.
+     * @param pojo The pojo representation of the entity.
+     */
     public void update(DashboardFramework pojo) {
         // Don't update the ID, that's immutable
         this.setName(pojo.getName());
         this.setCommandTemplate(pojo.getCommandTemplate());
     }
 
+    /**
+     * Converts the entity to a pojo representation.
+     * @return The pojo representation of the entity.
+     */
     public DashboardFramework toPojo() {
         return DashboardFramework.builder()
                 .id(this.getId())

@@ -68,12 +68,22 @@ public class DashboardConfigEntity extends AbstractHibernateEntity {
         this.hardwareConfig = hardwareConfig;
     }
 
+    /**
+     * Creates a new entity from the given pojo.
+     * @param pojo The pojo from which to create the entity.
+     * @return The newly created entity.
+     */
     public static DashboardConfigEntity fromPojo(final DashboardConfig pojo) {
         final DashboardConfigEntity entity = new DashboardConfigEntity();
         entity.update(pojo);
         return entity;
     }
 
+    /**
+     * Converts the entity to a pojo. The compute environment config and hardware config are converted to pojos
+     * with only the id and name set.
+     * @return The pojo representation of the entity.
+     */
     public DashboardConfig toPojo() {
         // Only the id and name is needed for the compute environment config and hardware config
         ComputeEnvironmentConfig computeEnvironmentConfig = ComputeEnvironmentConfig.builder()
@@ -102,7 +112,8 @@ public class DashboardConfigEntity extends AbstractHibernateEntity {
 
     /**
      * Updates the entity with the values from the given pojo. Updating the compute environment config and hardware
-     * config is not supported. Updating the dashboard config -> dashboard -> dashboard framework relationship is not supported.
+     * config is not supported. Updating the dashboard config -> dashboard -> dashboard framework relationship is not
+     * supported and must be done externally.
      * @param pojo The pojo from which to update the entity.
      */
     public void update(final DashboardConfig pojo) {

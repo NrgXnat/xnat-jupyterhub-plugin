@@ -110,12 +110,21 @@ public class DashboardEntity extends AbstractHibernateEntity {
         this.dashboardFramework = dashboardFramework;
     }
 
+    /**
+     * Creates a new entity from the given pojo.
+     * @param pojo The pojo from which to create the entity.
+     * @return The newly created entity.
+     */
     public static DashboardEntity fromPojo(final Dashboard pojo) {
         final DashboardEntity entity = new DashboardEntity();
         entity.update(pojo);
         return entity;
     }
 
+    /**
+     * Converts the entity to a pojo.
+     * @return The pojo representation of the entity.
+     */
     public Dashboard toPojo() {
         final String framework = this.getDashboardFramework() != null ? this.getDashboardFramework().getName() : null;
 
@@ -131,6 +140,10 @@ public class DashboardEntity extends AbstractHibernateEntity {
                         .build();
     }
 
+    /**
+     * Updates the entity with the values from the given pojo. Doesn't update the ID, that's immutable.
+     * @param pojo The pojo from which to update the entity.
+     */
     public void update(final Dashboard pojo) {
         // Don't update the ID, that's immutable
         // DashboardFrameworkEntity must be set separately
