@@ -4,11 +4,11 @@ import org.nrg.xnat.compute.services.ComputeEnvironmentConfigEntityService;
 import org.nrg.xnat.compute.services.ComputeEnvironmentConfigService;
 import org.nrg.xnat.compute.services.HardwareConfigEntityService;
 import org.nrg.xnat.compute.services.HardwareConfigService;
-import org.nrg.xnat.compute.services.impl.DefaultComputeEnvironmentConfigService;
-import org.nrg.xnat.compute.services.impl.DefaultHardwareConfigService;
 import org.nrg.xnatx.plugins.jupyterhub.services.DashboardConfigEntityService;
 import org.nrg.xnatx.plugins.jupyterhub.services.DashboardFrameworkEntityService;
 import org.nrg.xnatx.plugins.jupyterhub.services.DashboardFrameworkService;
+import org.nrg.xnatx.plugins.jupyterhub.services.impl.DashboardComputeEnvironmentConfigService;
+import org.nrg.xnatx.plugins.jupyterhub.services.impl.DashboardHardwareConfigService;
 import org.nrg.xnatx.plugins.jupyterhub.services.impl.DefaultDashboardConfigService;
 import org.nrg.xnatx.plugins.jupyterhub.services.impl.DefaultDashboardFrameworkService;
 import org.springframework.context.annotation.Bean;
@@ -34,19 +34,23 @@ public class DefaultDashboardConfigServiceTestConfig {
 
     @Bean
     public ComputeEnvironmentConfigService defaultComputeEnvironmentConfigService(final ComputeEnvironmentConfigEntityService computeEnvironmentConfigEntityService,
-                                                                                  final HardwareConfigEntityService hardwareConfigEntityService) {
-        return new DefaultComputeEnvironmentConfigService(
+                                                                                  final HardwareConfigEntityService hardwareConfigEntityService,
+                                                                                  final DashboardConfigEntityService dashboardConfigEntityService) {
+        return new DashboardComputeEnvironmentConfigService(
                 computeEnvironmentConfigEntityService,
-                hardwareConfigEntityService
+                hardwareConfigEntityService,
+                dashboardConfigEntityService
         );
     }
 
     @Bean
     public HardwareConfigService defaultHardwareConfigService(final HardwareConfigEntityService hardwareConfigEntityService,
-                                                              final ComputeEnvironmentConfigEntityService computeEnvironmentConfigEntityService) {
-        return new DefaultHardwareConfigService(
+                                                              final ComputeEnvironmentConfigEntityService computeEnvironmentConfigEntityService,
+                                                              final DashboardConfigEntityService dashboardConfigEntityService) {
+        return new DashboardHardwareConfigService(
                 hardwareConfigEntityService,
-                computeEnvironmentConfigEntityService
+                computeEnvironmentConfigEntityService,
+                dashboardConfigEntityService
         );
     }
 

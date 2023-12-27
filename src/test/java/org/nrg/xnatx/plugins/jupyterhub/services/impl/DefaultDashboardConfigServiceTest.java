@@ -844,6 +844,104 @@ public class DefaultDashboardConfigServiceTest {
         fail("Should not be able to delete dashboard framework in use by dashboard configs");
     }
 
+    @Test
+    @DirtiesContext
+    public void testCantDeleteComputeEnvironmentConfigInUse() throws Exception {
+        // Create compute environment and hardware configs
+        commitComputeEnvironmentAndHardwareConfigs();
+
+        // Commit dashboard frameworks
+        commitDashboardFrameworks();
+
+        // Create dashboard configs
+        defaultDashboardConfigService.create(dashboardConfig1);
+        defaultDashboardConfigService.create(dashboardConfig2);
+        defaultDashboardConfigService.create(dashboardConfig3);
+
+        commitTransaction();
+
+        // Try to delete compute environment config in use
+        try {
+            computeEnvironmentConfigService.delete(computeEnvironmentConfig1.getId());
+        } catch (RuntimeException e) {
+            assertTrue(computeEnvironmentConfigService.exists(computeEnvironmentConfig1.getId()));
+            return;
+        }
+
+        fail("Should not be able to delete compute environment config in use by dashboard configs");
+    }
+
+    @Test
+    @DirtiesContext
+    public void testCanDeleteComputeEnvironmentConfigNotInUse() throws Exception {
+        // Create compute environment and hardware configs
+        commitComputeEnvironmentAndHardwareConfigs();
+
+        // Commit dashboard frameworks
+        commitDashboardFrameworks();
+
+        // Create dashboard configs
+        defaultDashboardConfigService.create(dashboardConfig1);
+        defaultDashboardConfigService.create(dashboardConfig2);
+        defaultDashboardConfigService.create(dashboardConfig3);
+
+        commitTransaction();
+
+        // Try to delete compute environment config not in use
+        computeEnvironmentConfigService.delete(computeEnvironmentConfig2.getId());
+        commitTransaction();
+        assertFalse(computeEnvironmentConfigService.exists(computeEnvironmentConfig2.getId()));
+    }
+
+    @Test
+    @DirtiesContext
+    public void testCantDeleteHardwareConfigInUse() throws Exception {
+        // Create compute environment and hardware configs
+        commitComputeEnvironmentAndHardwareConfigs();
+
+        // Commit dashboard frameworks
+        commitDashboardFrameworks();
+
+        // Create dashboard configs
+        defaultDashboardConfigService.create(dashboardConfig1);
+        defaultDashboardConfigService.create(dashboardConfig2);
+        defaultDashboardConfigService.create(dashboardConfig3);
+
+        commitTransaction();
+
+        // Try to delete hardware config in use
+        try {
+            hardwareConfigService.delete(hardwareConfig1.getId());
+        } catch (RuntimeException e) {
+            assertTrue(hardwareConfigService.exists(hardwareConfig1.getId()));
+            return;
+        }
+
+        fail("Should not be able to delete hardware config in use by dashboard configs");
+    }
+
+    @Test
+    @DirtiesContext
+    public void testCanDeleteHardwareConfigNotInUse() throws Exception {
+        // Create compute environment and hardware configs
+        commitComputeEnvironmentAndHardwareConfigs();
+
+        // Commit dashboard frameworks
+        commitDashboardFrameworks();
+
+        // Create dashboard configs
+        defaultDashboardConfigService.create(dashboardConfig1);
+        defaultDashboardConfigService.create(dashboardConfig2);
+        defaultDashboardConfigService.create(dashboardConfig3);
+
+        commitTransaction();
+
+        // Try to delete hardware config not in use
+        hardwareConfigService.delete(hardwareConfig2.getId());
+        commitTransaction();
+        assertFalse(hardwareConfigService.exists(hardwareConfig2.getId()));
+    }
+
     public void createDummyConfigs() {
         // Setup hardware
         Hardware hardware1 = Hardware.builder()
@@ -1334,8 +1432,8 @@ public class DefaultDashboardConfigServiceTest {
         dashboardConfig1.setComputeEnvironmentConfig(computeEnvironmentConfig1);
         dashboardConfig1.setHardwareConfig(hardwareConfig1);
 
-        dashboardConfig2.setComputeEnvironmentConfig(computeEnvironmentConfig2);
-        dashboardConfig2.setHardwareConfig(hardwareConfig2);
+        dashboardConfig2.setComputeEnvironmentConfig(computeEnvironmentConfig3);
+        dashboardConfig2.setHardwareConfig(hardwareConfig3);
 
         dashboardConfig3.setComputeEnvironmentConfig(computeEnvironmentConfig3);
         dashboardConfig3.setHardwareConfig(hardwareConfig3);

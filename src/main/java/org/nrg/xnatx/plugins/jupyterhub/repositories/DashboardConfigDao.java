@@ -1,8 +1,10 @@
 package org.nrg.xnatx.plugins.jupyterhub.repositories;
 
 import lombok.extern.slf4j.Slf4j;
+import org.hibernate.Criteria;
 import org.hibernate.Hibernate;
 import org.hibernate.SessionFactory;
+import org.hibernate.criterion.Restrictions;
 import org.nrg.framework.orm.hibernate.AbstractHibernateDAO;
 import org.nrg.xnat.compute.repositories.ComputeEnvironmentConfigDao;
 import org.nrg.xnat.compute.repositories.HardwareConfigDao;
@@ -78,6 +80,30 @@ public class DashboardConfigDao extends AbstractHibernateDAO<DashboardConfigEnti
 
         Hibernate.initialize(entity);
         Hibernate.initialize(entity.getIds());
+    }
+
+    /**
+     * Checks if the given compute environment config is in use by a dashboard config.
+     * @param id The ID of the compute environment config to check.
+     * @return True if the compute environment config is used by a dashboard config, otherwise false.
+     */
+    public boolean isComputeEnvironmentConfigInUse(final long id) {
+        Criteria criteria = getSession().createCriteria(DashboardConfigEntity.class);
+        criteria.add(Restrictions.eq("computeEnvironmentConfig.id", id));
+        criteria.setMaxResults(1);
+        return criteria.uniqueResult() != null;
+    }
+
+    /**
+     * Checks if the given hardware config is in use by a dashboard config.
+     * @param id The ID of the hardware config to check.
+     * @return True if the hardware config is used by a dashboard config, otherwise false.
+     */
+    public boolean isHardwareConfigInUse(final long id) {
+        Criteria criteria = getSession().createCriteria(DashboardConfigEntity.class);
+        criteria.add(Restrictions.eq("hardwareConfig.id", id));
+        criteria.setMaxResults(1);
+        return criteria.uniqueResult() != null;
     }
 
 }
