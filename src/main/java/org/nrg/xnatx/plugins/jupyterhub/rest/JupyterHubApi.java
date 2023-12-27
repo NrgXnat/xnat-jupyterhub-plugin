@@ -278,10 +278,20 @@ public class JupyterHubApi extends AbstractXapiRestController {
         return getUserManagementService().getUser(username);
     }
 
+    /**
+     * Checks if the server start request is for starting a dashboard or a notebook.
+     * @param serverStartRequest The server start request to check.
+     * @return True if the server start request is for a dashboard, false otherwise.
+     */
     protected boolean isNotDashboard(ServerStartRequest serverStartRequest) {
         return serverStartRequest.getDashboardConfigId() == null;
     }
 
+    /**
+     * Checks if the user is authorized to start a Jupyter notebook server (not a dashboard).
+     * @param user The user to check.
+     * @throws InsufficientPrivilegesException If the user is not authorized to start a Jupyter notebook server.
+     */
     protected void checkJupyterAuthorization(UserI user) throws InsufficientPrivilegesException {
         final boolean allUsersCanStartJupyter = jupyterHubPreferences.getAllUsersCanStartJupyter();
         final boolean userHasJupyterRole = roleHolder.checkRole(user, JUPYTER_ROLE);
