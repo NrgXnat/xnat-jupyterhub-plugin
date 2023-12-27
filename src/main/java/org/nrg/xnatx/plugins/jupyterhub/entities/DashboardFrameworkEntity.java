@@ -16,7 +16,7 @@ import javax.persistence.UniqueConstraint;
 @AllArgsConstructor
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = false)
-@Table(uniqueConstraints = {@UniqueConstraint(columnNames = {"name"})})
+@Table(name = "xhbm_dashboard_framework_entity", uniqueConstraints = {@UniqueConstraint(columnNames = {"name"})})
 @Slf4j
 public class DashboardFrameworkEntity extends AbstractHibernateEntity {
 

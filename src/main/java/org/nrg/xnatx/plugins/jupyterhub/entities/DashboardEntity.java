@@ -13,12 +13,12 @@ import javax.persistence.Table;
 import javax.persistence.FetchType;
 
 @Entity
+@Table(name = "xhbm_dashboard_entity")
 @ToString
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = false)
-@Table
 @Slf4j
 public class DashboardEntity extends AbstractHibernateEntity {
 

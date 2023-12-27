@@ -9,6 +9,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 @Entity
+@Table(name = "xhbm_dashboard_scope_entity")
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
