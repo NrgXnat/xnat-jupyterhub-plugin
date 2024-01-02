@@ -270,6 +270,10 @@ XNAT.plugin.jupyterhub.dashboards.frameworks = getObject(XNAT.plugin.jupyterhub.
                             hr {
                                 margin: 15px 25px;
                             }
+                            
+                            code {
+                                white-space: pre-wrap;
+                            }
                         `),
                         spawn('input#id', { type: 'hidden', value: id }),
                         spawn('div.panel-element|data-name=name', [
@@ -348,7 +352,30 @@ XNAT.plugin.jupyterhub.dashboards.frameworks = getObject(XNAT.plugin.jupyterhub.
                                     { style: { fontFamily: 'sans-serif' } },
                                     command
                                 ),
-                                spawn('div.description', 'Enter the command that will be executed to start the dashboard.')
+                                spawn('div.description',
+                                    'Enter the command that will be executed to start the dashboard. ' +
+                                    'Use the following placeholders to insert values into the command: ' +
+                                    '<ul><li><b>{repo}</b> - The URL of the Git repository</li><li><b>{repobranch}</b> - ' +
+                                    'The branch of the Git repository</li><li><b>{mainFilePath}</b> - The path to the' +
+                                    ' main file in the Git repository</li></ul>' +
+                                    'Use the <code>jh-single-native-proxy</code> python package to proxy the dashboard ' +
+                                    'container through JupyterHub.' +
+                                    '</br></br>' +
+                                    'Example:</br>' +
+                                    '<code>' +
+                                    'jhsingle-native-proxy\n' +
+                                    '\t--destport 8505\n' +
+                                    '\t--repo {repo}\n' +
+                                    '\t--repobranch {repobranch}\n' +
+                                    '\t--repofolder /home/jovyan/dashboards\n' +
+                                    'streamlit run\n' +
+                                    '\t/home/jovyan/dashboards/{mainFilePath}\n' +
+                                    '\t{--}server.port 8505\n' +
+                                    '\t{--}server.headless True\n' +
+                                    '</code>' +
+                                    '</br></br>' +
+                                    'See documentation for more details.'
+                                )
                             ]),
                             spawn('div.clear')
                         ]),
@@ -495,6 +522,49 @@ XNAT.plugin.jupyterhub.dashboards.frameworks = getObject(XNAT.plugin.jupyterhub.
                                     .is('notEmpty')
                                     .failure('Framework is required')
                             );
+
+                            if (form.querySelector('#framework').value.toLowerCase() === 'custom') {
+                                // command is required for custom frameworks
+                                validators.push(
+                                    XNAT.validate(form.querySelector('#command'))
+                                        .reset().chain()
+                                        .required()
+                                        .is('notEmpty')
+                                        .failure('Command is required')
+                                );
+                            } else {
+                                // repo, branch and main file path are required for non-custom frameworks
+                                validators.push(
+                                    XNAT.validate(form.querySelector('#git-repo-url'))
+                                        .reset().chain()
+                                        .required()
+                                        .is('notEmpty')
+                                        .failure('Git Repo URL is required')
+                                );
+
+                                validators.push(
+                                    XNAT.validate(form.querySelector('#git-repo-url'))
+                                        .reset().chain()
+                                        .is('url')
+                                        .failure('Git Repo must be a URL')
+                                )
+
+                                validators.push(
+                                    XNAT.validate(form.querySelector('#git-repo-branch'))
+                                        .reset().chain()
+                                        .required()
+                                        .is('notEmpty')
+                                        .failure('Branch is required')
+                                );
+
+                                validators.push(
+                                    XNAT.validate(form.querySelector('#main-file-path'))
+                                        .reset().chain()
+                                        .required()
+                                        .is('notEmpty')
+                                        .failure('Main File Path is required')
+                                );
+                            }
 
                             validators.push(
                                 XNAT.validate(form.querySelector('#jupyter-environment'))
