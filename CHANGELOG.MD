@@ -14,7 +14,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Requires XNAT 1.8.10 or higher.
+- [JHP-66][] and [XNAT-7867][]: Moves the compute services code from the plugin to the XNAT core to allow other plugins 
+                                to use the compute services. Makes the plugin dependent on XNAT 1.8.10 or later.
+
 
 ## [1.0.1] - 2023-10-12
 
@@ -29,8 +31,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
               to their Jupyter notebook server. Addresses an issue encountered in multi-node XNAT deployments.
               The new preference will default to the site URL (which will keep the current behavior).
 
-
+[XNAT-7867]: https://radiologics.atlassian.net/browse/XNAT-7867
 [XNAT-7903]: https://radiologics.atlassian.net/browse/XNAT-7903
+[JHP-66]: https://radiologics.atlassian.net/jira/software/c/projects/JHP/issues/JHP-66
 [JHP-68]: https://radiologics.atlassian.net/jira/software/c/projects/JHP/issues/JHP-68
 [JHP-69]: https://radiologics.atlassian.net/jira/software/c/projects/JHP/issues/JHP-69
 [JHP-73]: https://radiologics.atlassian.net/jira/software/c/projects/JHP/issues/JHP-73
