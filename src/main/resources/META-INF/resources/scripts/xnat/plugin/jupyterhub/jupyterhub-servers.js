@@ -471,7 +471,7 @@ XNAT.compute.computeEnvironmentConfigs = getObject(XNAT.compute.computeEnvironme
             }
 
             const startButton = {
-                label: 'Start',
+                label: 'Start Dashboard',
                 isDefault: true,
                 close: false,
                 action: function(obj) {
