@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - [JHP-73][]: Adds dashboards functionality to the JupyterHub plugin. May require browser cache to be cleared.
 - [XNAT-7903][] and [JHP-74][]: Support mounting of shared data at the project level. 
+- [JHP-70]: Adds capability to configure plugin preferences via environment variables at startup.
 
 ### Changed
 
@@ -36,5 +37,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [JHP-66]: https://radiologics.atlassian.net/jira/software/c/projects/JHP/issues/JHP-66
 [JHP-68]: https://radiologics.atlassian.net/jira/software/c/projects/JHP/issues/JHP-68
 [JHP-69]: https://radiologics.atlassian.net/jira/software/c/projects/JHP/issues/JHP-69
+[JHP-70]: https://radiologics.atlassian.net/jira/software/c/projects/JHP/issues/JHP-70
 [JHP-73]: https://radiologics.atlassian.net/jira/software/c/projects/JHP/issues/JHP-73
 [JHP-74]: https://radiologics.atlassian.net/jira/software/c/projects/JHP/issues/JHP-74
