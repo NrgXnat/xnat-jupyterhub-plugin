@@ -27,11 +27,13 @@ import org.nrg.xnatx.plugins.jupyterhub.models.XnatUserOptions;
 import org.nrg.xnatx.plugins.jupyterhub.models.docker.Mount;
 import org.nrg.xnatx.plugins.jupyterhub.models.docker.*;
 import org.nrg.xnatx.plugins.jupyterhub.preferences.JupyterHubPreferences;
+import org.nrg.xnatx.plugins.jupyterhub.services.DashboardJobTemplateService;
 import org.nrg.xnatx.plugins.jupyterhub.services.UserOptionsEntityService;
 import org.nrg.xnatx.plugins.jupyterhub.services.UserOptionsService;
 import org.nrg.xnatx.plugins.jupyterhub.services.UserWorkspaceService;
 import org.nrg.xnatx.plugins.jupyterhub.utils.PermissionsHelper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Nullable;
@@ -55,6 +57,7 @@ public class DefaultUserOptionsService implements UserOptionsService {
     private final UserOptionsEntityService userOptionsEntityService;
     private final PermissionsHelper permissionsHelper;
     private final JobTemplateService jobTemplateService;
+    private final DashboardJobTemplateService dashboardJobTemplateService;
 
     @Autowired
     public DefaultUserOptionsService(final JupyterHubPreferences jupyterHubPreferences,
@@ -64,7 +67,8 @@ public class DefaultUserOptionsService implements UserOptionsService {
                                      final SiteConfigPreferences siteConfigPreferences,
                                      final UserOptionsEntityService userOptionsEntityService,
                                      final PermissionsHelper permissionsHelper,
-                                     final JobTemplateService jobTemplateService) {
+                                     @Qualifier("defaultJobTemplateService") final JobTemplateService jobTemplateService,
+                                     final DashboardJobTemplateService dashboardJobTemplateService) {
         this.jupyterHubPreferences = jupyterHubPreferences;
         this.userWorkspaceService = userWorkspaceService;
         this.searchHelperService = searchHelperService;
@@ -73,6 +77,7 @@ public class DefaultUserOptionsService implements UserOptionsService {
         this.userOptionsEntityService = userOptionsEntityService;
         this.permissionsHelper = permissionsHelper;
         this.jobTemplateService = jobTemplateService;
+        this.dashboardJobTemplateService = dashboardJobTemplateService;
     }
 
     public Map<String, String> getProjectPaths(final UserI user, final List<String> projectIds) throws BaseXnatExperimentdata.UnknownPrimaryProjectException, DBPoolException, SQLException, InvalidArchiveStructure, IOException {
@@ -302,7 +307,7 @@ public class DefaultUserOptionsService implements UserOptionsService {
 
     @Override
     public void storeUserOptions(UserI user, String servername, String xsiType, String id, String projectId,
-                                 Long computeEnvironmentConfigId, Long hardwareConfigId, String eventTrackingId) throws BaseXnatExperimentdata.UnknownPrimaryProjectException, DBPoolException, SQLException, InvalidArchiveStructure, IOException {
+                                 Long computeEnvironmentConfigId, Long hardwareConfigId, Long dashboardConfigId, String eventTrackingId) throws BaseXnatExperimentdata.UnknownPrimaryProjectException, DBPoolException, SQLException, InvalidArchiveStructure, IOException {
         log.debug("Storing user options for user '{}' server '{}' xsiType '{}' id '{}' projectId '{}'",
                   user.getUsername(), servername, xsiType, id, projectId);
 
@@ -314,7 +319,17 @@ public class DefaultUserOptionsService implements UserOptionsService {
         Map<Scope, String> executionScope = new HashMap<>();
         executionScope.put(Scope.Project, projectId);
         executionScope.put(Scope.User, user.getUsername());
-        JobTemplate jobTemplate = jobTemplateService.resolve(computeEnvironmentConfigId, hardwareConfigId, executionScope);
+        executionScope.put(Scope.DataType, xsiType);
+
+        JobTemplate jobTemplate;
+
+        if (dashboardConfigId != null) {
+            // The dashboard resolver supersedes the compute environment command,
+            // enabling the initiation of the dashboard rather than Jupyter Lab
+            jobTemplate = dashboardJobTemplateService.resolve(dashboardConfigId, computeEnvironmentConfigId, hardwareConfigId, executionScope);
+        } else {
+            jobTemplate = jobTemplateService.resolve(computeEnvironmentConfigId, hardwareConfigId, executionScope);
+        }
 
         // specific xsi type -> general xsi type
         if (instanceOf(xsiType, XnatExperimentdata.SCHEMA_ELEMENT_NAME)) {
@@ -489,6 +504,7 @@ public class DefaultUserOptionsService implements UserOptionsService {
 
         // Build container spec for the task template
         containerSpec.setImage(computeEnvironment.getImage());
+        containerSpec.setCommand(computeEnvironment.getCommand());
 
         // Add environment variables from compute environment and hardware
         Map<String, String> environmentVariables = new HashMap<>();

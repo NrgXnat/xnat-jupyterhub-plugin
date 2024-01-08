@@ -26,6 +26,6 @@ public interface UserOptionsService {
 
     Optional<XnatUserOptions> retrieveUserOptions(UserI user);
     Optional<XnatUserOptions> retrieveUserOptions(UserI user, String servername);
-    void storeUserOptions(UserI user, String servername, String xsiType, String id, String projectId, Long computeEnvironmentConfigId, Long hardwareConfigId, String eventTrackingId) throws BaseXnatExperimentdata.UnknownPrimaryProjectException, DBPoolException, SQLException, InvalidArchiveStructure, IOException;
+    void storeUserOptions(UserI user, String servername, String xsiType, String id, String projectId, Long computeEnvironmentConfigId, Long hardwareConfigId, Long dashboardConfigId, String eventTrackingId) throws BaseXnatExperimentdata.UnknownPrimaryProjectException, DBPoolException, SQLException, InvalidArchiveStructure, IOException;
 
 }

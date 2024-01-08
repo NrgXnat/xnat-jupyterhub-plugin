@@ -28,6 +28,7 @@ public class UserOptionsEntity extends AbstractHibernateEntity {
     private String itemId;
     private String projectId;
     private String eventTrackingId;
+    private Long dashboardConfigId;
 
     private TaskTemplate taskTemplate;
 
@@ -94,6 +95,14 @@ public class UserOptionsEntity extends AbstractHibernateEntity {
         this.eventTrackingId = trackingId;
     }
 
+    public Long getDashboardConfigId() {
+        return dashboardConfigId;
+    }
+
+    public void setDashboardConfigId(Long dashboardConfigId) {
+        this.dashboardConfigId = dashboardConfigId;
+    }
+
     public XnatUserOptions toPojo() {
         return XnatUserOptions.builder()
                 .userId(userId)
@@ -102,6 +111,7 @@ public class UserOptionsEntity extends AbstractHibernateEntity {
                 .itemId(itemId)
                 .projectId(projectId)
                 .eventTrackingId(eventTrackingId)
+                .dashboardConfigId(dashboardConfigId)
                 .taskTemplate(taskTemplate)
                 .build();
     }
@@ -113,6 +123,7 @@ public class UserOptionsEntity extends AbstractHibernateEntity {
         this.setItemId(update.getItemId());
         this.setProjectId(update.getProjectId());
         this.setEventTrackingId(update.getEventTrackingId());
+        this.setDashboardConfigId(update.getDashboardConfigId());
         this.setTaskTemplate(update.getTaskTemplate());
     }
 }

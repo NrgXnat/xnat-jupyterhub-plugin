@@ -4,6 +4,7 @@ import org.nrg.framework.services.ContextService;
 import org.nrg.xdat.security.services.RoleHolder;
 import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.nrg.xnat.tracking.services.EventTrackingDataHibernateService;
+import org.nrg.xnatx.plugins.jupyterhub.preferences.JupyterHubPreferences;
 import org.nrg.xnatx.plugins.jupyterhub.rest.JupyterHubApi;
 import org.nrg.xnatx.plugins.jupyterhub.services.JupyterHubService;
 import org.nrg.xnatx.plugins.jupyterhub.services.UserOptionsService;
@@ -28,12 +29,14 @@ public class JupyterHubApiConfig extends WebSecurityConfigurerAdapter {
                                        final RoleHolder mockRoleHolder,
                                        final JupyterHubService mockJupyterHubService,
                                        final UserOptionsService mockUserOptionsService,
-                                       final EventTrackingDataHibernateService mockEventTrackingDataHibernateService) {
+                                       final EventTrackingDataHibernateService mockEventTrackingDataHibernateService,
+                                       final JupyterHubPreferences mockJupyterHubPreferences) {
         return new JupyterHubApi(mockUserManagementService,
                                  mockRoleHolder,
                                  mockJupyterHubService,
                                  mockUserOptionsService,
-                                 mockEventTrackingDataHibernateService);
+                                 mockEventTrackingDataHibernateService,
+                                 mockJupyterHubPreferences);
     }
 
     @Bean

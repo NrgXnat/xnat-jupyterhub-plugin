@@ -4,8 +4,12 @@ import io.swagger.annotations.*;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.annotations.XapiRestController;
+import org.nrg.xapi.exceptions.InsufficientPrivilegesException;
 import org.nrg.xapi.exceptions.NotFoundException;
-import org.nrg.xapi.rest.*;
+import org.nrg.xapi.rest.AbstractXapiRestController;
+import org.nrg.xapi.rest.AuthorizedRoles;
+import org.nrg.xapi.rest.Username;
+import org.nrg.xapi.rest.XapiRequestMapping;
 import org.nrg.xdat.security.helpers.AccessLevel;
 import org.nrg.xdat.security.services.RoleHolder;
 import org.nrg.xdat.security.services.UserManagementServiceI;
@@ -14,13 +18,13 @@ import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.tracking.entities.EventTrackingData;
 import org.nrg.xnat.tracking.services.EventTrackingDataHibernateService;
-import org.nrg.xnatx.plugins.jupyterhub.authorization.JupyterUserAuthorization;
 import org.nrg.xnatx.plugins.jupyterhub.client.models.Hub;
 import org.nrg.xnatx.plugins.jupyterhub.client.models.Server;
 import org.nrg.xnatx.plugins.jupyterhub.client.models.Token;
 import org.nrg.xnatx.plugins.jupyterhub.client.models.User;
 import org.nrg.xnatx.plugins.jupyterhub.models.ServerStartRequest;
 import org.nrg.xnatx.plugins.jupyterhub.models.XnatUserOptions;
+import org.nrg.xnatx.plugins.jupyterhub.preferences.JupyterHubPreferences;
 import org.nrg.xnatx.plugins.jupyterhub.services.JupyterHubService;
 import org.nrg.xnatx.plugins.jupyterhub.services.UserOptionsService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,7 +37,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.nrg.xdat.security.helpers.AccessLevel.Authorizer;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 import static org.springframework.web.bind.annotation.RequestMethod.*;
 
@@ -47,16 +50,24 @@ public class JupyterHubApi extends AbstractXapiRestController {
     private final JupyterHubService jupyterHubService;
     private final UserOptionsService jupyterHubUserOptionsService;
     private final EventTrackingDataHibernateService eventTrackingDataHibernateService;
+    private final JupyterHubPreferences jupyterHubPreferences;
+    private final RoleHolder roleHolder;
+
+    public static final String JUPYTER_ROLE = "Jupyter";
 
     @Autowired
     public JupyterHubApi(final UserManagementServiceI userManagementService,
                          final RoleHolder roleHolder,
                          final JupyterHubService jupyterHubService,
-                         final UserOptionsService jupyterHubUserOptionsService, EventTrackingDataHibernateService eventTrackingDataHibernateService) {
+                         final UserOptionsService jupyterHubUserOptionsService,
+                         final EventTrackingDataHibernateService eventTrackingDataHibernateService,
+                         final JupyterHubPreferences jupyterHubPreferences) {
         super(userManagementService, roleHolder);
+        this.roleHolder = roleHolder;
         this.jupyterHubService = jupyterHubService;
         this.jupyterHubUserOptionsService = jupyterHubUserOptionsService;
         this.eventTrackingDataHibernateService = eventTrackingDataHibernateService;
+        this.jupyterHubPreferences = jupyterHubPreferences;
     }
 
     @ApiOperation(value = "Get the JupyterHub version.", response = Hub.class)
@@ -139,11 +150,17 @@ public class JupyterHubApi extends AbstractXapiRestController {
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Not authorized."),
                    @ApiResponse(code = 500, message = "Unexpected error")})
-    @XapiRequestMapping(value = "/users/{username}/server", method = POST, restrictTo = Authorizer)
-    @AuthDelegate(JupyterUserAuthorization.class)
-    public void startServer(@ApiParam(value = "username", required = true) @PathVariable("username") @Username final String username, // Unused, but required for auth
-                            @RequestBody final ServerStartRequest serverStartRequest) {
-        jupyterHubService.startServer(getSessionUser(), serverStartRequest);
+    @XapiRequestMapping(value = "/users/{username}/server", method = POST, restrictTo = AccessLevel.User)
+    public void startServer(@ApiParam(value = "username", required = true) @PathVariable("username") @Username final String username,
+                            @RequestBody final ServerStartRequest serverStartRequest) throws InsufficientPrivilegesException {
+        final UserI user = getSessionUser();
+
+        // Dashboards can be started by any user, Notebooks can only be started by authorized users
+        if (isNotDashboard(serverStartRequest)) {
+            checkJupyterAuthorization(user);
+        }
+
+        jupyterHubService.startServer(user, serverStartRequest);
     }
 
 
@@ -154,16 +171,22 @@ public class JupyterHubApi extends AbstractXapiRestController {
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Not authorized."),
                    @ApiResponse(code = 500, message = "Unexpected error")})
-    @XapiRequestMapping(value = "/users/{username}/server/{servername}", method = POST, restrictTo = Authorizer)
-    @AuthDelegate(JupyterUserAuthorization.class)
-    public void startNamedServer(@ApiParam(value = "username", required = true) @PathVariable("username") @Username final String username, // Unused, but required for auth
+    @XapiRequestMapping(value = "/users/{username}/server/{servername}", method = POST, restrictTo = AccessLevel.User)
+    public void startNamedServer(@ApiParam(value = "username", required = true) @PathVariable("username") @Username final String username,
                                  @ApiParam(value = "servername", required = true) @PathVariable("servername") final String servername,
-                                 @RequestBody final ServerStartRequest serverStartRequest) {
+                                 @RequestBody final ServerStartRequest serverStartRequest) throws InsufficientPrivilegesException {
         if (!StringUtils.equals(servername, serverStartRequest.getServername())) {
             throw new IllegalArgumentException("Server name in path does not match server name in request body.");
         }
 
-        jupyterHubService.startServer(getSessionUser(), serverStartRequest);
+        final UserI user = getSessionUser();
+
+        // Dashboards can be started by any user, Notebooks can only be started by authorized users
+        if (isNotDashboard(serverStartRequest)) {
+            checkJupyterAuthorization(user);
+        }
+
+        jupyterHubService.startServer(user, serverStartRequest);
     }
 
     @ApiOperation(value = "Returns the last known user options for the default server", response = XnatUserOptions.class)
@@ -243,8 +266,7 @@ public class JupyterHubApi extends AbstractXapiRestController {
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Not authorized."),
                    @ApiResponse(code = 500, message = "Unexpected error")})
-    @AuthDelegate(JupyterUserAuthorization.class)
-    @XapiRequestMapping(value = "/users/{username}/tokens", method = POST, restrictTo = Authorizer)
+    @XapiRequestMapping(value = "/users/{username}/tokens", method = POST, restrictTo = AccessLevel.User)
     public Token createToken(@ApiParam(value = "username", required = true) @PathVariable("username") @Username final String username,
                              @ApiParam(value = "note", required = true) @RequestParam("note") final String note,
                              @ApiParam(value = "expiresIn", required = true) @RequestParam(value = "expiresIn") final Integer expiresIn) throws UserNotFoundException, UserInitException {
@@ -255,4 +277,29 @@ public class JupyterHubApi extends AbstractXapiRestController {
     private UserI getUserI(final String username) throws UserNotFoundException, UserInitException {
         return getUserManagementService().getUser(username);
     }
+
+    /**
+     * Checks if the server start request is for starting a dashboard or a notebook.
+     * @param serverStartRequest The server start request to check.
+     * @return True if the server start request is for a dashboard, false otherwise.
+     */
+    protected boolean isNotDashboard(ServerStartRequest serverStartRequest) {
+        return serverStartRequest.getDashboardConfigId() == null;
+    }
+
+    /**
+     * Checks if the user is authorized to start a Jupyter notebook server (not a dashboard).
+     * @param user The user to check.
+     * @throws InsufficientPrivilegesException If the user is not authorized to start a Jupyter notebook server.
+     */
+    protected void checkJupyterAuthorization(UserI user) throws InsufficientPrivilegesException {
+        final boolean allUsersCanStartJupyter = jupyterHubPreferences.getAllUsersCanStartJupyter();
+        final boolean userHasJupyterRole = roleHolder.checkRole(user, JUPYTER_ROLE);
+
+        // If all users can't start jupyter and the user doesn't have the jupyter role, then they are not authorized
+        if (!allUsersCanStartJupyter && !userHasJupyterRole) {
+            throw new InsufficientPrivilegesException(user.getUsername());
+        }
+    }
+
 }

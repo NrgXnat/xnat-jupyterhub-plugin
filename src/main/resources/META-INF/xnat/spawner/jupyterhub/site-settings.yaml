@@ -313,6 +313,58 @@ jupyterHubUserActivity:
       content: >
         XNAT.plugin.jupyterhub.users.activity.init('jupyterhub-user-activity-table');
 
+dashboards:
+  kind: panel
+  name: dashboards
+  label: Dashboards
+  contents:
+    description:
+      tag: div.message
+      element:
+        style: "margin-bottom: 20px;"
+      contents:
+        "Dashboards are a way to deploy Jupyter notebooks (and other tools) as interactive web applications using JupyterHub.
+         Create a configuration for each dashboard you want to deploy. Dashboards are configured to launch in 
+         specific Jupyter environments and are associated with a specific Hardware configuration. You can also
+         specify which data types are supported by the dashboard. After enabling a dashboard, project owners can then 
+         enable the dashboard for their projects. See the documentation for more information."
+    dashboardConfigsTable:
+      tag: "div#jupyterhub-dashboards-table"
+    dashboardScripts:
+      tag: script|src="~/scripts/xnat/plugin/jupyterhub/jupyterhub-dashboards.js"
+    computeEnvironmentConfigsScript:
+      tag: script|src="~/scripts/xnat/compute/compute-environment-configs.js"
+    hardwareConfigsScript:
+      tag: script|src="~/scripts/xnat/compute/hardware-configs.js"
+    renderDashboardConfigsTable:
+      tag: script
+      content: >
+        XNAT.plugin.jupyterhub.dashboards.configs.table('div#jupyterhub-dashboards-table', 'Site');
+
+frameworks:
+  kind: panel
+  name: frameworks
+  label: Dashboard Frameworks
+  contents:
+    description:
+      tag: div.message
+      element:
+        style: "margin-bottom: 20px;"
+      contents:
+        "Configure the frameworks that can be used to deploy dashboards."
+    dashboardConfigsTable:
+      tag: "div#dashboard-frameworks-table"
+    dashboardScripts:
+      tag: script|src="~/scripts/xnat/plugin/jupyterhub/jupyterhub-dashboards.js"
+    computeEnvironmentConfigsScript:
+      tag: script|src="~/scripts/xnat/compute/compute-environment-configs.js"
+    hardwareConfigsScript:
+      tag: script|src="~/scripts/xnat/compute/hardware-configs.js"
+    renderDashboardConfigsTable:
+      tag: script
+      content: >
+        XNAT.plugin.jupyterhub.dashboards.frameworks.table('div#dashboard-frameworks-table');
+
 #################################################
 ####  Root Site Admin Spawner Config Object  ####
 #################################################
@@ -338,6 +390,15 @@ siteSettings:
         ${jupyterEnvironments}
         ${hardwareConfigs}
         ${constraints}
+    jupyterhubDashboardsTab:
+      kind: tab
+      name: jupyterhubDashboardsTab
+      label: Dashboards
+      group: jupyterhubTabGroup
+      active: true
+      contents:
+        ${dashboards}
+        ${frameworks}
     jupyterhubUserActivityTab:
       kind: tab
       name: jupyterhubUserActivityTab
@@ -346,3 +407,4 @@ siteSettings:
       active: true
       contents:
         ${jupyterHubUserActivity}
+

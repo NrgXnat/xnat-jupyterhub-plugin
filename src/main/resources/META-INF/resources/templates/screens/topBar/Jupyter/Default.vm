@@ -1,5 +1,5 @@
 <!-- Browse/Default -->
-<li><a href="#!" class="nolink">Jupyter Activity</a>
+<li><a href="#!" class="nolink">Activity</a>
     <ul id="my-jupyter-servers" class="shadowed dark-shadow">
         <!-- Sequence: 10 -->
     </ul>
@@ -14,3 +14,4 @@
 <script src="$content.getURI("/scripts/xnat/plugin/jupyterhub/jupyterhub-topnav.js")"></script>
 <script src="$content.getURI("/scripts/xnat/compute/compute-environment-configs.js")"></script>
 <script src="$content.getURI("/scripts/xnat/compute/hardware-configs.js")"></script>
+<script src="$content.getURI("/scripts/xnat/plugin/jupyterhub/jupyterhub-dashboards.js")"></script>
