@@ -17,6 +17,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - [JHP-66][] and [XNAT-7867][]: Moves the compute services code from the plugin to the XNAT core to allow other plugins 
                                 to use the compute services. Makes the plugin dependent on XNAT 1.8.10 or later.
+- [JHP-77][]: Add GitHub workflows to build the develop branch and publish releases. Move the build process to GitHub 
+              Actions and remove the Jenkins build process.
 
 
 ## [1.0.1] - 2023-10-12
@@ -40,3 +42,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [JHP-70]: https://radiologics.atlassian.net/jira/software/c/projects/JHP/issues/JHP-70
 [JHP-73]: https://radiologics.atlassian.net/jira/software/c/projects/JHP/issues/JHP-73
 [JHP-74]: https://radiologics.atlassian.net/jira/software/c/projects/JHP/issues/JHP-74
+[JHP-77]: https://radiologics.atlassian.net/jira/software/c/projects/JHP/issues/JHP-77
