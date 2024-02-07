@@ -18,7 +18,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [JHP-66][] and [XNAT-7867][]: Moves the compute services code from the plugin to the XNAT core to allow other plugins 
                                 to use the compute services. Makes the plugin dependent on XNAT 1.8.10 or later.
 - [JHP-77][]: Add GitHub workflows to build the develop branch and publish releases. Move the build process to GitHub 
-              Actions and remove the Jenkins build process.
+              Actions and remove the Jenkins build process. Repository has migrated from
+              [Bitbucket](https://bitbucket.org/xnatx/xnat-jupyterhub-plugin/) to
+              [GitHub](https://github.com/NrgXnat/xnat-jupyterhub-plugin)
 
 
 ## [1.0.1] - 2023-10-12
