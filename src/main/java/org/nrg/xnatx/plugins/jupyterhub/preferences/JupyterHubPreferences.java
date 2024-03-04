@@ -33,12 +33,17 @@ public class JupyterHubPreferences extends AbstractPreferenceBean {
     public static final String RESOURCE_SPEC_MEM_RESERVATION_PREF_ID = "resourceSpecMemReservation";
     public static final String INACTIVITY_TIMEOUT_PREF_ID = "inactivityTimeout";
     public static final String MAX_SERVER_LIFETIME_PREF_ID = "maxServerLifetime";
+    public static final String SHARED_PROJECT_STRING = "jupyter-notebooks";
+
 
     @Autowired
     protected JupyterHubPreferences(NrgPreferenceService preferenceService, ConfigPaths configFolderPaths, OrderedProperties initPrefs) {
         super(preferenceService, configFolderPaths, initPrefs);
     }
 
+    /**
+     * Defaults to empty string. This preference is dynamically set to the site url in JupyterHubPreferenceInitializer.
+     */
     @NrgPreference(defaultValue = "")
     public String getJupyterHubHostUrl() {
         return getValue(JUPYTERHUB_HOST_URL);
@@ -174,11 +179,6 @@ public class JupyterHubPreferences extends AbstractPreferenceBean {
         }
     }
 
-    @NrgPreference(defaultValue = "/data/xnat/workspaces")
-    public String getWorkspacePath() {
-        return getValue("workspacePath");
-    }
-
     @NrgPreference(defaultValue = "")
     public String getPathTranslationWorkspacePrefix() {
         return getValue("pathTranslationWorkspacePrefix");
@@ -203,6 +203,11 @@ public class JupyterHubPreferences extends AbstractPreferenceBean {
         } catch (InvalidPreferenceName e) {
             log.error("Invalid preference name 'pathTranslationWorkspaceDockerPrefix': something is very wrong here.", e);
         }
+    }
+
+    @NrgPreference(defaultValue = "/data/xnat/workspaces")
+    public String getWorkspacePath() {
+        return getValue("workspacePath");
     }
 
     public void setWorkspacePath(final String workspacePath) {

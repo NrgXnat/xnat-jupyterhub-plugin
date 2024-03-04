@@ -11,6 +11,8 @@ XNAT.plugin = getObject(XNAT.plugin || {});
 XNAT.plugin.jupyterhub = getObject(XNAT.plugin.jupyterhub || {});
 XNAT.plugin.jupyterhub.servers = getObject(XNAT.plugin.jupyterhub.servers || {});
 XNAT.plugin.jupyterhub.servers.user_options = getObject(XNAT.plugin.jupyterhub.servers.user_options || {});
+XNAT.compute = getObject(XNAT.compute || {});
+XNAT.compute.computeEnvironmentConfigs = getObject(XNAT.compute.computeEnvironmentConfigs || {});
 
 (function(factory) {
     if (typeof define === 'function' && define.amd) {
@@ -79,6 +81,16 @@ XNAT.plugin.jupyterhub.servers.user_options = getObject(XNAT.plugin.jupyterhub.s
         startServer(username, servername, xsiType, itemId, projectId, projectId, eventTrackingId)
     }
 
+    XNAT.plugin.jupyterhub.servers.startDashboardForProject = function(username = window.username,
+                                                                       servername = XNAT.data.context.projectID,
+                                                                       xsiType = XNAT.data.context.xsiType,
+                                                                       itemId = XNAT.data.context.projectID,
+                                                                       projectId = XNAT.data.context.projectID,
+                                                                       eventTrackingId = generateEventTrackingId()) {
+        console.debug(`jupyterhub-servers.js: XNAT.plugin.jupyterhub.servers.startDashboardForProject`);
+        startDashboard(username, servername, xsiType, itemId, projectId, projectId, eventTrackingId);
+    }
+
     XNAT.plugin.jupyterhub.servers.startServerForSubject = function(username = window.username,
                                                             servername = XNAT.data.context.ID,
                                                             xsiType = XNAT.data.context.xsiType,
@@ -109,6 +121,39 @@ XNAT.plugin.jupyterhub.servers.user_options = getObject(XNAT.plugin.jupyterhub.s
         }
     }
 
+    XNAT.plugin.jupyterhub.servers.startDashboardForSubject = function(username = window.username,
+                                                                       servername = XNAT.data.context.ID,
+                                                                       xsiType = XNAT.data.context.xsiType,
+                                                                       itemId = XNAT.data.context.ID,
+                                                                       projectId = XNAT.data.context.projectID,
+                                                                       eventTrackingId = generateEventTrackingId()) {
+        console.debug(`jupyterhub-servers.js: XNAT.plugin.jupyterhub.servers.startServerForSubject`);
+
+        if (XNAT.plugin.jupyterhub.isSharedItem()) {
+            XNAT.dialog.open({
+                width: 450,
+                title: "Unsupported Operation",
+                content: "Cannot start a dashboard on a shared subject.",
+                buttons: [
+                    {
+                        label: 'OK',
+                        isDefault: true,
+                        close: true,
+                        action: function() {
+                            xmodal.closeAll();
+                        }
+                    }
+                ]
+            });
+        } else {
+            getSubjectLabel(itemId).then(subjectLabel => {
+                startDashboard(username, servername, xsiType, itemId, subjectLabel, projectId, eventTrackingId)
+            }).catch(e => {
+                console.error(`Error getting subject label: ${e}`);
+            });
+        }
+    }
+
     XNAT.plugin.jupyterhub.servers.startServerForExperiment = function(username = window.username,
                                                                servername = XNAT.data.context.ID,
                                                                xsiType = "xnat:experimentData",
@@ -136,6 +181,39 @@ XNAT.plugin.jupyterhub.servers.user_options = getObject(XNAT.plugin.jupyterhub.s
         } else {
             getExperimentLabel(itemId).then(experimentLabel => startServer(username, servername, xsiType, itemId,
                                                                            experimentLabel, projectId, eventTrackingId))
+        }
+    }
+
+    XNAT.plugin.jupyterhub.servers.startDashboardForExperiment = function(username = window.username,
+                                                                          servername = XNAT.data.context.ID,
+                                                                          xsiType = XNAT.data.context.xsiType,
+                                                                          itemId = XNAT.data.context.ID,
+                                                                          projectId = XNAT.data.context.projectID,
+                                                                          eventTrackingId = generateEventTrackingId()) {
+        console.debug(`jupyterhub-servers.js: XNAT.plugin.jupyterhub.servers.startDashboardForExperiment`);
+
+        if (XNAT.plugin.jupyterhub.isSharedItem()) {
+            XNAT.dialog.open({
+                width: 450,
+                title: "Unsupported Operation",
+                content: "Cannot start a dashboard on a shared experiment.",
+                buttons: [
+                    {
+                        label: 'OK',
+                        isDefault: true,
+                        close: true,
+                        action: function() {
+                            xmodal.closeAll();
+                        }
+                    }
+                ]
+            });
+        } else {
+            getExperimentLabel(itemId).then(experimentLabel => {
+                startDashboard(username, servername, xsiType, itemId, experimentLabel, projectId, eventTrackingId)
+            }).catch(e => {
+                console.error(`Error getting experiment label: ${e}`);
+            });
         }
     }
 
@@ -251,7 +329,7 @@ XNAT.plugin.jupyterhub.servers.user_options = getObject(XNAT.plugin.jupyterhub.s
                         beforeSend: function () {
                             XNAT.app.activityTab.start(
                                 'Start Jupyter Notebook Server' +
-                                `<div class="actions"><a id="open-nb-${eventTrackingId}" class="icn open" style="display: none;"><i class="fa fa-book"></i></a>`,
+                                `<div class="actions"><a id="open-nb-${eventTrackingId}" class="icn open" style="display: none;"><i class="fa fa-external-link"></i></a>`,
                                 eventTrackingId,
                                 'XNAT.plugin.jupyterhub.servers.activityTabCallback', 1000);
                         },
@@ -372,6 +450,195 @@ XNAT.plugin.jupyterhub.servers.user_options = getObject(XNAT.plugin.jupyterhub.s
                 buttons: buttons
             });
         });
+    }
+
+    let startDashboard = XNAT.plugin.jupyterhub.servers.startDashboard = function(username, servername, xsiType, itemId, itemLabel, projectId, eventTrackingId) {
+        console.debug(`jupyterhub-servers.js: XNAT.plugin.jupyterhub.servers.startDashboard`);
+        console.debug(`Starting dashboard. User: ${username}, Server Name: ${servername}, XSI Type: ${xsiType}, ID: ${itemId}, Label: ${itemLabel}, Project ID: ${projectId}, eventTrackingId: ${eventTrackingId}`);
+
+        const executionScope = {
+            'site': 'XNAT',
+            'user': username,
+            'prj': projectId,
+            'datatype': xsiType,
+        }
+
+        XNAT.plugin.jupyterhub.dashboards.configs.available(executionScope).then(dashboardConfigs => {
+            const cancelButton = {
+                label: 'Cancel',
+                isDefault: false,
+                close: true,
+            }
+
+            const startButton = {
+                label: 'Start Dashboard',
+                isDefault: true,
+                close: false,
+                action: function(obj) {
+                    const dashboardConfigId = document.querySelector('#dashboard-config').value;
+                    const computeEnvironmentConfigId = document.querySelector('#compute-environment-config').value;
+                    const hardwareConfigId = document.querySelector('#hardware-config').value;
+
+                    if (!dashboardConfigId) {
+                        XNAT.dialog.open({
+                            width: 450,
+                            title: "Error",
+                            content: "Please select a Dashboard.",
+                            buttons: [
+                                {
+                                    label: 'OK',
+                                    isDefault: true,
+                                    close: true,
+                                }
+                            ]
+                        });
+
+                        return;
+                    }
+
+                    const serverStartRequest = {
+                        'username': username,
+                        'servername': '', // Not supported yet
+                        'xsiType': xsiType,
+                        'itemId': itemId,
+                        'itemLabel': itemLabel,
+                        'projectId': projectId,
+                        'eventTrackingId': eventTrackingId,
+                        'dashboardConfigId': dashboardConfigId,
+                        'computeEnvironmentConfigId': computeEnvironmentConfigId,
+                        'hardwareConfigId': hardwareConfigId,
+                    }
+
+                    XNAT.xhr.ajax({
+                        url: newServerUrl(username, servername),
+                        method: 'POST',
+                        contentType: 'application/json',
+                        data: JSON.stringify(serverStartRequest),
+                        beforeSend: function () {
+                            XNAT.app.activityTab.start(
+                                'Start Dashboard' +
+                                `<div class="actions"><a id="open-nb-${eventTrackingId}" class="icn open" style="display: none;"><i class="fa fa-external-link"></i></a>`,
+                                eventTrackingId,
+                                'XNAT.plugin.jupyterhub.servers.activityTabCallback', 1000);
+                        },
+                        fail: function (error) {
+                            console.error(`Failed to send Jupyter server request: ${error}`)
+                        }
+                    });
+
+                    xmodal.closeAll();
+                    XNAT.ui.dialog.closeAll();
+                }
+            }
+
+            const buttons = (dashboardConfigs.length === 0) ? [cancelButton] : [cancelButton, startButton];
+
+            XNAT.dialog.open({
+                title: 'Start Dashboard',
+                content: spawn('form#server-start-request-form'),
+                maxBtn: true,
+                width: 400,
+                height: 500,
+                beforeShow: function(obj) {
+                    const form = document.getElementById('server-start-request-form');
+                    form.classList.add('panel');
+
+                    if (dashboardConfigs.length === 0) {
+                        obj.$modal.find('.xnat-dialog-content').html('<div class="error">No dashboards are available. Please contact your administrator.</div>');
+                        return;
+                    }
+
+                    let xnatData = spawn('div.xnat-data', {
+                        style: {
+                            marginTop: '10px',
+                            marginBottom: '40px',
+                        }
+                    }, [
+                        spawn('h2', 'XNAT Data'),
+                        spawn('p.xnat-data-row.description', 'The following data will be available to your dashboard.'),
+                        spawn('p.xnat-data-row.project', [
+                            spawn('strong', 'Project '), projectId,
+                        ]),
+                        spawn('p.xnat-data-row.subject', [
+                            spawn('strong', 'Subject '), itemLabel,
+                        ]),
+                        spawn('p.xnat-data-row.experiment', [
+                            spawn('strong', 'Experiment '), itemLabel,
+                        ]),
+                    ]);
+
+                    xnatData.querySelectorAll('strong').forEach(s => {
+                        s.style.display = 'inline-block';
+                        s.style.width = '90px';
+                    });
+
+                    if (xsiType === 'xnat:projectData') {
+                        xnatData.querySelector('p.subject').remove();
+                        xnatData.querySelector('p.experiment').remove();
+                    } else if (xsiType === 'xnat:subjectData') {
+                        xnatData.querySelector('p.project').remove();
+                        xnatData.querySelector('p.experiment').remove();
+                    } else { // xsiType is an xnat:experimentData
+                        xnatData.querySelector('p.project').remove();
+                        xnatData.querySelector('p.subject').remove();
+                    }
+
+                    let dashboardConfigSelect = spawn('div', [
+                        spawn('h2', 'Dashboard'),
+                        spawn('p.description', 'Select from the list of available dashboards.'),
+                        spawn('div.form-group', [
+                            spawn('select#dashboard-config | size=5', [
+                                ...dashboardConfigs.map(c => spawn('option', {value: c['id']}, c['dashboard']['name'])),
+                            ]),
+                            spawn('div#dashboard-description.description', ''),
+                        ]),
+                        spawn('input#hardware-config', {type: 'hidden', value: ''}),
+                        spawn('input#compute-environment-config', {type: 'hidden', value: ''}),
+                        spawn('style', {type: 'text/css'}, `
+                        
+                            div.form-group {
+                                display: flex;
+                                flex-direction: column;
+                                align-items: flex-start;
+                                justify-content: flex-start;
+                                gap: 10px;
+                            }
+                            
+                            div.form-group select {
+                                width: 100%;
+                                font-size: 1.1em;
+                            }
+                            
+                            div.form-group div.description {
+                                font-size: 1em;
+                                color: #555;
+                                font-weight: bold;
+                            }
+                            
+                            p.description {
+                                font-size: .9em;
+                                color: #777;
+                            }
+                            
+                            `)
+                    ]);
+
+                    form.appendChild(spawn('!', [
+                        xnatData,
+                        dashboardConfigSelect
+                    ]));
+
+                    dashboardConfigSelect.querySelector('select').addEventListener('change', () => {
+                        const dashboardConfig = dashboardConfigs.filter(c => c['id'].toString() === dashboardConfigSelect.querySelector('select').value)[0];
+                        const dashboard = dashboardConfig['dashboard'];
+                        document.getElementById('hardware-config').value = dashboardConfig['hardwareConfig']['id'];
+                        document.getElementById('compute-environment-config').value = dashboardConfig['computeEnvironmentConfig']['id'];
+                        document.getElementById('dashboard-description').innerHTML = dashboard['description'];
+                    });
+                },
+                buttons: buttons
+            });
+        })
     }
 
     let activityTabCallback = XNAT.plugin.jupyterhub.servers.activityTabCallback = function(itemDivId, detailsTag, jsonobj, lastProgressIdx) {

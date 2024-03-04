@@ -24,5 +24,6 @@ public class ServerStartRequest implements UserOptions {
 
     private Long computeEnvironmentConfigId;
     private Long hardwareConfigId;
+    private Long dashboardConfigId; // Optional, only used for dashboard servers (not notebooks)
 
 }

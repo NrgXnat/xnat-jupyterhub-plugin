@@ -37,8 +37,14 @@ XNAT.plugin.jupyterhub.topnav = getObject(XNAT.plugin.jupyterhub.topnav || {});
 
         // add table header row
         jupyterServerTable.tr()
+            .th({addClass: 'left', style: {width: '75px'}, html: '<b>Application</b>'})
             .th({addClass: 'left', style: {width: '200px'}, html: '<b>Context</b>'})
             .th({addClass: 'center', style: {width: '100px'}, html: '<b>Actions</b>'})
+
+        function application(server) {
+            return server['user_options']['dashboardConfigId'] != null &&
+                   server['user_options']['dashboardConfigId'] !== '' ? 'Dashboard' : 'Notebook';
+        }
 
         function xnatItem(server) {
             const userOptions = server['user_options'];
@@ -57,12 +63,6 @@ XNAT.plugin.jupyterhub.topnav = getObject(XNAT.plugin.jupyterhub.topnav || {});
                 case 'xnat:subjectData':
                     return spawn('a', {
                         href: restUrl(`/data/subjects/${itemId}`),
-                        title: itemLabel,
-                        html: itemLabel,
-                    });
-                case 'xnat:experimentData':
-                    return spawn('a', {
-                        href: restUrl(`/data/experiments/${itemId}?format=html`),
                         title: itemLabel,
                         html: itemLabel,
                     });
@@ -95,9 +95,20 @@ XNAT.plugin.jupyterhub.topnav = getObject(XNAT.plugin.jupyterhub.topnav || {});
                                 html: itemLabel,
                             });
                         }
-
                     }
+                // If not project, subject, or stored search, default to experiment
+                case 'xnat:experimentData':
+                default:
+                    return spawn('a', {
+                        href: restUrl(`/data/experiments/${itemId}?format=html`),
+                        title: itemLabel,
+                        html: itemLabel,
+                    });
             }
+        }
+
+        function isDashboard(server) {
+            return server?.user_options?.dashboardConfigId != null && server?.user_options?.dashboardConfigId !== '';
         }
 
         function gotoServerButton(server) {
@@ -106,7 +117,7 @@ XNAT.plugin.jupyterhub.topnav = getObject(XNAT.plugin.jupyterhub.topnav || {});
                     e.preventDefault();
                     XNAT.plugin.jupyterhub.servers.goTo(server['url'])
                 }
-            }, [ spawn('i.fa.fa-book|title="Go to Jupyter notebook server"') ])
+            }, [ spawn(`i.fa.fa-external-link|title="Go to ${isDashboard(server) ? 'dashboard' : 'Jupyter Notebook Server'}"`) ])
         }
 
         function stopServerButton(server) {
@@ -117,24 +128,24 @@ XNAT.plugin.jupyterhub.topnav = getObject(XNAT.plugin.jupyterhub.topnav || {});
                         height: 220,
                         scroll: false,
                         content: "" +
-                            "<p>Are you sure you'd like to stop this Jupyer notebook server?</p>" +
+                            `<p>Are you sure you'd like to stop this ${isDashboard(server) ? 'dashboard' : 'Jupyter Notebook Server'}?</p>` +
                             "<p><b>This action cannot be undone.</b></p>",
                         okAction: function() {
                             const eventTrackingId = XNAT.plugin.jupyterhub.servers.generateEventTrackingId()
                             XNAT.plugin.jupyterhub.servers.stopServer(window.username, server['name'], eventTrackingId).then(() => {
                                 XNAT.app.activityTab.start(
-                                    'Stop Jupyter Notebook Server',
+                                    `Stop ${isDashboard(server) ? 'Dashboard' : 'Jupyter Notebook Server'}`,
                                     eventTrackingId,
                                     'XNAT.plugin.jupyterhub.servers.activityTabCallback',
                                     2000);
                             }).catch(error => {
                                 console.error(error);
-                                XNAT.dialog.alert(`Failed to stop Jupyter server: ${error}`)
+                                XNAT.dialog.alert(`Failed to stop ${isDashboard(server) ? 'dashboard' : 'Jupyter Notebook Server'}.`);
                             });
                         }
                     })
                 }
-            }, [ spawn('i.fa.fa-ban|title="Stop Jupyter notebook server"') ])
+            }, [ spawn(`i.fa.fa-ban|title="Stop ${isDashboard(server) ? 'Dashboard' : 'Jupyter Notebook Server'}"`) ])
         }
 
         function spacer(width = 10) {
@@ -153,17 +164,17 @@ XNAT.plugin.jupyterhub.topnav = getObject(XNAT.plugin.jupyterhub.topnav || {});
 
             isEmpty(servers) ?
                 jupyterServerTable.tr()
-                    .td([ spawn('div.left', {style: {'font-size': '12px'}}, ['No running Jupyter servers. Go to a project, subject, or experiment to start Jupyter.']) ])
-                    .td([ spawn('div.center', ['']) ]) :
+                    .td({colSpan: '3'}, [ spawn('div.left', {style: {'font-size': '12px'}}, ['No running Jupyter notebooks or dashboards. Go to a project, subject, or experiment to start one.']) ]):
                 Object.values(servers).forEach(server => {
                     jupyterServerTable.tr()
+                        .td([ spawn('div.left', {style: {'font-size': '12px', 'font-weight': 'bold'}}, [application(server)]) ])
                         .td([ spawn('div.left', [xnatItem(server)]) ])
                         .td([ spawn('div.center', [gotoServerButton(server), spacer(), stopServerButton(server)]) ])
                 });
 
         }).catch(() => {
             jupyterServerTable.tr()
-                .td([ spawn('div.left', {style: {'font-size': '12px'}}, ['Unable to connect to JupyterHub']) ])
+                .td({colSpan: '3'}, [ spawn('div.left', {style: {'font-size': '12px'}}, ['Unable to connect to JupyterHub']) ])
                 .td([ spawn('div.center', ['']) ]);
         })
 

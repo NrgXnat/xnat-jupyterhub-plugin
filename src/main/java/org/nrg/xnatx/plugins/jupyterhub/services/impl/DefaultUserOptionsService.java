@@ -4,6 +4,7 @@ import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.constants.Scope;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.entities.AliasToken;
 import org.nrg.xdat.model.XnatSubjectassessordataI;
 import org.nrg.xdat.om.*;
@@ -12,6 +13,7 @@ import org.nrg.xdat.om.base.auto.AutoXnatProjectdata;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.services.SearchHelperServiceI;
 import org.nrg.xdat.services.AliasTokenService;
+import org.nrg.xft.exception.DBPoolException;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
@@ -19,22 +21,27 @@ import org.nrg.xft.security.UserI;
 import org.nrg.xnat.compute.models.*;
 import org.nrg.xnat.compute.services.JobTemplateService;
 import org.nrg.xnat.exceptions.InvalidArchiveStructure;
+import org.nrg.xnat.utils.FileUtils;
 import org.nrg.xnatx.plugins.jupyterhub.entities.UserOptionsEntity;
 import org.nrg.xnatx.plugins.jupyterhub.models.XnatUserOptions;
 import org.nrg.xnatx.plugins.jupyterhub.models.docker.Mount;
 import org.nrg.xnatx.plugins.jupyterhub.models.docker.*;
 import org.nrg.xnatx.plugins.jupyterhub.preferences.JupyterHubPreferences;
+import org.nrg.xnatx.plugins.jupyterhub.services.DashboardJobTemplateService;
 import org.nrg.xnatx.plugins.jupyterhub.services.UserOptionsEntityService;
 import org.nrg.xnatx.plugins.jupyterhub.services.UserOptionsService;
 import org.nrg.xnatx.plugins.jupyterhub.services.UserWorkspaceService;
 import org.nrg.xnatx.plugins.jupyterhub.utils.PermissionsHelper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Nullable;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.sql.SQLException;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -50,6 +57,7 @@ public class DefaultUserOptionsService implements UserOptionsService {
     private final UserOptionsEntityService userOptionsEntityService;
     private final PermissionsHelper permissionsHelper;
     private final JobTemplateService jobTemplateService;
+    private final DashboardJobTemplateService dashboardJobTemplateService;
 
     @Autowired
     public DefaultUserOptionsService(final JupyterHubPreferences jupyterHubPreferences,
@@ -59,7 +67,8 @@ public class DefaultUserOptionsService implements UserOptionsService {
                                      final SiteConfigPreferences siteConfigPreferences,
                                      final UserOptionsEntityService userOptionsEntityService,
                                      final PermissionsHelper permissionsHelper,
-                                     final JobTemplateService jobTemplateService) {
+                                     @Qualifier("defaultJobTemplateService") final JobTemplateService jobTemplateService,
+                                     final DashboardJobTemplateService dashboardJobTemplateService) {
         this.jupyterHubPreferences = jupyterHubPreferences;
         this.userWorkspaceService = userWorkspaceService;
         this.searchHelperService = searchHelperService;
@@ -68,37 +77,56 @@ public class DefaultUserOptionsService implements UserOptionsService {
         this.userOptionsEntityService = userOptionsEntityService;
         this.permissionsHelper = permissionsHelper;
         this.jobTemplateService = jobTemplateService;
+        this.dashboardJobTemplateService = dashboardJobTemplateService;
     }
 
+    public Map<String, String> getProjectPaths(final UserI user, final List<String> projectIds) throws BaseXnatExperimentdata.UnknownPrimaryProjectException, DBPoolException, SQLException, InvalidArchiveStructure, IOException {
+        return getProjectPaths(user, projectIds, null);
+    }
     @Override
-    public Map<String, String> getProjectPaths(final UserI user, final List<String> projectIds) {
+    public Map<String, String> getProjectPaths(final UserI user, final List<String> projectIds, @Nullable String eventTrackingId) throws BaseXnatExperimentdata.UnknownPrimaryProjectException, DBPoolException, SQLException, InvalidArchiveStructure, IOException {
         Map<String, String> projectPaths = new HashMap<>();
 
-        projectIds.forEach(projectId -> {
+        for (String projectId: projectIds) {
             XnatProjectdata xnatProjectdata = XnatProjectdata.getXnatProjectdatasById(projectId, user, false);
 
             if (xnatProjectdata != null) {
-                // Experiments
-                final Path projectDirectory = Paths.get(xnatProjectdata.getRootArchivePath() + xnatProjectdata.getCurrentArc());
-                if (Files.exists(projectDirectory)) {
-                    projectPaths.put("/data/projects/" + projectId + "/experiments", projectDirectory.toString());
-                }
+                //In this case we're creating a directory for both shared and standard data for a project as one folder
+                //should always be the case for basic project based needs not used for stored searches etc.
+                if (eventTrackingId != null) {
+                        Map<Path, Path> allSharedPaths = FileUtils.getAllSharedPaths(projectId, user, true, true, true, true);
+                        if (allSharedPaths.isEmpty()) {
+                            final Path projectDirectory = Paths.get(xnatProjectdata.getRootArchivePath() + xnatProjectdata.getCurrentArc());
+                            if (Files.exists(projectDirectory)) {
+                                projectPaths.put("/data/projects/" + projectId + "/experiments", projectDirectory.toString());
+                            }
+                        } else {
+                            Path sharedLinksDirectory = Paths.get(JupyterHubPreferences.SHARED_PROJECT_STRING, eventTrackingId);
+                            projectPaths.put("/data/projects/" + projectId, String.valueOf(FileUtils.createDirectoryForSharedData(allSharedPaths, sharedLinksDirectory)));
+                        }
+                } else {
+                    //here we're working with stored searches and the like
+                    // Experiments
+                    final Path projectDirectory = Paths.get(xnatProjectdata.getRootArchivePath() + xnatProjectdata.getCurrentArc());
+                    if (Files.exists(projectDirectory)) {
+                        projectPaths.put("/data/projects/" + projectId + "/experiments", projectDirectory.toString());
+                    }
 
-                // Project resources
-                final Path resourceDirectory = Paths.get(xnatProjectdata.getRootArchivePath() + "/resources");
-                if (Files.exists(resourceDirectory)) {
-                    projectPaths.put("/data/projects/" + projectId + "/resources", resourceDirectory.toString());
-                }
+                    // Project resources
+                    final Path resourceDirectory = Paths.get(xnatProjectdata.getRootArchivePath() + "/resources");
+                    if (Files.exists(resourceDirectory)) {
+                        projectPaths.put("/data/projects/" + projectId + "/resources", resourceDirectory.toString());
+                    }
 
-                // Subject resources
-                final Path subjectResourceDirectory = Paths.get(xnatProjectdata.getRootArchivePath() + "/subjects");
-                if (Files.exists(subjectResourceDirectory)) {
-                    projectPaths.put("/data/projects/" + projectId + "/subjects", subjectResourceDirectory.toString());
+                    // Subject resources
+                    final Path subjectResourceDirectory = Paths.get(xnatProjectdata.getRootArchivePath() + "/subjects");
+                    if (Files.exists(subjectResourceDirectory)) {
+                        projectPaths.put("/data/projects/" + projectId + "/subjects", subjectResourceDirectory.toString());
+                    }
                 }
 
             }
-        });
-
+        }
         return projectPaths;
     }
 
@@ -208,7 +236,7 @@ public class DefaultUserOptionsService implements UserOptionsService {
     }
 
     @Override
-    public Map<String, String> getStoredSearchPaths(UserI user, String storedSearchId, @Nullable String projectId) {
+    public Map<String, String> getStoredSearchPaths(UserI user, String storedSearchId, @Nullable String projectId) throws BaseXnatExperimentdata.UnknownPrimaryProjectException, DBPoolException, SQLException, InvalidArchiveStructure, IOException {
         Map<String, String> storedSearchPaths = new HashMap<>();
         XdatStoredSearch storedSearch;
 
@@ -279,7 +307,7 @@ public class DefaultUserOptionsService implements UserOptionsService {
 
     @Override
     public void storeUserOptions(UserI user, String servername, String xsiType, String id, String projectId,
-                                 Long computeEnvironmentConfigId, Long hardwareConfigId, String eventTrackingId) {
+                                 Long computeEnvironmentConfigId, Long hardwareConfigId, Long dashboardConfigId, String eventTrackingId) throws BaseXnatExperimentdata.UnknownPrimaryProjectException, DBPoolException, SQLException, InvalidArchiveStructure, IOException {
         log.debug("Storing user options for user '{}' server '{}' xsiType '{}' id '{}' projectId '{}'",
                   user.getUsername(), servername, xsiType, id, projectId);
 
@@ -291,7 +319,17 @@ public class DefaultUserOptionsService implements UserOptionsService {
         Map<Scope, String> executionScope = new HashMap<>();
         executionScope.put(Scope.Project, projectId);
         executionScope.put(Scope.User, user.getUsername());
-        JobTemplate jobTemplate = jobTemplateService.resolve(computeEnvironmentConfigId, hardwareConfigId, executionScope);
+        executionScope.put(Scope.DataType, xsiType);
+
+        JobTemplate jobTemplate;
+
+        if (dashboardConfigId != null) {
+            // The dashboard resolver supersedes the compute environment command,
+            // enabling the initiation of the dashboard rather than Jupyter Lab
+            jobTemplate = dashboardJobTemplateService.resolve(dashboardConfigId, computeEnvironmentConfigId, hardwareConfigId, executionScope);
+        } else {
+            jobTemplate = jobTemplateService.resolve(computeEnvironmentConfigId, hardwareConfigId, executionScope);
+        }
 
         // specific xsi type -> general xsi type
         if (instanceOf(xsiType, XnatExperimentdata.SCHEMA_ELEMENT_NAME)) {
@@ -304,7 +342,7 @@ public class DefaultUserOptionsService implements UserOptionsService {
 
         switch (xsiType) {
             case (XnatProjectdata.SCHEMA_ELEMENT_NAME): {
-                paths.putAll(getProjectPaths(user, Collections.singletonList(id)));
+                paths.putAll(getProjectPaths(user, Collections.singletonList(id), eventTrackingId));
                 break;
             }
             case (XnatSubjectdata.SCHEMA_ELEMENT_NAME): {
@@ -466,6 +504,7 @@ public class DefaultUserOptionsService implements UserOptionsService {
 
         // Build container spec for the task template
         containerSpec.setImage(computeEnvironment.getImage());
+        containerSpec.setCommand(computeEnvironment.getCommand());
 
         // Add environment variables from compute environment and hardware
         Map<String, String> environmentVariables = new HashMap<>();

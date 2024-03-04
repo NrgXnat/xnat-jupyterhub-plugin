@@ -8,7 +8,6 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mockito;
 import org.nrg.framework.services.NrgEventServiceI;
-import org.nrg.xnat.compute.services.JobTemplateService;
 import org.nrg.xdat.om.XnatExperimentdata;
 import org.nrg.xdat.om.XnatImagescandata;
 import org.nrg.xdat.om.XnatProjectdata;
@@ -16,9 +15,8 @@ import org.nrg.xdat.om.XnatSubjectdata;
 import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.nrg.xdat.security.user.exceptions.UserInitException;
 import org.nrg.xft.security.UserI;
+import org.nrg.xnat.compute.services.JobTemplateService;
 import org.nrg.xnatx.plugins.jupyterhub.client.JupyterHubClient;
-import org.nrg.xnatx.plugins.jupyterhub.client.exceptions.ResourceAlreadyExistsException;
-import org.nrg.xnatx.plugins.jupyterhub.client.exceptions.UserNotFoundException;
 import org.nrg.xnatx.plugins.jupyterhub.client.models.Server;
 import org.nrg.xnatx.plugins.jupyterhub.client.models.Token;
 import org.nrg.xnatx.plugins.jupyterhub.client.models.User;
@@ -27,6 +25,7 @@ import org.nrg.xnatx.plugins.jupyterhub.config.DefaultJupyterHubServiceConfig;
 import org.nrg.xnatx.plugins.jupyterhub.events.JupyterServerEventI;
 import org.nrg.xnatx.plugins.jupyterhub.models.ServerStartRequest;
 import org.nrg.xnatx.plugins.jupyterhub.preferences.JupyterHubPreferences;
+import org.nrg.xnatx.plugins.jupyterhub.services.DashboardJobTemplateService;
 import org.nrg.xnatx.plugins.jupyterhub.services.UserOptionsEntityService;
 import org.nrg.xnatx.plugins.jupyterhub.services.UserOptionsService;
 import org.nrg.xnatx.plugins.jupyterhub.utils.PermissionsHelper;
@@ -58,6 +57,7 @@ public class DefaultJupyterHubServiceTest {
     @Autowired private JupyterHubPreferences mockJupyterHubPreferences;
     @Autowired private UserManagementServiceI mockUserManagementServiceI;
     @Autowired private JobTemplateService mockJobTemplateService;
+    @Autowired private DashboardJobTemplateService mockDashboardJobTemplateService;
 
     @Captor ArgumentCaptor<JupyterServerEventI> jupyterServerEventCaptor;
     @Captor ArgumentCaptor<Token> tokenArgumentCaptor;
@@ -169,6 +169,7 @@ public class DefaultJupyterHubServiceTest {
         Mockito.reset(mockPermissionsHelper);
         Mockito.reset(mockUserOptionsEntityService);
         Mockito.reset(mockUserManagementServiceI);
+        Mockito.reset(mockJobTemplateService);
     }
 
     @Test
@@ -419,8 +420,34 @@ public class DefaultJupyterHubServiceTest {
         verify(mockJupyterHubClient, never()).startServer(any(), any(), any());
     }
 
+    @Test(timeout = 2000)
+    public void testStartServer_dashboardJobTemplateUnavailable() throws Exception {
+        // Grant permissions
+        when(mockPermissionsHelper.canRead(any(), anyString(), anyString(), anyString())).thenReturn(true);
+
+        // Dashboard job template unavailable
+        when(mockDashboardJobTemplateService.isAvailable(any(), any(), any(), any())).thenReturn(false);
+
+        // Test
+        startProjectRequest.setDashboardConfigId(1L);
+        jupyterHubService.startServer(user, startProjectRequest);
+        Thread.sleep(1000); // Async call, need to wait. Is there a better way to test this?
+
+        // Verify failure to start event occurred
+        verify(mockEventService, atLeastOnce()).triggerEvent(jupyterServerEventCaptor.capture());
+        JupyterServerEventI capturedEvent = jupyterServerEventCaptor.getValue();
+        assertEquals(JupyterServerEventI.Status.Failed, capturedEvent.getStatus());
+        assertEquals(JupyterServerEventI.Operation.Start, capturedEvent.getOperation());
+
+        // Verify user options are not saved
+        verify(mockUserOptionsEntityService, never()).createOrUpdate(any());
+
+        // Verify no attempts to start a server
+        verify(mockJupyterHubClient, never()).startServer(any(), any(), any());
+    }
+
     @Test(timeout = 4000)
-    public void testStartServer_Timeout() throws UserNotFoundException, ResourceAlreadyExistsException, InterruptedException {
+    public void testStartServer_Timeout() throws Exception {
         // Grant permissions
         when(mockPermissionsHelper.canRead(any(), anyString(), anyString(), anyString())).thenReturn(true);
 
@@ -439,7 +466,7 @@ public class DefaultJupyterHubServiceTest {
         // Verify user options are stored
         verify(mockUserOptionsService, times(1)).storeUserOptions(eq(user), eq(""), eq(XnatProjectdata.SCHEMA_ELEMENT_NAME),
                                                                   eq(projectId), eq(projectId), eq(computeEnvironmentConfigId),
-                                                                  eq(hardwareConfigId), eq(eventTrackingId));
+                                                                  eq(hardwareConfigId), isNull(), eq(eventTrackingId));
 
         // Verify JupyterHub start server request sent
         verify(mockJupyterHubClient, times(1)).startServer(eq(username), eq(""), any(UserOptions.class));
@@ -474,7 +501,7 @@ public class DefaultJupyterHubServiceTest {
         // Verify user options are stored
         verify(mockUserOptionsService, times(1)).storeUserOptions(eq(user), eq(""), eq(XnatProjectdata.SCHEMA_ELEMENT_NAME),
                                                                   eq(projectId), eq(projectId), eq(computeEnvironmentConfigId),
-                                                                  eq(hardwareConfigId), eq(eventTrackingId));
+                                                                  eq(hardwareConfigId), isNull(), eq(eventTrackingId));
 
         // Verify JupyterHub start server request sent
         verify(mockJupyterHubClient, times(1)).startServer(eq(username), eq(""), any(UserOptions.class));
@@ -511,7 +538,7 @@ public class DefaultJupyterHubServiceTest {
         // Verify user options are stored
         verify(mockUserOptionsService, times(1)).storeUserOptions(eq(user), eq(""), eq(XnatProjectdata.SCHEMA_ELEMENT_NAME),
                                                                   eq(projectId), eq(projectId), eq(computeEnvironmentConfigId),
-                                                                  eq(hardwareConfigId), eq(eventTrackingId));
+                                                                  eq(hardwareConfigId), isNull(), eq(eventTrackingId));
 
         // Verify JupyterHub start server request sent
         verify(mockJupyterHubClient, times(1)).startServer(eq(username), eq(""), any(UserOptions.class));
@@ -527,6 +554,7 @@ public class DefaultJupyterHubServiceTest {
     public void testStopSever_Failure() throws Exception {
         // Returning a server should lead to a failure to stop event
         when(mockJupyterHubClient.getServer(anyString(), anyString()))
+                .thenReturn(Optional.empty())
                 .thenReturn(Optional.of(Server.builder().build()));
 
         // Test
@@ -534,10 +562,10 @@ public class DefaultJupyterHubServiceTest {
         Thread.sleep(2500); // Async call, need to wait. Is there a better way to test this?
 
         // Verify one attempt to stop the sever
-        verify(mockJupyterHubClient, times(1)).stopServer(username, servername);
+        verify(mockJupyterHubClient, atLeastOnce()).stopServer(username, servername);
 
         // Verify attempts to see if server stopped
-        verify(mockJupyterHubClient, times(2)).getServer(username, servername);
+        verify(mockJupyterHubClient, atLeast(2)).getServer(username, servername);
 
         // Verify failure to stop event occurred
         verify(mockEventService, atLeastOnce()).triggerEvent(jupyterServerEventCaptor.capture());
@@ -558,8 +586,8 @@ public class DefaultJupyterHubServiceTest {
         // Verify one attempt to stop the sever
         verify(mockJupyterHubClient, times(1)).stopServer(username, servername);
 
-        // Verify one attempt to see if server stopped
-        verify(mockJupyterHubClient, times(1)).getServer(username, servername);
+        // Verify at least one attempt to see if server stopped
+        verify(mockJupyterHubClient, atLeastOnce()).getServer(username, servername);
 
         // Verify stop completed event occurred
         verify(mockEventService, atLeastOnce()).triggerEvent(jupyterServerEventCaptor.capture());

@@ -5,6 +5,7 @@ import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.services.SearchHelperServiceI;
 import org.nrg.xdat.services.AliasTokenService;
 import org.nrg.xnatx.plugins.jupyterhub.preferences.JupyterHubPreferences;
+import org.nrg.xnatx.plugins.jupyterhub.services.DashboardJobTemplateService;
 import org.nrg.xnatx.plugins.jupyterhub.services.UserOptionsEntityService;
 import org.nrg.xnatx.plugins.jupyterhub.services.UserWorkspaceService;
 import org.nrg.xnatx.plugins.jupyterhub.services.impl.DefaultUserOptionsService;
@@ -25,7 +26,8 @@ public class DefaultUserOptionsServiceConfig {
                                                                final SiteConfigPreferences mockSiteConfigPreferences,
                                                                final UserOptionsEntityService mockUserOptionsEntityService,
                                                                final PermissionsHelper mockPermissionsHelper,
-                                                               final JobTemplateService mockJobTemplateService) {
+                                                               final JobTemplateService mockJobTemplateService,
+                                                               final DashboardJobTemplateService mockDashboardJobTemplateService) {
         return new DefaultUserOptionsService(mockJupyterHubPreferences,
                                              mockUserWorkspaceService,
                                              mockSearchHelperService,
@@ -33,7 +35,8 @@ public class DefaultUserOptionsServiceConfig {
                                              mockSiteConfigPreferences,
                                              mockUserOptionsEntityService,
                                              mockPermissionsHelper,
-                                             mockJobTemplateService);
+                                             mockJobTemplateService,
+                                             mockDashboardJobTemplateService);
     }
 
 }
