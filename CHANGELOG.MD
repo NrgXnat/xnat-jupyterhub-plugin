@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- [JHP-83] - Fix issue with project resources not being mounted. Caused by XNAT-7903.
+
 ## [1.1.0] - 2024-03-04
 
 ### Added
@@ -47,3 +51,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [JHP-73]: https://radiologics.atlassian.net/jira/software/c/projects/JHP/issues/JHP-73
 [JHP-74]: https://radiologics.atlassian.net/jira/software/c/projects/JHP/issues/JHP-74
 [JHP-77]: https://radiologics.atlassian.net/jira/software/c/projects/JHP/issues/JHP-77
+[JHP-83]: https://radiologics.atlassian.net/jira/software/c/projects/JHP/issues/JHP-83

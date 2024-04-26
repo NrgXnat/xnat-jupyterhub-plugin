@@ -96,9 +96,23 @@ public class DefaultUserOptionsService implements UserOptionsService {
                 if (eventTrackingId != null) {
                         Map<Path, Path> allSharedPaths = FileUtils.getAllSharedPaths(projectId, user, true, true, true, true);
                         if (allSharedPaths.isEmpty()) {
+                            // Hot fix. I don't like the code duplication, but it resolves the issue safely for now.
+                            // Need to figure out what to do with stored searches before refactoring.
                             final Path projectDirectory = Paths.get(xnatProjectdata.getRootArchivePath() + xnatProjectdata.getCurrentArc());
                             if (Files.exists(projectDirectory)) {
                                 projectPaths.put("/data/projects/" + projectId + "/experiments", projectDirectory.toString());
+                            }
+
+                            // Project resources
+                            final Path resourceDirectory = Paths.get(xnatProjectdata.getRootArchivePath() + "/resources");
+                            if (Files.exists(resourceDirectory)) {
+                                projectPaths.put("/data/projects/" + projectId + "/resources", resourceDirectory.toString());
+                            }
+
+                            // Subject resources
+                            final Path subjectResourceDirectory = Paths.get(xnatProjectdata.getRootArchivePath() + "/subjects");
+                            if (Files.exists(subjectResourceDirectory)) {
+                                projectPaths.put("/data/projects/" + projectId + "/subjects", subjectResourceDirectory.toString());
                             }
                         } else {
                             Path sharedLinksDirectory = Paths.get(JupyterHubPreferences.SHARED_PROJECT_STRING, eventTrackingId);
