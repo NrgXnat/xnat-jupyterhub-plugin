@@ -61,7 +61,8 @@ XNAT.plugin.jupyterhub.users.authorization.roles = getObject(XNAT.plugin.jupyter
             throw new Error(`HTTP error getting user roles for user ${username}`);
         }
 
-        return await response.json();
+        let users = await response.json();
+        return users.sort((a, b) => a.localeCompare(b));
     }
 
     XNAT.plugin.jupyterhub.users.authorization.getUnauthorized = async function () {
@@ -80,7 +81,7 @@ XNAT.plugin.jupyterhub.users.authorization.roles = getObject(XNAT.plugin.jupyter
 
         let allUsers = await response.json();
 
-        return allUsers.filter(user => !authorizedUsers.contains(user) && user !== 'jupyterhub' && user !== 'guest');
+        return allUsers.filter(user => !authorizedUsers.contains(user) && user !== 'jupyterhub' && user !== 'guest').sort((a, b) => a.localeCompare(b));
     }
 
     XNAT.plugin.jupyterhub.users.authorization.add = async function (username) {
@@ -133,8 +134,6 @@ XNAT.plugin.jupyterhub.users.authorization.roles = getObject(XNAT.plugin.jupyter
         }
 
         XNAT.plugin.jupyterhub.users.authorization.getAuthorized().then(users => {
-            users.sort();
-
             const noUsers = users.length === 0;
             if (noUsers) {
                 users.push('No users have been authorized.');
@@ -180,9 +179,9 @@ XNAT.plugin.jupyterhub.users.authorization.roles = getObject(XNAT.plugin.jupyter
             id: 'add-jupyter-user-btn',
             onclick: function () {
                 XNAT.dialog.open({
-                    title: 'Add Jupyter Users',
+                    title: 'Authorize Jupyter Users',
                     content: spawn('form'),
-                    width: 600,
+                    width: 400,
                     beforeShow: function (obj) {
                         const formContainer$ = obj.$modal.find('.xnat-dialog-content');
                         formContainer$.addClass('panel');
@@ -199,8 +198,8 @@ XNAT.plugin.jupyterhub.users.authorization.roles = getObject(XNAT.plugin.jupyter
                             );
 
                             const selectEl = document.getElementById('jupyter-users-to-authorize');
-                            selectEl.style.minWidth = '175px';
-                            selectEl.style.minHeight = '125px';
+                            selectEl.style.minWidth = '100%';
+                            selectEl.style.minHeight = '200px';
                         })
                     },
                     buttons: [

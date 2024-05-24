@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- [JHP-88]: Cleanup the User Authorization table and modal in the plugin preferences page. Usernames were not being 
+            sorted alphabetically.
+
 ## [1.1.1] - 2024-05-03
 
 ### Fixed
@@ -54,3 +59,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [JHP-74]: https://radiologics.atlassian.net/jira/software/c/projects/JHP/issues/JHP-74
 [JHP-77]: https://radiologics.atlassian.net/jira/software/c/projects/JHP/issues/JHP-77
 [JHP-83]: https://radiologics.atlassian.net/jira/software/c/projects/JHP/issues/JHP-83
+[JHP-88]: https://radiologics.atlassian.net/jira/software/c/projects/JHP/issues/JHP-88
