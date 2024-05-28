@@ -1,12 +1,12 @@
 <li class="yuimenuitem">
     <a class="yuimenuitemlabel" id="start-jupyter-server" style="display: none" onclick="XNAT.plugin.jupyterhub.servers.startServerForSubject()">
-        Start Jupyter
+        Start Jupyter Notebook
     </a>
 </li>
 
 <li class="yuimenuitem">
     <a class="yuimenuitemlabel" id="start-dashboard" style="display: none" onclick="XNAT.plugin.jupyterhub.servers.startDashboardForSubject()">
-        Start Dashboard
+        Start Jupyter Dashboard
     </a>
 </li>
 

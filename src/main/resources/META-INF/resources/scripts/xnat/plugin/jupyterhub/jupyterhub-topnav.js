@@ -134,7 +134,7 @@ XNAT.plugin.jupyterhub.topnav = getObject(XNAT.plugin.jupyterhub.topnav || {});
                             const eventTrackingId = XNAT.plugin.jupyterhub.servers.generateEventTrackingId()
                             XNAT.plugin.jupyterhub.servers.stopServer(window.username, server['name'], eventTrackingId).then(() => {
                                 XNAT.app.activityTab.start(
-                                    `Stop ${isDashboard(server) ? 'Dashboard' : 'Jupyter Notebook Server'}`,
+                                    `Stop Jupyter ${isDashboard(server) ? 'Dashboard' : 'Notebook'}`,
                                     eventTrackingId,
                                     'XNAT.plugin.jupyterhub.servers.activityTabCallback',
                                     2000);

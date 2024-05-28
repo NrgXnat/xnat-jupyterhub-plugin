@@ -268,7 +268,7 @@ XNAT.compute.computeEnvironmentConfigs = getObject(XNAT.compute.computeEnvironme
             }
             
             const startButton = {
-                label: 'Start Jupyter',
+                label: 'Start Notebook',
                 isDefault: true,
                 close: false,
                 action: function(obj) {
@@ -328,7 +328,7 @@ XNAT.compute.computeEnvironmentConfigs = getObject(XNAT.compute.computeEnvironme
                         data: JSON.stringify(serverStartRequest),
                         beforeSend: function () {
                             XNAT.app.activityTab.start(
-                                'Start Jupyter Notebook Server' +
+                                'Start Jupyter Notebook' +
                                 `<div class="actions"><a id="open-nb-${eventTrackingId}" class="icn open" style="display: none;"><i class="fa fa-external-link"></i></a>`,
                                 eventTrackingId,
                                 'XNAT.plugin.jupyterhub.servers.activityTabCallback', 1000);
@@ -346,7 +346,7 @@ XNAT.compute.computeEnvironmentConfigs = getObject(XNAT.compute.computeEnvironme
             const buttons = (computeEnvironmentConfigs.length === 0) ? [cancelButton] : [cancelButton, startButton];
             
             XNAT.dialog.open({
-                title: 'Start Jupyter',
+                title: 'Start Jupyter Notebook',
                 content: spawn('form#server-start-request-form'),
                 maxBtn: true,
                 width: 500,
@@ -516,7 +516,7 @@ XNAT.compute.computeEnvironmentConfigs = getObject(XNAT.compute.computeEnvironme
                         data: JSON.stringify(serverStartRequest),
                         beforeSend: function () {
                             XNAT.app.activityTab.start(
-                                'Start Dashboard' +
+                                'Start Jupyter Dashboard' +
                                 `<div class="actions"><a id="open-nb-${eventTrackingId}" class="icn open" style="display: none;"><i class="fa fa-external-link"></i></a>`,
                                 eventTrackingId,
                                 'XNAT.plugin.jupyterhub.servers.activityTabCallback', 1000);
@@ -534,7 +534,7 @@ XNAT.compute.computeEnvironmentConfigs = getObject(XNAT.compute.computeEnvironme
             const buttons = (dashboardConfigs.length === 0) ? [cancelButton] : [cancelButton, startButton];
 
             XNAT.dialog.open({
-                title: 'Start Dashboard',
+                title: 'Start Jupyter Dashboard',
                 content: spawn('form#server-start-request-form'),
                 maxBtn: true,
                 width: 400,

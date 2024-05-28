@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- [JHP-89]: Changed the action labels to `Start Jupyter Notebook` and `Start Jupyter Dashboard` for clarity and 
+            consistency as the batch launch plugin is already contains a 'Processing Dashboard' action.
+
 ### Fixed
 
 - [JHP-88]: Cleanup the User Authorization table and modal in the plugin preferences page. Usernames were not being 
