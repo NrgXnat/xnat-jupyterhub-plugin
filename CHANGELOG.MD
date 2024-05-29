@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - [JHP-89]: Changed the action labels to `Start Jupyter Notebook` and `Start Jupyter Dashboard` for clarity and 
             consistency as the batch launch plugin is already contains a 'Processing Dashboard' action.
+- [JHP-91]: The 'New / Update Dashboard' modal in the plugin settings accepts both git branches and tags in the 'Branch'
+            field. The field label and description have been updated to reflect this ability.
 
 ### Fixed
 

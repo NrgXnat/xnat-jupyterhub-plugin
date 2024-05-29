@@ -306,10 +306,10 @@ XNAT.plugin.jupyterhub.dashboards.frameworks = getObject(XNAT.plugin.jupyterhub.
                             spawn('div.clear')
                         ]),
                         spawn('div.panel-element.file-source.git|data-name=git-repo-branch', [
-                            spawn('label.element-label|for=git-repo-branch', 'Branch'),
+                            spawn('label.element-label|for=git-repo-branch', 'Branch / Tag'),
                             spawn('div.element-wrapper', [
                                 spawn(`input#git-repo-branch|type=text`, { value: gitRepoBranch }),
-                                spawn('div.description', 'Enter the branch containing the dashboard code.')
+                                spawn('div.description', 'Enter the branch or tag containing the dashboard code.')
                             ]),
                             spawn('div.clear')
                         ]),
