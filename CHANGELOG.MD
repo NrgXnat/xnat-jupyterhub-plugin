@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- [JHP-82]:  Enables support for JupyterHub named servers. This feature allows users to start multiple Jupyter notebooks
+             or Dashboards from the XNAT UI. A new preference has been added to the plugin to limit the number of named
+             servers a user can start. The default is 1. May require browser cache to be cleared.
+
 ### Changed
 
 - [JHP-89]: Changed the action labels to `Start Jupyter Notebook` and `Start Jupyter Dashboard` for clarity and 
@@ -65,5 +71,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [JHP-73]: https://radiologics.atlassian.net/jira/software/c/projects/JHP/issues/JHP-73
 [JHP-74]: https://radiologics.atlassian.net/jira/software/c/projects/JHP/issues/JHP-74
 [JHP-77]: https://radiologics.atlassian.net/jira/software/c/projects/JHP/issues/JHP-77
+[JHP-82]: https://radiologics.atlassian.net/jira/software/c/projects/JHP/issues/JHP-82
 [JHP-83]: https://radiologics.atlassian.net/jira/software/c/projects/JHP/issues/JHP-83
 [JHP-88]: https://radiologics.atlassian.net/jira/software/c/projects/JHP/issues/JHP-88

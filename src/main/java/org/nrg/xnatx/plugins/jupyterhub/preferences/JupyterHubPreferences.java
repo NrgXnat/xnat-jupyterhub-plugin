@@ -33,6 +33,7 @@ public class JupyterHubPreferences extends AbstractPreferenceBean {
     public static final String RESOURCE_SPEC_MEM_RESERVATION_PREF_ID = "resourceSpecMemReservation";
     public static final String INACTIVITY_TIMEOUT_PREF_ID = "inactivityTimeout";
     public static final String MAX_SERVER_LIFETIME_PREF_ID = "maxServerLifetime";
+    public static final String MAX_NAMED_SERVERS_PREF_ID = "maxNamedServers";
     public static final String SHARED_PROJECT_STRING = "jupyter-notebooks";
 
 
@@ -333,6 +334,23 @@ public class JupyterHubPreferences extends AbstractPreferenceBean {
             setLongValue(maxServerLifetime, MAX_SERVER_LIFETIME_PREF_ID);
         } catch (InvalidPreferenceName e) {
             log.error("Invalid preference name 'maxServerLifetime': something is very wrong here.", e);
+        }
+    }
+
+    @NrgPreference(defaultValue = "1")
+    public int getMaxNamedServers() {
+        return getIntegerValue(MAX_NAMED_SERVERS_PREF_ID);
+    }
+
+    public void setMaxNamedServers(final int maxNamedServers) {
+        try {
+            if (maxNamedServers < 1) {
+                throw new IllegalArgumentException("Max named servers must be at least 1.");
+            }
+
+            setIntegerValue(maxNamedServers, MAX_NAMED_SERVERS_PREF_ID);
+        } catch (InvalidPreferenceName e) {
+            log.error("Invalid preference name 'maxNamedServers': something is very wrong here.", e);
         }
     }
 

@@ -425,6 +425,13 @@ public class DefaultUserOptionsService implements UserOptionsService {
         userOptionsEntityService.createOrUpdate(userOptionsEntity);
     }
 
+    @Override
+    public void removeUserOptions(UserI user, String servername) {
+        log.debug("Removing user options for user '{}' server '{}'", user.getUsername(), servername);
+        Optional<UserOptionsEntity> userOptionsEntity = userOptionsEntityService.find(user.getID(), servername);
+        userOptionsEntity.ifPresent(userOptionsEntityService::delete);
+    }
+
     /**
      * Translate paths within the archive to paths within the docker container
      * @param path the path to translate, must be the archive path or a subdirectory of the archive path

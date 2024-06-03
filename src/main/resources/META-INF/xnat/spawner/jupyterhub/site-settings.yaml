@@ -153,6 +153,16 @@ maxServerLifetime:
     description: >
         Automatically shut down Jupyter notebook servers after a certain amount of time regardless of activity. Set to 0 to not shut down any long running servers.
 
+maxNamedServers:
+  kind: panel.input.number
+  id: maxNamedServers
+  name: maxNamedServers
+  label: Max Servers Per User
+  afterElement: <span class="after">server(s)</span>
+  validation: integer gte:1 onblur
+  description: >
+    The maximum number of servers a user can have running at once on JupyterHub. At least one server per user is required.
+
 jupyterHubSetup:
   kind: panel
   name: jupyterHubSetup
@@ -286,6 +296,7 @@ jupyterhubPreferences:
     ${stopTimeout}
     ${inactivityTimeout}
     ${maxServerLifetime}
+    ${maxNamedServers}
     ${workspacePath}
     ${pathTranslationArchivePrefix}
     ${pathTranslationArchiveDockerPrefix}

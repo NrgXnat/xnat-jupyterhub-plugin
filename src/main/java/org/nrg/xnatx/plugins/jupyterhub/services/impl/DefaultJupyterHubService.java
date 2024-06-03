@@ -241,17 +241,15 @@ public class DefaultJupyterHubService implements JupyterHubService {
                                                                       JupyterServerEventI.Operation.Start, 0,
                                                                       "Checking for existing Jupyter servers."));
 
-                boolean hasRunningServer = jupyterHubClient.getUser(user.getUsername())
-                                                           .orElseGet(() -> createUser(user))
-                                                           .getServers()
-                                                           .containsKey(servername);
-                if (hasRunningServer) {
-                    eventService.triggerEvent(JupyterServerEvent.failed(eventTrackingId,
-                                                                        user.getID(), xsiType, itemId,
+                int maxNamedServers = jupyterHubPreferences.getMaxNamedServers();
+                boolean hasMaxNamedServers = jupyterHubClient.getUser(user.getUsername())
+                                                             .orElseGet(() -> createUser(user))
+                                                             .getServers()
+                                                             .size() >= maxNamedServers;
+                if (hasMaxNamedServers) {
+                    eventService.triggerEvent(JupyterServerEvent.failed(eventTrackingId, user.getID(), xsiType, itemId,
                                                                         JupyterServerEventI.Operation.Start,
-                                                                        "Failed to launch " + application + ". " +
-                                                                                "There is already a dashboard or Jupyter notebook running. " +
-                                                                                "Please stop the running dashboard or notebook before starting a new one."));
+                                                                        "Failed to launch " + application + ". Maximum number of running Jupyter servers reached."));
                     return;
                 }
 
@@ -448,6 +446,8 @@ public class DefaultJupyterHubService implements JupyterHubService {
 
                     if (!server.isPresent()) {
                         log.info("Jupyter server stopped for user {}", user.getUsername());
+                        log.debug("Removing user options for user {} and server {}", user.getUsername(), servername);
+                        userOptionsService.removeUserOptions(user, servername);
                         eventService.triggerEvent(JupyterServerEvent.completed(eventTrackingId, user.getID(),
                                                                                JupyterServerEventI.Operation.Stop,
                                                                                "Jupyter Server Stopped."));

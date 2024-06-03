@@ -64,12 +64,11 @@ public class DefaultJupyterHubServiceTest {
 
     private UserI user;
     private String username;
-    private final String servername = "";
-    private final String eventTrackingId = "eventTrackingId";
+    private final String servername = "20240513T143619676Z";
+    private final String eventTrackingId = "20240513T143619676Z";
     private final String projectId = "TestProject";
     private final Long computeEnvironmentConfigId = 3L;
     private final Long hardwareConfigId = 2L;
-    private User userWithServers;
     private User userNoServers;
 
     private ServerStartRequest startProjectRequest;
@@ -84,15 +83,6 @@ public class DefaultJupyterHubServiceTest {
         username = "user";
         when(user.getUsername()).thenReturn(username);
         when(mockUserManagementServiceI.getUser(eq(username))).thenReturn(user);
-
-        Server server = Server.builder()
-                .name(servername)
-                .build();
-
-        userWithServers = User.builder()
-                .name(username)
-                .servers(Collections.singletonMap("", server))
-                .build();
 
         userNoServers = User.builder()
                 .name(username)
@@ -160,6 +150,9 @@ public class DefaultJupyterHubServiceTest {
         when(mockJupyterHubPreferences.getStartPollingInterval()).thenReturn(1);
         when(mockJupyterHubPreferences.getStopTimeout()).thenReturn(2);
         when(mockJupyterHubPreferences.getStopPollingInterval()).thenReturn(1);
+
+        // Default preferences
+        when(mockJupyterHubPreferences.getMaxNamedServers()).thenReturn(1);
     }
 
     @After
@@ -167,6 +160,7 @@ public class DefaultJupyterHubServiceTest {
         Mockito.reset(mockJupyterHubClient);
         Mockito.reset(mockEventService);
         Mockito.reset(mockPermissionsHelper);
+        Mockito.reset(mockUserOptionsService);
         Mockito.reset(mockUserOptionsEntityService);
         Mockito.reset(mockUserManagementServiceI);
         Mockito.reset(mockJobTemplateService);
@@ -323,6 +317,7 @@ public class DefaultJupyterHubServiceTest {
     public void testStartServer_HubOffline() throws Exception {
         // Grant permissions
         when(mockPermissionsHelper.canRead(any(), anyString(), anyString(), anyString())).thenReturn(true);
+        when(mockJobTemplateService.isAvailable(any(), any(), any())).thenReturn(true);
 
         // Connection to JupyterHub failed
         when(mockJupyterHubClient.getVersion()).thenThrow(RuntimeException.class);
@@ -348,6 +343,7 @@ public class DefaultJupyterHubServiceTest {
     public void testStartServer_HubOnlineButXNATCantConnect() throws Exception {
         // Grant permissions
         when(mockPermissionsHelper.canRead(any(), anyString(), anyString(), anyString())).thenReturn(true);
+        when(mockJobTemplateService.isAvailable(any(), any(), any())).thenReturn(true);
 
         // Can't getInfo from JupyterHub, but connection to JupyterHub succeeded
         when(mockJupyterHubClient.getVersion()).thenReturn(null);
@@ -371,12 +367,20 @@ public class DefaultJupyterHubServiceTest {
     }
 
     @Test(timeout = 2000)
-    public void testStartServer_serverAlreadyRunning() throws Exception {
+    public void testStartServer_serverLimitReached() throws Exception {
         // Grant permissions
         when(mockPermissionsHelper.canRead(any(), anyString(), anyString(), anyString())).thenReturn(true);
+        when(mockJobTemplateService.isAvailable(any(), any(), any())).thenReturn(true);
 
-        // Setup existing server
+        // Setup existing servers
+        Map<String, Server> servers = new HashMap<>();
+        servers.put("20240513T143619676Z", Server.builder().build());
+        servers.put("20240513T143720921Z", Server.builder().build());
+        User userWithServers = User.builder().name(username).servers(servers).build();
         when(mockJupyterHubClient.getUser(anyString())).thenReturn(Optional.of(userWithServers));
+
+        // Update max named servers to 2
+        when(mockJupyterHubPreferences.getMaxNamedServers()).thenReturn(2);
 
         // Test
         jupyterHubService.startServer(user, startProjectRequest);
@@ -464,15 +468,15 @@ public class DefaultJupyterHubServiceTest {
         Thread.sleep(3000); // Async call, need to wait. Is there a better way to test this?
 
         // Verify user options are stored
-        verify(mockUserOptionsService, times(1)).storeUserOptions(eq(user), eq(""), eq(XnatProjectdata.SCHEMA_ELEMENT_NAME),
+        verify(mockUserOptionsService, times(1)).storeUserOptions(eq(user), eq(servername), eq(XnatProjectdata.SCHEMA_ELEMENT_NAME),
                                                                   eq(projectId), eq(projectId), eq(computeEnvironmentConfigId),
                                                                   eq(hardwareConfigId), isNull(), eq(eventTrackingId));
 
         // Verify JupyterHub start server request sent
-        verify(mockJupyterHubClient, times(1)).startServer(eq(username), eq(""), any(UserOptions.class));
+        verify(mockJupyterHubClient, times(1)).startServer(eq(username), eq(servername), any(UserOptions.class));
 
         // Verify 2 attempts to get server from JupyterHub with polling rate and timeout
-        verify(mockJupyterHubClient, times(2)).getServer(eq(username), eq(""));
+        verify(mockJupyterHubClient, times(2)).getServer(eq(username), eq(servername));
 
         // Verify failure to start event occurred
         verify(mockEventService, atLeastOnce()).triggerEvent(jupyterServerEventCaptor.capture());
@@ -499,12 +503,12 @@ public class DefaultJupyterHubServiceTest {
         Thread.sleep(2500); // Async call, need to wait. Is there a better way to test this?
 
         // Verify user options are stored
-        verify(mockUserOptionsService, times(1)).storeUserOptions(eq(user), eq(""), eq(XnatProjectdata.SCHEMA_ELEMENT_NAME),
+        verify(mockUserOptionsService, times(1)).storeUserOptions(eq(user), eq(servername), eq(XnatProjectdata.SCHEMA_ELEMENT_NAME),
                                                                   eq(projectId), eq(projectId), eq(computeEnvironmentConfigId),
                                                                   eq(hardwareConfigId), isNull(), eq(eventTrackingId));
 
         // Verify JupyterHub start server request sent
-        verify(mockJupyterHubClient, times(1)).startServer(eq(username), eq(""), any(UserOptions.class));
+        verify(mockJupyterHubClient, times(1)).startServer(eq(username), eq(servername), any(UserOptions.class));
 
         // Verify start completed event occurred
         verify(mockEventService, atLeastOnce()).triggerEvent(jupyterServerEventCaptor.capture());
@@ -536,12 +540,12 @@ public class DefaultJupyterHubServiceTest {
         verify(mockJupyterHubClient, times(1)).createUser(anyString());
 
         // Verify user options are stored
-        verify(mockUserOptionsService, times(1)).storeUserOptions(eq(user), eq(""), eq(XnatProjectdata.SCHEMA_ELEMENT_NAME),
+        verify(mockUserOptionsService, times(1)).storeUserOptions(eq(user), eq(servername), eq(XnatProjectdata.SCHEMA_ELEMENT_NAME),
                                                                   eq(projectId), eq(projectId), eq(computeEnvironmentConfigId),
                                                                   eq(hardwareConfigId), isNull(), eq(eventTrackingId));
 
         // Verify JupyterHub start server request sent
-        verify(mockJupyterHubClient, times(1)).startServer(eq(username), eq(""), any(UserOptions.class));
+        verify(mockJupyterHubClient, times(1)).startServer(eq(username), eq(servername), any(UserOptions.class));
 
         // Verify start completed event occurred
         verify(mockEventService, atLeastOnce()).triggerEvent(jupyterServerEventCaptor.capture());
@@ -558,7 +562,7 @@ public class DefaultJupyterHubServiceTest {
                 .thenReturn(Optional.of(Server.builder().build()));
 
         // Test
-        jupyterHubService.stopServer(user, eventTrackingId);
+        jupyterHubService.stopServer(user, servername, eventTrackingId);
         Thread.sleep(2500); // Async call, need to wait. Is there a better way to test this?
 
         // Verify one attempt to stop the sever
@@ -580,7 +584,7 @@ public class DefaultJupyterHubServiceTest {
         when(mockJupyterHubClient.getServer(anyString(), anyString())).thenReturn(Optional.empty());
 
         // Test
-        jupyterHubService.stopServer(user, eventTrackingId);
+        jupyterHubService.stopServer(user, servername, eventTrackingId);
         Thread.sleep(2000); // Async call, need to wait. Is there a better way to test this?
 
         // Verify one attempt to stop the sever
@@ -588,6 +592,9 @@ public class DefaultJupyterHubServiceTest {
 
         // Verify at least one attempt to see if server stopped
         verify(mockJupyterHubClient, atLeastOnce()).getServer(username, servername);
+
+        // Verify user options are removed
+        verify(mockUserOptionsService, times(1)).removeUserOptions(eq(user), eq(servername));
 
         // Verify stop completed event occurred
         verify(mockEventService, atLeastOnce()).triggerEvent(jupyterServerEventCaptor.capture());
@@ -633,12 +640,12 @@ public class DefaultJupyterHubServiceTest {
         servers.put("server_active", server_active);
         servers.put("server_inactive", server_inactive);
 
-        User user = User.builder()
+        User jupyterUser = User.builder()
                 .name(username)
                 .servers(servers)
                 .build();
 
-        when(mockJupyterHubClient.getUsers()).thenReturn(Collections.singletonList(user));
+        when(mockJupyterHubClient.getUsers()).thenReturn(Collections.singletonList(jupyterUser));
 
         // Test
         jupyterHubService.cullInactiveServers();
@@ -646,9 +653,11 @@ public class DefaultJupyterHubServiceTest {
 
         // Verify active server not stopped
         verify(mockJupyterHubClient, never()).stopServer(eq(username), eq(server_active.getName()));
+        verify(mockUserOptionsService, never()).removeUserOptions(eq(user), eq(server_active.getName()));
 
         // Verify inactive server stopped
         verify(mockJupyterHubClient, times(1)).stopServer(eq(username), eq(server_inactive.getName()));
+        verify(mockUserOptionsService, times(1)).removeUserOptions(eq(user), eq(server_inactive.getName()));
     }
 
     @Test(timeout = 3000)
@@ -662,6 +671,7 @@ public class DefaultJupyterHubServiceTest {
 
         // Verify no servers stopped
         verify(mockJupyterHubClient, never()).stopServer(any(), any());
+        verify(mockUserOptionsService, never()).removeUserOptions(any(), any());
     }
 
     @Test(timeout = 3000)
@@ -676,6 +686,7 @@ public class DefaultJupyterHubServiceTest {
 
         // Verify no servers stopped
         verify(mockJupyterHubClient, never()).stopServer(any(), any());
+        verify(mockUserOptionsService, never()).removeUserOptions(any(), any());
     }
 
     @Test(timeout = 3000)
@@ -697,12 +708,12 @@ public class DefaultJupyterHubServiceTest {
         servers.put(server_active.getName(), server_active);
         servers.put(server_long_running.getName(), server_long_running);
 
-        User user = User.builder()
+        User jupyterUser = User.builder()
                 .name(username)
                 .servers(servers)
                 .build();
 
-        when(mockJupyterHubClient.getUsers()).thenReturn(Collections.singletonList(user));
+        when(mockJupyterHubClient.getUsers()).thenReturn(Collections.singletonList(jupyterUser));
 
         // Test
         jupyterHubService.cullLongRunningServers();
@@ -710,9 +721,11 @@ public class DefaultJupyterHubServiceTest {
 
         // Verify active server not stopped
         verify(mockJupyterHubClient, never()).stopServer(eq(username), eq(server_active.getName()));
+        verify(mockUserOptionsService, never()).removeUserOptions(eq(user), eq(server_active.getName()));
 
         // Verify inactive server stopped
         verify(mockJupyterHubClient, times(1)).stopServer(eq(username), eq(server_long_running.getName()));
+        verify(mockUserOptionsService, times(1)).removeUserOptions(eq(user), eq(server_long_running.getName()));
     }
 
     @Test(timeout = 3000)
@@ -726,6 +739,7 @@ public class DefaultJupyterHubServiceTest {
 
         // Verify servers not stopped
         verify(mockJupyterHubClient, never()).stopServer(any(), any());
+        verify(mockUserOptionsService, never()).removeUserOptions(any(), any());
     }
 
     @Test(timeout = 3000)
@@ -748,12 +762,12 @@ public class DefaultJupyterHubServiceTest {
         servers.put(server_active.getName(), server_active);
         servers.put(server_long_running.getName(), server_long_running);
 
-        User user = User.builder()
+        User jupyterUser = User.builder()
                 .name(username)
                 .servers(servers)
                 .build();
 
-        when(mockJupyterHubClient.getUsers()).thenReturn(Collections.singletonList(user));
+        when(mockJupyterHubClient.getUsers()).thenReturn(Collections.singletonList(jupyterUser));
 
         // Test
         jupyterHubService.cullLongRunningServers();
@@ -761,9 +775,11 @@ public class DefaultJupyterHubServiceTest {
 
         // Verify active server not stopped
         verify(mockJupyterHubClient, never()).stopServer(eq(username), eq(server_active.getName()));
+        verify(mockUserOptionsService, never()).removeUserOptions(eq(user), eq(server_active.getName()));
 
         // Verify inactive server not stopped. Timeout is set to zero
         verify(mockJupyterHubClient, never()).stopServer(eq(username), eq(server_long_running.getName()));
+        verify(mockUserOptionsService, never()).removeUserOptions(eq(user), eq(server_long_running.getName()));
     }
 
     @Test(timeout = 3000)
@@ -778,6 +794,6 @@ public class DefaultJupyterHubServiceTest {
 
         // Verify no server stopped
         verify(mockJupyterHubClient, never()).stopServer(any(), any());
-
+        verify(mockUserOptionsService, never()).removeUserOptions(any(), any());
     }
 }

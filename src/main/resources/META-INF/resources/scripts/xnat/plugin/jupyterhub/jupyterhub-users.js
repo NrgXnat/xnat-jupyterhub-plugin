@@ -186,26 +186,28 @@ XNAT.plugin.jupyterhub.users.tokens = getObject(XNAT.plugin.jupyterhub.users.tok
         XNAT.plugin.jupyterhub.users.getUsers().then(users => {
             let noRunningServers = true;
             
-            users.forEach(user => {
-                let name = user['name'];
-                let admin = user['admin'] ? 'admin' : '';
-                let servers = user['servers'];
-                let hasServer = '' in servers; // TODO: handle multiple servers, '' is the default server name
-                let url = hasServer ? servers['']['url'] : '';
-                let ready = hasServer ? servers['']['ready'] : '';
-                let started = hasServer ? new Date(servers['']['started']) : '';
-                let lastActivity = hasServer ? new Date(servers['']['last_activity']) : '';
+            users.sort((a, b) => a['name'].localeCompare(b['name']))
+                 .forEach(user => {
+                     let name = user['name'];
+                     let admin = user['admin'] ? 'admin' : '';
+                     let servers = user['servers'];
 
-                if (hasServer) {
-                    noRunningServers = false;
-                    usersTable.tr()
-                              .td([spawn('div.left', [name])])
-                              .td([spawn('div.center', [hasServer ? serverDialog(user['name'], servers['']) : ''])])
-                              .td([spawn('div.center', [ready ? spawn('i.fa.fa-check') : spawn('i.fa.fa-gear')])])
-                              .td([spawn('div.center', [started.toLocaleString()])])
-                              .td([spawn('div.center', [lastActivity.toLocaleString()])])
-                              .td([spawn('div.center', [hasServer ? stopServerButton(name, '') : ''])]);
-                }
+                     for (let serverName in servers) {
+                         let server = servers[serverName];
+                         let url = server['url'] || '';
+                         let ready = server['ready'] || '';
+                         let started = server['started'] ? new Date(server['started']) : '';
+                         let lastActivity = server['last_activity'] ? new Date(server['last_activity']) : '';
+
+                         noRunningServers = false;
+                         usersTable.tr()
+                             .td([spawn('div.left', [name])])
+                             .td([spawn('div.center', [serverDialog(user['name'], server)])])
+                             .td([spawn('div.center', [ready ? spawn('i.fa.fa-check') : spawn('i.fa.fa-gear')])])
+                             .td([spawn('div.center', [started.toLocaleString()])])
+                             .td([spawn('div.center', [lastActivity.toLocaleString()])])
+                             .td([spawn('div.center', [stopServerButton(name, serverName)])]);
+                    }
             })
             
             if (noRunningServers) {

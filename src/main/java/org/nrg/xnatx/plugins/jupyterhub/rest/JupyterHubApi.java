@@ -40,7 +40,6 @@ import java.util.Map;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 import static org.springframework.web.bind.annotation.RequestMethod.*;
 
-@SuppressWarnings("DefaultAnnotationParam")
 @Api("JupyterHub Plugin API")
 @XapiRestController
 @RequestMapping("/jupyterhub")
@@ -133,7 +132,7 @@ public class JupyterHubApi extends AbstractXapiRestController {
         return jupyterHubService.getServer(getUserI(username)).orElse(null);
     }
 
-    @ApiOperation(value = "Get Jupyter Server details for a user.", hidden = true)
+    @ApiOperation(value = "Get Jupyter Server details for a user.")
     @ApiResponses({@ApiResponse(code = 200, message = "Server found."),
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Not authorized."),
@@ -165,8 +164,7 @@ public class JupyterHubApi extends AbstractXapiRestController {
 
 
     @ApiOperation(value = "Starts a Jupyter server for the user",
-                  notes = "Use the Event Tracking API to track progress.",
-                  hidden = true)
+                  notes = "Use the Event Tracking API to track progress.")
     @ApiResponses({@ApiResponse(code = 200, message = "Jupyter server successfully started"),
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Not authorized."),
@@ -202,8 +200,7 @@ public class JupyterHubApi extends AbstractXapiRestController {
     }
 
     @ApiOperation(value = "Returns the last known user options for the named server",
-                  response = XnatUserOptions.class,
-                  hidden = true)
+                  response = XnatUserOptions.class)
     @ApiResponses({@ApiResponse(code = 200, message = "Successfully retrieved user options."),
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Not authorized to access site configuration properties."),
@@ -247,8 +244,7 @@ public class JupyterHubApi extends AbstractXapiRestController {
     }
 
     @ApiOperation(value = "Stops a users named Jupyter server",
-                  notes = "Use the Event Tracking API to track progress.",
-                  hidden = true)
+                  notes = "Use the Event Tracking API to track progress.")
     @ApiResponses({@ApiResponse(code = 200, message = "Jupyter server successfully stopped."),
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
                    @ApiResponse(code = 403, message = "Not authorized."),

@@ -12,6 +12,7 @@ import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -246,10 +247,12 @@ public class DefaultJupyterHubClient implements JupyterHubClient {
 
         RestTemplate restTemplate = new RestTemplate();
 
+        Map<String, Boolean> requestBody = Collections.singletonMap("remove", true);
+
         MultiValueMap<String, String> headers = new HttpHeaders();
         headers.add(HttpHeaders.AUTHORIZATION, "token " + jupyterHubApiToken);
         headers.add(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE);
-        HttpEntity<String> request = new HttpEntity<>(null, headers);
+        HttpEntity<Map<String, Boolean>> request = new HttpEntity<>(requestBody, headers);
 
         try {
             ResponseEntity<String> response = restTemplate.exchange(serverUrl(username, servername),

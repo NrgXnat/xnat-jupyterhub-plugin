@@ -29,12 +29,7 @@ XNAT.compute.computeEnvironmentConfigs = getObject(XNAT.compute.computeEnvironme
     let restUrl = XNAT.url.restUrl;
 
     let newServerUrl = XNAT.plugin.jupyterhub.servers.newServerUrl = function (username, servername) {
-        let url = `/xapi/jupyterhub/users/${username}/server`;
-
-        // if (servername && servername !== "") {
-        //     url = `${url}/${servername}`;
-        // }
-        
+        let url = `/xapi/jupyterhub/users/${username}/server/${servername}`;
         return restUrl(url);
     }
 
@@ -72,27 +67,24 @@ XNAT.compute.computeEnvironmentConfigs = getObject(XNAT.compute.computeEnvironme
     }
 
     XNAT.plugin.jupyterhub.servers.startServerForProject = function(username = window.username,
-                                                            servername = XNAT.data.context.projectID,
                                                             xsiType = XNAT.data.context.xsiType,
                                                             itemId = XNAT.data.context.projectID,
                                                             projectId = XNAT.data.context.projectID,
                                                             eventTrackingId = generateEventTrackingId()) {
         console.debug(`jupyterhub-servers.js: XNAT.plugin.jupyterhub.servers.startServerForProject`);
-        startServer(username, servername, xsiType, itemId, projectId, projectId, eventTrackingId)
+        startServer(username, eventTrackingId, xsiType, itemId, projectId, projectId, eventTrackingId)
     }
 
     XNAT.plugin.jupyterhub.servers.startDashboardForProject = function(username = window.username,
-                                                                       servername = XNAT.data.context.projectID,
                                                                        xsiType = XNAT.data.context.xsiType,
                                                                        itemId = XNAT.data.context.projectID,
                                                                        projectId = XNAT.data.context.projectID,
                                                                        eventTrackingId = generateEventTrackingId()) {
         console.debug(`jupyterhub-servers.js: XNAT.plugin.jupyterhub.servers.startDashboardForProject`);
-        startDashboard(username, servername, xsiType, itemId, projectId, projectId, eventTrackingId);
+        startDashboard(username, eventTrackingId, xsiType, itemId, projectId, projectId, eventTrackingId);
     }
 
     XNAT.plugin.jupyterhub.servers.startServerForSubject = function(username = window.username,
-                                                            servername = XNAT.data.context.ID,
                                                             xsiType = XNAT.data.context.xsiType,
                                                             itemId = XNAT.data.context.ID,
                                                             projectId = XNAT.data.context.projectID,
@@ -116,13 +108,12 @@ XNAT.compute.computeEnvironmentConfigs = getObject(XNAT.compute.computeEnvironme
                 ]
             });
         } else {
-            getSubjectLabel(itemId).then(subjectLabel => startServer(username, servername, xsiType, itemId,
+            getSubjectLabel(itemId).then(subjectLabel => startServer(username, eventTrackingId, xsiType, itemId,
                                                                      subjectLabel, projectId, eventTrackingId))
         }
     }
 
     XNAT.plugin.jupyterhub.servers.startDashboardForSubject = function(username = window.username,
-                                                                       servername = XNAT.data.context.ID,
                                                                        xsiType = XNAT.data.context.xsiType,
                                                                        itemId = XNAT.data.context.ID,
                                                                        projectId = XNAT.data.context.projectID,
@@ -147,7 +138,7 @@ XNAT.compute.computeEnvironmentConfigs = getObject(XNAT.compute.computeEnvironme
             });
         } else {
             getSubjectLabel(itemId).then(subjectLabel => {
-                startDashboard(username, servername, xsiType, itemId, subjectLabel, projectId, eventTrackingId)
+                startDashboard(username, eventTrackingId, xsiType, itemId, subjectLabel, projectId, eventTrackingId)
             }).catch(e => {
                 console.error(`Error getting subject label: ${e}`);
             });
@@ -155,7 +146,6 @@ XNAT.compute.computeEnvironmentConfigs = getObject(XNAT.compute.computeEnvironme
     }
 
     XNAT.plugin.jupyterhub.servers.startServerForExperiment = function(username = window.username,
-                                                               servername = XNAT.data.context.ID,
                                                                xsiType = "xnat:experimentData",
                                                                itemId = XNAT.data.context.ID,
                                                                projectId = XNAT.data.context.projectID,
@@ -179,13 +169,12 @@ XNAT.compute.computeEnvironmentConfigs = getObject(XNAT.compute.computeEnvironme
                 ]
             });
         } else {
-            getExperimentLabel(itemId).then(experimentLabel => startServer(username, servername, xsiType, itemId,
+            getExperimentLabel(itemId).then(experimentLabel => startServer(username, eventTrackingId, xsiType, itemId,
                                                                            experimentLabel, projectId, eventTrackingId))
         }
     }
 
     XNAT.plugin.jupyterhub.servers.startDashboardForExperiment = function(username = window.username,
-                                                                          servername = XNAT.data.context.ID,
                                                                           xsiType = XNAT.data.context.xsiType,
                                                                           itemId = XNAT.data.context.ID,
                                                                           projectId = XNAT.data.context.projectID,
@@ -210,7 +199,7 @@ XNAT.compute.computeEnvironmentConfigs = getObject(XNAT.compute.computeEnvironme
             });
         } else {
             getExperimentLabel(itemId).then(experimentLabel => {
-                startDashboard(username, servername, xsiType, itemId, experimentLabel, projectId, eventTrackingId)
+                startDashboard(username, eventTrackingId, xsiType, itemId, experimentLabel, projectId, eventTrackingId)
             }).catch(e => {
                 console.error(`Error getting experiment label: ${e}`);
             });
@@ -220,7 +209,7 @@ XNAT.compute.computeEnvironmentConfigs = getObject(XNAT.compute.computeEnvironme
     XNAT.plugin.jupyterhub.servers.startServerForStoredSearch = function(username, servername, xsiType, itemId,
                                                                          itemLabel, projectId, eventTrackingId) {
         console.debug(`jupyterhub-servers.js: XNAT.plugin.jupyterhub.servers.startServerForStoredSearch`);
-         startServer(username, servername, xsiType, itemId, itemLabel, projectId, eventTrackingId)
+         startServer(username, eventTrackingId, xsiType, itemId, itemLabel, projectId, eventTrackingId)
     }
 
 
@@ -311,7 +300,7 @@ XNAT.compute.computeEnvironmentConfigs = getObject(XNAT.compute.computeEnvironme
                     
                     const serverStartRequest = {
                         'username': username,
-                        'servername': '', // Not supported yet
+                        'servername': servername,
                         'xsiType': xsiType,
                         'itemId': itemId,
                         'itemLabel': itemLabel,
@@ -347,10 +336,63 @@ XNAT.compute.computeEnvironmentConfigs = getObject(XNAT.compute.computeEnvironme
             
             XNAT.dialog.open({
                 title: 'Start Jupyter Notebook',
-                content: spawn('form#server-start-request-form'),
+                content: spawn('div', [
+                        spawn('div#warning-message.warning', {style: {display: 'none'}}),
+                        spawn('form#server-start-request-form')
+                    ]
+                ),
                 maxBtn: true,
                 width: 500,
                 beforeShow: function(obj) {
+                    // Show message if user is already running a server for this xsiType and itemId
+                    Promise.all([
+                        XNAT.plugin.jupyterhub.preferences.get('maxNamedServers'),
+                        XNAT.plugin.jupyterhub.users.getUser(username)
+                    ]).then(([maxNamedServers, user]) => {
+                        let servers = user['servers'] || {};
+
+                        if (Object.keys(servers).length >= maxNamedServers) {
+                            XNAT.dialog.open({
+                                width: 450,
+                                title: "Error",
+                                content: spawn('div.warning', [
+                                    spawn('p', 'You have reached the maximum number of running Jupyter servers per user. Please stop a server from the Jupyter navigation menu before starting a new one.')
+                                ]),
+                                buttons: [
+                                    {
+                                        label: 'OK',
+                                        isDefault: true,
+                                        close: true,
+                                        action: function() {
+                                            xmodal.closeAll();
+                                            XNAT.ui.dialog.closeAll();
+                                        }
+                                    }
+                                ]
+                            });
+                            return;
+                        }
+
+                        let duplicateServers = Object.entries(servers).filter(([serverName, server]) => {
+                            return server['user_options']['xsiType'] === xsiType
+                                && server['user_options']['itemId'] === itemId
+                                && (server['user_options']['dashboardConfigId'] === undefined ||
+                                    server['user_options']['dashboardConfigId'] === null ||
+                                    server['user_options']['dashboardConfigId'] === '');
+                        });
+
+                        if (duplicateServers.length === 1) {
+                            document.getElementById('warning-message').style.display = 'block';
+                            document.getElementById('warning-message').innerHTML =
+                                "You're already running a Jupyter notebook on this data. " +
+                                "<a onclick='XNAT.plugin.jupyterhub.servers.goTo(\"" + duplicateServers[0][1]['url'] + "\").then(() => XNAT.ui.dialog.closeAll())'>Access it here</a> " +
+                                "or from the Jupyter navigation menu.";
+                        } else if (duplicateServers.length > 1) {
+                            document.getElementById('warning-message').style.display = 'block';
+                            document.getElementById('warning-message').innerHTML = 'You are already running multiple Jupyter servers for this data. They can be accessed from the Jupyter navigation menu.';
+                        }
+                    })
+
                     const form = document.getElementById('server-start-request-form');
                     form.classList.add('panel');
                     
@@ -498,7 +540,7 @@ XNAT.compute.computeEnvironmentConfigs = getObject(XNAT.compute.computeEnvironme
 
                     const serverStartRequest = {
                         'username': username,
-                        'servername': '', // Not supported yet
+                        'servername': servername,
                         'xsiType': xsiType,
                         'itemId': itemId,
                         'itemLabel': itemLabel,
@@ -535,11 +577,64 @@ XNAT.compute.computeEnvironmentConfigs = getObject(XNAT.compute.computeEnvironme
 
             XNAT.dialog.open({
                 title: 'Start Jupyter Dashboard',
-                content: spawn('form#server-start-request-form'),
+                content: spawn('div', [
+                        spawn('div#warning-message.warning', {style: {display: 'none'}}),
+                        spawn('form#server-start-request-form')
+                    ]
+                ),
                 maxBtn: true,
                 width: 400,
                 height: 500,
                 beforeShow: function(obj) {
+                    // Show message if user is already running a server for this xsiType and itemId
+                    Promise.all([
+                        XNAT.plugin.jupyterhub.preferences.get('maxNamedServers'),
+                        XNAT.plugin.jupyterhub.users.getUser(username)
+                    ]).then(([maxNamedServers, user]) => {
+                        let servers = user['servers'] || {};
+
+                        if (Object.keys(servers).length >= maxNamedServers) {
+                            XNAT.dialog.open({
+                                width: 450,
+                                title: "Error",
+                                content: spawn('div.warning', [
+                                    spawn('p', 'You have reached the maximum number of running Jupyter servers per user. Please stop a server from the Jupyter navigation menu before starting a new one.')
+                                ]),
+                                buttons: [
+                                    {
+                                        label: 'OK',
+                                        isDefault: true,
+                                        close: true,
+                                        action: function() {
+                                            xmodal.closeAll();
+                                            XNAT.ui.dialog.closeAll();
+                                        }
+                                    }
+                                ]
+                            });
+                            return;
+                        }
+
+                        let duplicateServers = Object.entries(servers).filter(([serverName, server]) => {
+                            return server['user_options']['xsiType'] === xsiType
+                                && server['user_options']['itemId'] === itemId
+                                && (server['user_options']['dashboardConfigId'] !== undefined  &&
+                                    server['user_options']['dashboardConfigId'] !== null &&
+                                    server['user_options']['dashboardConfigId'] !== '');
+                        });
+
+                        if (duplicateServers.length === 1) {
+                            document.getElementById('warning-message').style.display = 'block';
+                            document.getElementById('warning-message').innerHTML =
+                                "You're already running a Jupyter dashboard on this data. " +
+                                "<a onclick='XNAT.plugin.jupyterhub.servers.goTo(\"" + duplicateServers[0][1]['url'] + "\").then(() => XNAT.ui.dialog.closeAll())'>Access it here</a> " +
+                                "or from the Jupyter navigation menu.";
+                        } else if (duplicateServers.length > 1) {
+                            document.getElementById('warning-message').style.display = 'block';
+                            document.getElementById('warning-message').innerHTML = 'You are already running multiple Dashboards on this data. They can be accessed from the Jupyter navigation menu.';
+                        }
+                    })
+
                     const form = document.getElementById('server-start-request-form');
                     form.classList.add('panel');
 
@@ -712,7 +807,7 @@ XNAT.compute.computeEnvironmentConfigs = getObject(XNAT.compute.computeEnvironme
     }
 
     XNAT.plugin.jupyterhub.servers.goTo = function(server_url) {
-        Promise.all([
+        return Promise.all([
             XNAT.plugin.jupyterhub.preferences.get('jupyterHubHostUrl'),
             XNAT.plugin.jupyterhub.users.tokens.create()
         ]).then(([jupyterHubHostUrl, token]) => {
