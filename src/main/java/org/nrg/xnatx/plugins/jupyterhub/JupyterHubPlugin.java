@@ -18,6 +18,7 @@ import java.util.concurrent.TimeUnit;
 
 @XnatPlugin(value = "jupyterHubPlugin",
             name  = "XNAT JupyterHub Plugin",
+            description = "Integrates JupyterHub with XNAT for launching Jupyter notebooks on XNAT data.",
             logConfigurationFile = "jupyterhub-logback.xml",
             entityPackages = {"org.nrg.xnatx.plugins.jupyterhub.entities"})
 @ComponentScan({"org.nrg.xnatx.plugins.jupyterhub.preferences",
