@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - [JHP-88]: Cleanup the User Authorization table and modal in the plugin preferences page. Usernames were not being 
             sorted alphabetically.
+- [JHP-66][] and [XNAT-7867][]: Some file deletions were missed in the previous release.
 
 ## [1.1.1] - 2024-05-03
 
