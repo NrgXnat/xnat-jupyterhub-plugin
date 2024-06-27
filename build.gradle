@@ -9,7 +9,7 @@ plugins {
 }
 
 group "org.nrg.xnatx.plugins"
-version "1.2.0-rc.2"
+version "1.2.0"
 description "JupyterHub Plugin for XNAT"
 
 repositories {
