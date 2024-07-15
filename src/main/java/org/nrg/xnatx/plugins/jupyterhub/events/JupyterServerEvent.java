@@ -6,7 +6,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.extern.slf4j.Slf4j;
-import org.jetbrains.annotations.Nullable;
+import javax.annotation.Nullable;
 import org.nrg.xdat.XDAT;
 import org.nrg.xnatx.plugins.jupyterhub.models.JupyterServerEventTrackingLog;
 
