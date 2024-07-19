@@ -1,5 +1,6 @@
 package org.nrg.xnatx.plugins.jupyterhub.config;
 
+import org.nrg.framework.orm.DatabaseHelper;
 import org.nrg.xdat.security.services.RoleHolder;
 import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.nrg.xnat.services.XnatAppInfo;
@@ -19,13 +20,15 @@ public class JupyterHubUserInitializerConfig {
                                                                       final RoleHolder mockRoleHolder,
                                                                       final XFTManagerHelper mockXFTManagerHelper,
                                                                       final XnatAppInfo mockXnatAppInfo,
-                                                                      final SystemHelper mockSystemHelper) {
+                                                                      final SystemHelper mockSystemHelper,
+                                                                      final DatabaseHelper mockDatabaseHelper) {
         return new JupyterHubUserInitializer(
                 mockUserManagementService,
                 mockRoleHolder,
                 mockXFTManagerHelper,
                 mockXnatAppInfo,
-                mockSystemHelper
+                mockSystemHelper,
+                mockDatabaseHelper
         );
     }
 

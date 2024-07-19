@@ -5,6 +5,7 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
+import org.nrg.framework.orm.DatabaseHelper;
 import org.nrg.xdat.security.services.RoleServiceI;
 import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.nrg.xft.event.EventDetails;
@@ -31,6 +32,7 @@ public class JupyterHubUserInitializerTest {
     @Autowired private XnatAppInfo mockXnatAppInfo;
     @Autowired private RoleServiceI mockRoleService;
     @Autowired private SystemHelper mockSystemHelper;
+    @Autowired private DatabaseHelper mockDatabaseHelper;
 
     private final String username = "jupyterhub";
 
@@ -41,6 +43,7 @@ public class JupyterHubUserInitializerTest {
         Mockito.reset(mockRoleService);
         Mockito.reset(mockXnatAppInfo);
         Mockito.reset(mockSystemHelper);
+        Mockito.reset(mockDatabaseHelper);
     }
 
     @Test(expected = InitializingTaskException.class)
@@ -53,9 +56,20 @@ public class JupyterHubUserInitializerTest {
     }
 
     @Test(expected = InitializingTaskException.class)
+    public void test_DatabaseTableNotExists() throws Exception {
+        // XFT initialized but database table not exists
+        when(mockXFTManagerHelper.isInitialized()).thenReturn(true);
+        when(mockDatabaseHelper.tableExists("xdat_user")).thenReturn(false);
+
+        // Should throw InitializingTaskException
+        jupyterHubUserInitializer.callImpl();
+    }
+
+    @Test(expected = InitializingTaskException.class)
     public void test_AppNotInitialized() throws Exception {
         // XFT initialized but app not initialized
         when(mockXFTManagerHelper.isInitialized()).thenReturn(true);
+        when(mockDatabaseHelper.tableExists("xdat_user")).thenReturn(true);
         when(mockXnatAppInfo.isInitialized()).thenReturn(false);
 
         // Should throw InitializingTaskException
@@ -67,6 +81,7 @@ public class JupyterHubUserInitializerTest {
         // Setup
         // XFT initialized and user already exists
         when(mockXFTManagerHelper.isInitialized()).thenReturn(true);
+        when(mockDatabaseHelper.tableExists("xdat_user")).thenReturn(true);
         when(mockXnatAppInfo.isInitialized()).thenReturn(true);
         when(mockUserManagementService.exists(username)).thenReturn(true);
 
@@ -87,6 +102,7 @@ public class JupyterHubUserInitializerTest {
     public void test_FailedToSaveUser() throws Exception {
         // Setup
         when(mockXFTManagerHelper.isInitialized()).thenReturn(true);
+        when(mockDatabaseHelper.tableExists("xdat_user")).thenReturn(true);
         when(mockXnatAppInfo.isInitialized()).thenReturn(true);
         when(mockUserManagementService.exists(username)).thenReturn(false);
         when(mockUserManagementService.createUser()).thenReturn(mock(UserI.class));
@@ -110,6 +126,7 @@ public class JupyterHubUserInitializerTest {
     public void test_FailedAddUserRole() throws Exception {
         // Setup
         when(mockXFTManagerHelper.isInitialized()).thenReturn(true);
+        when(mockDatabaseHelper.tableExists("xdat_user")).thenReturn(true);
         when(mockXnatAppInfo.isInitialized()).thenReturn(true);
         when(mockUserManagementService.exists(username)).thenReturn(false);
         when(mockUserManagementService.createUser()).thenReturn(mock(UserI.class));
@@ -134,6 +151,7 @@ public class JupyterHubUserInitializerTest {
     public void test_FailedAddUserRole_Exception() throws Exception {
         // Setup
         when(mockXFTManagerHelper.isInitialized()).thenReturn(true);
+        when(mockDatabaseHelper.tableExists("xdat_user")).thenReturn(true);
         when(mockXnatAppInfo.isInitialized()).thenReturn(true);
         when(mockUserManagementService.exists(username)).thenReturn(false);
         when(mockUserManagementService.createUser()).thenReturn(mock(UserI.class));
@@ -159,6 +177,7 @@ public class JupyterHubUserInitializerTest {
     public void test_UserCreated() throws Exception {
         // Setup
         when(mockXFTManagerHelper.isInitialized()).thenReturn(true);
+        when(mockDatabaseHelper.tableExists("xdat_user")).thenReturn(true);
         when(mockXnatAppInfo.isInitialized()).thenReturn(true);
         when(mockUserManagementService.exists(username)).thenReturn(false);
         UserI mockUser = mock(UserI.class);
@@ -187,6 +206,7 @@ public class JupyterHubUserInitializerTest {
     public void test_UserCreatedFromEnv() throws Exception {
         // Setup
         when(mockXFTManagerHelper.isInitialized()).thenReturn(true);
+        when(mockDatabaseHelper.tableExists("xdat_user")).thenReturn(true);
         when(mockXnatAppInfo.isInitialized()).thenReturn(true);
         when(mockUserManagementService.exists(username)).thenReturn(false);
         UserI mockUser = mock(UserI.class);

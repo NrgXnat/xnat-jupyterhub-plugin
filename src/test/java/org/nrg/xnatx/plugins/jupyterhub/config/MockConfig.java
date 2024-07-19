@@ -2,6 +2,7 @@ package org.nrg.xnatx.plugins.jupyterhub.config;
 
 import org.mockito.Mockito;
 import org.nrg.framework.configuration.ConfigPaths;
+import org.nrg.framework.orm.DatabaseHelper;
 import org.nrg.framework.services.NrgEventServiceI;
 import org.nrg.framework.services.SerializerService;
 import org.nrg.framework.utilities.OrderedProperties;
@@ -150,6 +151,11 @@ public class MockConfig {
     @Bean
     public XnatAppInfo mockXnatAppInfo() {
         return Mockito.mock(XnatAppInfo.class);
+    }
+
+    @Bean
+    public DatabaseHelper mockDatabaseHelper() {
+        return Mockito.mock(DatabaseHelper.class);
     }
 
     @Bean

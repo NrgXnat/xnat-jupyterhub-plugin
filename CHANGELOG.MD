@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- [JHP-103]: Check for xdat_user table before creating JupyterHub user account. 
+
 ## [1.2.0] - 2024-06-27
 
 ### Added
@@ -81,3 +85,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [JHP-89]: https://radiologics.atlassian.net/jira/software/c/projects/JHP/issues/JHP-89
 [JHP-91]: https://radiologics.atlassian.net/jira/software/c/projects/JHP/issues/JHP-91
 [JHP-92]: https://radiologics.atlassian.net/jira/software/c/projects/JHP/issues/JHP-92
+[JHP-103]: https://radiologics.atlassian.net/jira/software/c/projects/JHP/issues/JHP-103
