@@ -1,6 +1,7 @@
 package org.nrg.xnatx.plugins.jupyterhub.initialize;
 
 import lombok.extern.slf4j.Slf4j;
+import org.nrg.framework.orm.DatabaseHelper;
 import org.nrg.xapi.rest.users.UsersApi;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.security.services.RoleHolder;
@@ -16,6 +17,8 @@ import org.nrg.xnatx.plugins.jupyterhub.utils.XFTManagerHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.sql.SQLException;
+
 /**
  * Initializing task which creates a user account for JupyterHub allowing it to communicate with XNAT
  */
@@ -28,18 +31,22 @@ public class JupyterHubUserInitializer extends AbstractInitializingTask {
     private final XFTManagerHelper xftManagerHelper;
     private final XnatAppInfo appInfo;
     private final SystemHelper systemHelper;
+    private final DatabaseHelper databaseHelper;
 
     @Autowired
     public JupyterHubUserInitializer(final UserManagementServiceI userManagementService,
                                      final RoleHolder roleHolder,
                                      final XFTManagerHelper xftManagerHelper,
                                      final XnatAppInfo appInfo,
-                                     final SystemHelper systemHelper) {
+                                     final SystemHelper systemHelper,
+                                     final DatabaseHelper databaseHelper) {
+
         this.userManagementService = userManagementService;
         this.roleHolder = roleHolder;
         this.xftManagerHelper = xftManagerHelper;
         this.appInfo = appInfo;
         this.systemHelper = systemHelper;
+        this.databaseHelper = databaseHelper;
     }
 
     @Override
@@ -56,9 +63,16 @@ public class JupyterHubUserInitializer extends AbstractInitializingTask {
     protected void callImpl() throws InitializingTaskException {
         log.info("Creating `jupyterhub` user account.");
 
-        if (!xftManagerHelper.isInitialized()) {
-            log.info("XFT not initialized, deferring execution.");
-            throw new InitializingTaskException(InitializingTaskException.Level.RequiresInitialization);
+        try {
+            if (!xftManagerHelper.isInitialized() || !databaseHelper.tableExists("xdat_user")) {
+                log.info("XFT and database not initialized, deferring execution.");
+                throw new InitializingTaskException(InitializingTaskException.Level.RequiresInitialization);
+            }
+        } catch (SQLException e) {
+            throw new InitializingTaskException(
+                    InitializingTaskException.Level.Error,
+                    "An error occurred trying to access the database to check for the table 'xdat_user'.",
+                    e);
         }
 
         if (!appInfo.isInitialized()) {
