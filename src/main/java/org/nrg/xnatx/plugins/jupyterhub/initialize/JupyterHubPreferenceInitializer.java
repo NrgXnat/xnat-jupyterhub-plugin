@@ -65,8 +65,10 @@ public class JupyterHubPreferenceInitializer extends AbstractInitializingTask {
         initializeStopTimeoutFromEnv();
         initializePathTranslationArchivePrefixFromEnv();
         initializePathTranslationArchiveDockerPrefixFromEnv();
+        initializePathTranslationArchiveServerPrefixFromEnv(); // Overwrites DOCKER env var if set
         initializePathTranslationWorkspacePrefixFromEnv();
         initializePathTranslationWorkspaceDockerPrefixFromEnv();
+        initializePathTranslationWorkspaceServerPrefixFromEnv(); // Overwrites DOCKER env var if set
         initializeWorkspacePathFromEnv();
         initializeInactivityTimeoutFromEnv();
         initializeMaxServerLifetimeFromEnv();
@@ -197,6 +199,20 @@ public class JupyterHubPreferenceInitializer extends AbstractInitializingTask {
     }
 
     /**
+     * Initialize the JupyterHub path translation archive docker prefix preference from the JH_XNAT_PT_ARCHIVE_SERVER_PREFIX environment variable.
+     */
+    protected void initializePathTranslationArchiveServerPrefixFromEnv() {
+        String jupyterHubPathTranslationArchiveServerPrefixEnv = systemHelper.getEnv("JH_XNAT_PT_ARCHIVE_SERVER_PREFIX");
+
+        if (StringUtils.isNotBlank(jupyterHubPathTranslationArchiveServerPrefixEnv)) {
+            jupyterHubPreferences.setPathTranslationArchiveDockerPrefix(jupyterHubPathTranslationArchiveServerPrefixEnv);
+            log.info("JupyterHub Path Translation Archive Server Prefix preference initialized from environment variable to: " + jupyterHubPathTranslationArchiveServerPrefixEnv);
+        } else {
+            log.debug("JupyterHub Path Translation Archive Server Prefix environment variable not set. Skipping initialization.");
+        }
+    }
+
+    /**
      * Initialize the JupyterHub path translation workspace prefix preference from the JH_XNAT_PT_WORKSPACE_PREFIX environment variable.
      */
     protected void initializePathTranslationWorkspacePrefixFromEnv() {
@@ -221,6 +237,20 @@ public class JupyterHubPreferenceInitializer extends AbstractInitializingTask {
             log.info("JupyterHub Path Translation Workspace Docker Prefix preference initialized from environment variable to: " + jupyterHubPathTranslationWorkspaceDockerPrefixEnv);
         } else {
             log.debug("JupyterHub Path Translation Workspace Docker Prefix environment variable not set. Skipping initialization.");
+        }
+    }
+
+    /**
+     * Initialize the JupyterHub path translation workspace server prefix preference from the JH_XNAT_PT_WORKSPACE_SERVER_PREFIX environment variable.
+     */
+    protected void initializePathTranslationWorkspaceServerPrefixFromEnv() {
+        String jupyterHubPathTranslationWorkspaceServerPrefixEnv = systemHelper.getEnv("JH_XNAT_PT_WORKSPACE_SERVER_PREFIX");
+
+        if (StringUtils.isNotBlank(jupyterHubPathTranslationWorkspaceServerPrefixEnv)) {
+            jupyterHubPreferences.setPathTranslationWorkspaceDockerPrefix(jupyterHubPathTranslationWorkspaceServerPrefixEnv);
+            log.info("JupyterHub Path Translation Workspace Server Prefix preference initialized from environment variable to: " + jupyterHubPathTranslationWorkspaceServerPrefixEnv);
+        } else {
+            log.debug("JupyterHub Path Translation Workspace Server Prefix environment variable not set. Skipping initialization.");
         }
     }
 
