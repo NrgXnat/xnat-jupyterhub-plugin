@@ -131,8 +131,10 @@ public class JupyterHubPreferenceInitializerTest {
         when(mockSystemHelper.getEnv("JH_XNAT_STOP_TIMEOUT")).thenReturn("60");
         when(mockSystemHelper.getEnv("JH_XNAT_PT_ARCHIVE_PREFIX")).thenReturn("/data/xnat/archive");
         when(mockSystemHelper.getEnv("JH_XNAT_PT_ARCHIVE_DOCKER_PREFIX")).thenReturn("/home/andy/xnat-docker-compose/xnat-data/archive");
+        when(mockSystemHelper.getEnv("JH_XNAT_PT_ARCHIVE_SERVER_PREFIX")).thenReturn("/home/andy/xnat-docker-compose/xnat-data/archive");
         when(mockSystemHelper.getEnv("JH_XNAT_PT_WORKSPACE_PREFIX")).thenReturn("/data/xnat/workspaces");
         when(mockSystemHelper.getEnv("JH_XNAT_PT_WORKSPACE_DOCKER_PREFIX")).thenReturn("/home/andy/xnat-docker-compose/xnat-data/workspaces");
+        when(mockSystemHelper.getEnv("JH_XNAT_PT_WORKSPACE_SERVER_PREFIX")).thenReturn("/home/andy/xnat-docker-compose/xnat-data/workspaces");
         when(mockSystemHelper.getEnv("JH_XNAT_WORKSPACE_PATH")).thenReturn("/data/xnat/workspaces");
         when(mockSystemHelper.getEnv("JH_XNAT_INACTIVITY_TIMEOUT")).thenReturn("24");
         when(mockSystemHelper.getEnv("JH_XNAT_MAX_SERVER_LIFETIME")).thenReturn("48");
@@ -148,9 +150,9 @@ public class JupyterHubPreferenceInitializerTest {
         verify(mockJupyterHubPreferences).setStartTimeout(60);
         verify(mockJupyterHubPreferences).setStopTimeout(60);
         verify(mockJupyterHubPreferences).setPathTranslationArchivePrefix("/data/xnat/archive");
-        verify(mockJupyterHubPreferences).setPathTranslationArchiveDockerPrefix("/home/andy/xnat-docker-compose/xnat-data/archive");
+        verify(mockJupyterHubPreferences, times(2)).setPathTranslationArchiveDockerPrefix("/home/andy/xnat-docker-compose/xnat-data/archive");
         verify(mockJupyterHubPreferences).setPathTranslationWorkspacePrefix("/data/xnat/workspaces");
-        verify(mockJupyterHubPreferences).setPathTranslationWorkspaceDockerPrefix("/home/andy/xnat-docker-compose/xnat-data/workspaces");
+        verify(mockJupyterHubPreferences, times(2)).setPathTranslationWorkspaceDockerPrefix("/home/andy/xnat-docker-compose/xnat-data/workspaces");
         verify(mockJupyterHubPreferences).setWorkspacePath("/data/xnat/workspaces");
         verify(mockJupyterHubPreferences).setInactivityTimeout(24L);
         verify(mockJupyterHubPreferences).setMaxServerLifetime(48L);
@@ -169,8 +171,10 @@ public class JupyterHubPreferenceInitializerTest {
         when(mockSystemHelper.getEnv("JH_XNAT_STOP_TIMEOUT")).thenReturn("");
         when(mockSystemHelper.getEnv("JH_XNAT_PT_ARCHIVE_PREFIX")).thenReturn("");
         when(mockSystemHelper.getEnv("JH_XNAT_PT_ARCHIVE_DOCKER_PREFIX")).thenReturn("");
+        when(mockSystemHelper.getEnv("JH_XNAT_PT_ARCHIVE_SERVER_PREFIX")).thenReturn("");
         when(mockSystemHelper.getEnv("JH_XNAT_PT_WORKSPACE_PREFIX")).thenReturn("");
         when(mockSystemHelper.getEnv("JH_XNAT_PT_WORKSPACE_DOCKER_PREFIX")).thenReturn("");
+        when(mockSystemHelper.getEnv("JH_XNAT_PT_WORKSPACE_SERVER_PREFIX")).thenReturn("");
         when(mockSystemHelper.getEnv("JH_XNAT_WORKSPACE_PATH")).thenReturn("");
         when(mockSystemHelper.getEnv("JH_XNAT_INACTIVITY_TIMEOUT")).thenReturn("");
         when(mockSystemHelper.getEnv("JH_XNAT_MAX_SERVER_LIFETIME")).thenReturn("");
@@ -207,8 +211,10 @@ public class JupyterHubPreferenceInitializerTest {
         when(mockSystemHelper.getEnv("JH_XNAT_STOP_TIMEOUT")).thenReturn(null);
         when(mockSystemHelper.getEnv("JH_XNAT_PT_ARCHIVE_PREFIX")).thenReturn(null);
         when(mockSystemHelper.getEnv("JH_XNAT_PT_ARCHIVE_DOCKER_PREFIX")).thenReturn(null);
+        when(mockSystemHelper.getEnv("JH_XNAT_PT_ARCHIVE_SERVER_PREFIX")).thenReturn(null);
         when(mockSystemHelper.getEnv("JH_XNAT_PT_WORKSPACE_PREFIX")).thenReturn(null);
         when(mockSystemHelper.getEnv("JH_XNAT_PT_WORKSPACE_DOCKER_PREFIX")).thenReturn(null);
+        when(mockSystemHelper.getEnv("JH_XNAT_PT_WORKSPACE_SERVER_PREFIX")).thenReturn(null);
         when(mockSystemHelper.getEnv("JH_XNAT_WORKSPACE_PATH")).thenReturn(null);
         when(mockSystemHelper.getEnv("JH_XNAT_INACTIVITY_TIMEOUT")).thenReturn(null);
         when(mockSystemHelper.getEnv("JH_XNAT_MAX_SERVER_LIFETIME")).thenReturn(null);

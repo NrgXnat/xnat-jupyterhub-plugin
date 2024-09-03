@@ -11,6 +11,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - [JHP-103]: Check for xdat_user table before creating JupyterHub user account. 
 
+### Changed: 
+
+- [JHP-112]: The path translation settings have always been applied to both Docker Swarm and Kubernetes deployments. 
+             Updated the plugin settings labels and descriptions to reflect this.
+
 ## [1.2.0] - 2024-06-27
 
 ### Added
@@ -86,3 +91,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [JHP-91]: https://radiologics.atlassian.net/jira/software/c/projects/JHP/issues/JHP-91
 [JHP-92]: https://radiologics.atlassian.net/jira/software/c/projects/JHP/issues/JHP-92
 [JHP-103]: https://radiologics.atlassian.net/jira/software/c/projects/JHP/issues/JHP-103
+[JHP-112]: https://radiologics.atlassian.net/jira/software/c/projects/JHP/issues/JHP-112
