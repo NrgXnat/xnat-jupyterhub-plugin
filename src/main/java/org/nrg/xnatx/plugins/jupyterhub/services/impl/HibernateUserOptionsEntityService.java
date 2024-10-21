@@ -1,7 +1,7 @@
 package org.nrg.xnatx.plugins.jupyterhub.services.impl;
 
 import lombok.extern.slf4j.Slf4j;
-import org.jetbrains.annotations.NotNull;
+import javax.validation.constraints.NotNull;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntityService;
 import org.nrg.xnatx.plugins.jupyterhub.entities.UserOptionsEntity;
 import org.nrg.xnatx.plugins.jupyterhub.repositories.UserOptionsDao;
