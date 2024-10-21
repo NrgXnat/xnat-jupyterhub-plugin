@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - [JHP-103]: Check for xdat_user table before creating JupyterHub user account. 
+- [JHP-114]: Update gradlew to v7.0 to fix build issues.
 
 ### Changed: 
 
@@ -97,3 +98,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [JHP-95]: https://radiologics.atlassian.net/jira/software/c/projects/JHP/issues/JHP-95
 [JHP-103]: https://radiologics.atlassian.net/jira/software/c/projects/JHP/issues/JHP-103
 [JHP-112]: https://radiologics.atlassian.net/jira/software/c/projects/JHP/issues/JHP-112
+[JHP-114]: https://radiologics.atlassian.net/jira/software/c/projects/JHP/issues/JHP-114
