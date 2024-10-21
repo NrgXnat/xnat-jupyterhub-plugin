@@ -101,37 +101,45 @@ stopPollingInterval:
   description: >
     The rate (in seconds) at which to poll JupyterHub to check if the single-user server has stopped.
 
+userLimitsAndTimeoutsSubhead:
+  kind: panel.subhead
+  text: User Limits and Timeouts
+
+pathTranslationSubhead:
+  kind: panel.subhead
+  text: Path Translation (Optional)
+
 pathTranslationArchivePrefix:
   kind: panel.input.text
   id: pathTranslationArchivePrefix
   name: pathTranslationArchivePrefix
-  label: Path Translation XNAT Archive Prefix
+  label: XNAT Archive Path Prefix
   description: >
-    (Optional) Enter the XNAT archive path as seen by XNAT, i.e. "/data/xnat/archive"
+    Enter the XNAT archive path as seen by XNAT, i.e. "/data/xnat/archive"
 
 pathTranslationArchiveDockerPrefix:
     kind: panel.input.text
     id: pathTranslationArchiveDockerPrefix
     name: pathTranslationArchiveDockerPrefix
-    label: Path Translation Docker Archive Prefix
+    label: Server Archive Path Prefix
     description: >
-        (Optional) Enter the Docker Server path to the XNAT archive mount, i.e. "/docker/my-data/XNAT/archive"
+        Enter the server path to the XNAT archive mount, i.e. "/docker/my-data/XNAT/archive"
 
 pathTranslationWorkspacePrefix:
   kind: panel.input.text
   id: pathTranslationWorkspacePrefix
   name: pathTranslationWorkspacePrefix
-  label: Path Translation User Workspace Prefix
+  label: XNAT User Workspaces Path Prefix
   description: >
-    (Optional) Enter the user workspace path as seen by XNAT, i.e. "/data/xnat/workspaces"
+    Enter the user workspaces path as seen by XNAT, i.e. "/data/xnat/workspaces"
 
 pathTranslationWorkspaceDockerPrefix:
     kind: panel.input.text
     id: pathTranslationWorkspaceDockerPrefix
     name: pathTranslationWorkspaceDockerPrefix
-    label: Path Translation Docker User Workspace Prefix
+    label: Server User Workspaces Path Prefix
     description: >
-        (Optional) Enter the Docker Server path to the user workspace mount, i.e. "/docker/my-data/XNAT/workspaces"
+        Enter the server path to the user workspaces mount, i.e. "/docker/my-data/XNAT/workspaces"
 
 inactivityTimeout:
   kind: panel.input.number
@@ -292,12 +300,14 @@ jupyterhubPreferences:
     ${jupyterHubHostUrl}
     ${jupyterhubApiUrl}
     ${jupyterHubToken}
-    ${startTimeout}
-    ${stopTimeout}
-    ${inactivityTimeout}
+    ${workspacePath}
+    ${userLimitsAndTimeoutsSubhead}
     ${maxServerLifetime}
     ${maxNamedServers}
-    ${workspacePath}
+    ${inactivityTimeout}
+    ${startTimeout}
+    ${stopTimeout}
+    ${pathTranslationSubhead}
     ${pathTranslationArchivePrefix}
     ${pathTranslationArchiveDockerPrefix}
     ${pathTranslationWorkspacePrefix}

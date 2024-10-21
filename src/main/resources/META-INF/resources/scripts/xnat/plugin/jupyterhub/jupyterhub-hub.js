@@ -100,7 +100,7 @@ XNAT.plugin.jupyterhub.hub = getObject(XNAT.plugin.jupyterhub.hub || {});
                         content: spawn('div#jupyterhub-setup-form'),
                         maxBtn: true,
                         footer: false,
-                        width: 800,
+                        width: 900,
                         beforeShow: function(obj) {
                             console.log(obj)
                             let serverFormContainerEl = document.getElementById(`jupyterhub-setup-form`);
@@ -124,6 +124,10 @@ XNAT.plugin.jupyterhub.hub = getObject(XNAT.plugin.jupyterhub.hub || {});
                                     revertButton.addEventListener("click", () => {
                                         XNAT.ui.dialog.closeAll();
                                     });
+
+                                    // Hide panel header
+                                    const panelHeader = formContainerEl.querySelector('.panel-heading');
+                                    panelHeader.style.display = 'none';
                                 })
                         },
                         buttons: []
