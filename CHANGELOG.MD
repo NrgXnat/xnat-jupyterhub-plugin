@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- [JHP-115]: Increase default timeout on token create to prevent excessive timeout errors.
+
 ## [1.3.0] - 2024-10-22
 
 ### Added
