@@ -807,16 +807,18 @@ XNAT.compute.computeEnvironmentConfigs = getObject(XNAT.compute.computeEnvironme
     }
 
     XNAT.plugin.jupyterhub.servers.goTo = function(server_url) {
-        return Promise.all([
-            XNAT.plugin.jupyterhub.preferences.get('jupyterHubHostUrl'),
-            XNAT.plugin.jupyterhub.users.tokens.create()
-        ]).then(([jupyterHubHostUrl, token]) => {
+        XNAT.plugin.jupyterhub.preferences.get('jupyterHubHostUrl').then(hostUrl => {
             // Remove trailing slash from jupyterHubHostUrl (if present)
-            jupyterHubHostUrl = jupyterHubHostUrl.replace(/\/$/, "");
+            let jupyterHubHostUrl = hostUrl.replace(/\/$/, "");
 
-            // open new tab to Jupyter notebook server
-            window.open(`${jupyterHubHostUrl}${server_url}?token=${token['token']}`, '_blank');
-        }).catch(() => {
+            XNAT.plugin.jupyterhub.users.tokens.create().then(token => {
+                window.open(`${jupyterHubHostUrl}${server_url}?token=${token['token']}`, '_blank');
+            }).catch(e => {
+                console.error(`Unable to populate Jupyter URL with token: ${e}`);
+                window.open(`${jupyterHubHostUrl}${server_url}`, '_blank');
+            })
+        }).catch(e => {
+            console.error(`Unable to populate Jupyter URL with jupyterHubHostUrl: ${e}`);
             window.open(server_url, '_blank');
         });
     }
