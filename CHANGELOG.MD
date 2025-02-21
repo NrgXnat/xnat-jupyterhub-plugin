@@ -11,6 +11,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - [JHP-115]: Increase default timeout on token create to prevent excessive timeout errors.
 
+### Fixed
+
+- [JHP-116]: Failure to generate a user token should not ignore the jupyterHubHostUrl preference, which could potentially
+             reroute the user to an invalid URL
+
 ## [1.3.0] - 2024-10-22
 
 ### Added
@@ -105,3 +110,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [JHP-103]: https://radiologics.atlassian.net/jira/software/c/projects/JHP/issues/JHP-103
 [JHP-112]: https://radiologics.atlassian.net/jira/software/c/projects/JHP/issues/JHP-112
 [JHP-114]: https://radiologics.atlassian.net/jira/software/c/projects/JHP/issues/JHP-114
+[JHP-115]: https://radiologics.atlassian.net/jira/software/c/projects/JHP/issues/JHP-115
+[JHP-116]: https://radiologics.atlassian.net/jira/software/c/projects/JHP/issues/JHP-116
