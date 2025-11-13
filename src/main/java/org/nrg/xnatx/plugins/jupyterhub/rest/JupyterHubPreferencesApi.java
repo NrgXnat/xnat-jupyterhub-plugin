@@ -4,14 +4,18 @@ import io.swagger.annotations.*;
 import lombok.extern.slf4j.Slf4j;
 import org.nrg.framework.annotations.XapiRestController;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
+import org.nrg.xapi.exceptions.InsufficientPrivilegesException;
+import org.nrg.xapi.exceptions.NotAuthenticatedException;
 import org.nrg.xapi.exceptions.NotFoundException;
 import org.nrg.xapi.rest.AbstractXapiRestController;
 import org.nrg.xapi.rest.XapiRequestMapping;
 import org.nrg.xdat.security.helpers.AccessLevel;
+import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xdat.security.services.RoleHolder;
 import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnatx.plugins.jupyterhub.preferences.JupyterHubPreferences;
+import org.nrg.xnatx.plugins.jupyterhub.utils.RoleUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -38,119 +42,135 @@ public class JupyterHubPreferencesApi extends AbstractXapiRestController {
     public JupyterHubPreferencesApi(final UserManagementServiceI userManagementService,
                                     final RoleHolder roleHolder,
                                     final JupyterHubPreferences jupyterHubPreferences) {
-        super(userManagementService, roleHolder);
-        this.jupyterHubPreferences = jupyterHubPreferences;
-    }
+            super(userManagementService, roleHolder);
+            this.jupyterHubPreferences = jupyterHubPreferences;
+        }
 
-    @ApiOperation(value = "Returns the full map of JupyterHub plugin preferences.",
-                  notes = "Complex objects may be returned as encapsulated JSON strings.",
-                  response = String.class, responseContainer = "Map")
-    @ApiResponses({
-            @ApiResponse(code = 200, message = "JupyterHub plugin preferences successfully retrieved."),
-            @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
-            @ApiResponse(code = 403, message = "Not authorized to access JupyterHub preferences."),
-            @ApiResponse(code = 500, message = "Unexpected error")
-    })
-    @XapiRequestMapping(produces = APPLICATION_JSON_VALUE, method = GET, restrictTo = AccessLevel.Authenticated)
-    public Map<String, Object> getPreferences() {
-        final UserI user      = getSessionUser();
-        final String username = user.getUsername();
+        @ApiOperation(value = "Returns the full map of JupyterHub plugin preferences.",
+                notes = "Complex objects may be returned as encapsulated JSON strings.",
+                response = String.class, responseContainer = "Map")
+        @ApiResponses({
+                @ApiResponse(code = 200, message = "JupyterHub plugin preferences successfully retrieved."),
+                @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
+                @ApiResponse(code = 403, message = "Not authorized to access JupyterHub preferences."),
+                @ApiResponse(code = 500, message = "Unexpected error")
+        })
+        @XapiRequestMapping(produces = APPLICATION_JSON_VALUE, method = GET, restrictTo = AccessLevel.Authenticated)
+            public Map<String, Object> getPreferences() throws InsufficientPrivilegesException {
+                final UserI user      = getSessionUser();
+                final String username = user.getUsername();
 
-        log.debug("User {} requested the JupyterHub preferences", username);
+                log.debug("User {} requested the JupyterHub preferences", username);
 
-        return jupyterHubPreferences.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-    }
+                if (!isAuthorized(user)) {
+                    throw new InsufficientPrivilegesException(user.getUsername());
+                }
+                return jupyterHubPreferences.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+            }
 
-    @ApiOperation(value = "Sets a map of JupyterHub plugin preferences.")
-    @ApiResponses({
-            @ApiResponse(code = 200, message = "JupyterHub plugin preferences successfully set."),
-            @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
-            @ApiResponse(code = 403, message = "Not authorized to set JupyterHub plugin preferences."),
-            @ApiResponse(code = 500, message = "Unexpected error")
-    })
-    @XapiRequestMapping(consumes = {APPLICATION_FORM_URLENCODED_VALUE, APPLICATION_JSON_VALUE}, method = POST, restrictTo = AccessLevel.Admin)
-    public void setPreferences(@ApiParam(value = "The map of JupyterHub preferences to be set.", required = true) @RequestBody final Map<String, Object> preferences) {
-        if (!preferences.isEmpty()) {
-            for (final String name : preferences.keySet()) {
-                try {
-                    final Object value = preferences.get(name);
-                    if (value instanceof List) {
-                        // noinspection rawtypes
-                        jupyterHubPreferences.setListValue(name, (List) value);
-                    } else if (value instanceof Map) {
-                        // noinspection rawtypes
-                        jupyterHubPreferences.setMapValue(name, (Map) value);
-                    } else if (value.getClass().isArray()) {
-                        jupyterHubPreferences.setArrayValue(name, (Object[]) value);
-                    } else {
-                        jupyterHubPreferences.set(value.toString(), name);
+            @ApiOperation(value = "Sets a map of JupyterHub plugin preferences.")
+            @ApiResponses({
+                    @ApiResponse(code = 200, message = "JupyterHub plugin preferences successfully set."),
+                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
+                    @ApiResponse(code = 403, message = "Not authorized to set JupyterHub plugin preferences."),
+                    @ApiResponse(code = 500, message = "Unexpected error")
+            })
+            @XapiRequestMapping(consumes = {APPLICATION_FORM_URLENCODED_VALUE, APPLICATION_JSON_VALUE}, method = POST, restrictTo = AccessLevel.Admin)
+            public void setPreferences(@ApiParam(value = "The map of JupyterHub preferences to be set.", required = true) @RequestBody final Map<String, Object> preferences) {
+                if (!preferences.isEmpty()) {
+                    for (final String name : preferences.keySet()) {
+                        try {
+                            final Object value = preferences.get(name);
+                            if (value instanceof List) {
+                                // noinspection rawtypes
+                                jupyterHubPreferences.setListValue(name, (List) value);
+                            } else if (value instanceof Map) {
+                                // noinspection rawtypes
+                                jupyterHubPreferences.setMapValue(name, (Map) value);
+                            } else if (value.getClass().isArray()) {
+                                jupyterHubPreferences.setArrayValue(name, (Object[]) value);
+                            } else {
+                                jupyterHubPreferences.set(value.toString(), name);
+                            }
+                            log.debug("Set property {} to value: {}", name, value);
+                        } catch (InvalidPreferenceName invalidPreferenceName) {
+                            log.error("Got an invalid preference name error for the preference: {}", name);
+                        }
                     }
-                    log.debug("Set property {} to value: {}", name, value);
-                } catch (InvalidPreferenceName invalidPreferenceName) {
-                    log.error("Got an invalid preference name error for the preference: {}", name);
                 }
             }
-        }
-    }
 
-    @ApiOperation(value = "Returns the value of the selected JupyterHub plugin preference.",
-                  notes = "Returns singleton map from preference name to preference object.",
-                  response = Map.class)
-    @ApiResponses({
-            @ApiResponse(code = 200, message = "JupyterHub plugin preference successfully retrieved."),
-            @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
-            @ApiResponse(code = 403, message = "Not authorized to access JupyterHub plugin preferences."),
-            @ApiResponse(code = 500, message = "Unexpected error")
-    })
-    @XapiRequestMapping(value = "/{preference}", produces = APPLICATION_JSON_VALUE, method = GET, restrictTo = AccessLevel.Authenticated)
-    public Map<String, Object> getSpecifiedPreference(@ApiParam(value = "The JupyterHub plugin preference to retrieve.", required = true) @PathVariable final String preference) throws NotFoundException {
-        if (!jupyterHubPreferences.containsKey(preference)) {
-            throw new NotFoundException("No JupyterHub plugin preference named " + preference);
-        }
-        final Object value;
+            @ApiOperation(value = "Returns the value of the selected JupyterHub plugin preference.",
+                    notes = "Returns singleton map from preference name to preference object.",
+                    response = Map.class)
+            @ApiResponses({
+                    @ApiResponse(code = 200, message = "JupyterHub plugin preference successfully retrieved."),
+                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
+                    @ApiResponse(code = 403, message = "Not authorized to access JupyterHub plugin preferences."),
+                    @ApiResponse(code = 500, message = "Unexpected error")
+            })
+            @XapiRequestMapping(value = "/{preference}", produces = APPLICATION_JSON_VALUE, method = GET, restrictTo = AccessLevel.Authenticated)
+            public Map<String, Object> getSpecifiedPreference(@ApiParam(value = "The JupyterHub plugin preference to retrieve.", required = true) @PathVariable final String preference) throws NotFoundException, NotAuthenticatedException {
+                if (!jupyterHubPreferences.containsKey(preference)) {
+                    throw new NotFoundException("No JupyterHub plugin preference named " + preference);
+                }
+                final Object value;
+                UserI authenticatedUser = getSessionUser();
 
-        // I think there is a bug in the preference library with caching hence the switch.
-        switch (preference) {
-            case (JupyterHubPreferences.INACTIVITY_TIMEOUT_PREF_ID): {
-                value = jupyterHubPreferences.getInactivityTimeout();
-                break;
-            }
-            case (JupyterHubPreferences.MAX_SERVER_LIFETIME_PREF_ID): {
-                value = jupyterHubPreferences.getMaxServerLifetime();
-                break;
-            }
-            case (JupyterHubPreferences.MAX_NAMED_SERVERS_PREF_ID): {
-                value = jupyterHubPreferences.getMaxNamedServers();
-                break;
-            }
-            case (JupyterHubPreferences.ALL_USERS_JUPYTER): {
-                value = jupyterHubPreferences.getAllUsersCanStartJupyter();
-                break;
-            }
-            case (JupyterHubPreferences.JUPYTERHUB_HOST_URL): {
-                value = jupyterHubPreferences.getJupyterHubHostUrl();
-                break;
-            }
-            default:
-                value = jupyterHubPreferences.get(preference);
-        }
+                // I think there is a bug in the preference library with caching hence the switch.
+                switch (preference) {
+                    case (JupyterHubPreferences.INACTIVITY_TIMEOUT_PREF_ID): {
+                        value = jupyterHubPreferences.getInactivityTimeout();
+                        break;
+                    }
+                    case (JupyterHubPreferences.MAX_SERVER_LIFETIME_PREF_ID): {
+                        value = jupyterHubPreferences.getMaxServerLifetime();
+                        break;
+                    }
+                    case (JupyterHubPreferences.MAX_NAMED_SERVERS_PREF_ID): {
+                        value = jupyterHubPreferences.getMaxNamedServers();
+                        break;
+                    }
+                    case (JupyterHubPreferences.ALL_USERS_JUPYTER): {
+                        value = jupyterHubPreferences.getAllUsersCanStartJupyter();
+                        break;
+                    }
+                    case (JupyterHubPreferences.JUPYTERHUB_HOST_URL): {
+                        value = jupyterHubPreferences.getJupyterHubHostUrl();
+                        break;
+                    }
+                    case (JupyterHubPreferences.JUPYTERHUB_TOKEN): {
+                        if (isAuthorized(authenticatedUser)) {
+                            value = jupyterHubPreferences.get(preference);
+                        } else {
+                            throw new NotAuthenticatedException("You do not have sufficient permissions.");
+                        }
+                        break;
+                    }
+                    default:
+                        value = jupyterHubPreferences.get(preference);
+                }
 
-        log.debug("User {} requested the value for the JupyterHub plugin preference {}, got value: {}", getSessionUser().getUsername(), preference, value);
-        return Collections.singletonMap(preference, value);
-    }
+                log.debug("User {} requested the value for the JupyterHub plugin preference {}, got value: {}", getSessionUser().getUsername(), preference, value);
+                return Collections.singletonMap(preference, value);
+            }
 
-    @ApiOperation(value = "Sets a single JupyterHub plugin preference.")
-    @ApiResponses({
-            @ApiResponse(code = 200, message = "JupyterHub plugin preference successfully set."),
-            @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
-            @ApiResponse(code = 403, message = "Not authorized to set JupyterHub plugin preferences."),
-            @ApiResponse(code = 500, message = "Unexpected error")
-    })
-    @XapiRequestMapping(value = "/{preference}", consumes = {TEXT_PLAIN_VALUE, APPLICATION_JSON_VALUE}, method = POST, restrictTo = AccessLevel.Admin)
-    public void setSpecificPreference(@ApiParam(value = "The preference to be set.", required = true) @PathVariable final String preference,
-                                      @ApiParam(value = "The value to be set for the property.", required = true) @RequestBody final String value) throws InvalidPreferenceName {
-        log.debug("User '{}' set the value of the JupyterHub plugin preference {} to: {}", getSessionUser().getUsername(), preference, value);
-        jupyterHubPreferences.set(value, preference);
-    }
+                @ApiOperation(value = "Sets a single JupyterHub plugin preference.")
+                @ApiResponses({
+                        @ApiResponse(code = 200, message = "JupyterHub plugin preference successfully set."),
+                        @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
+                        @ApiResponse(code = 403, message = "Not authorized to set JupyterHub plugin preferences."),
+                        @ApiResponse(code = 500, message = "Unexpected error")
+                })
+                @XapiRequestMapping(value = "/{preference}", consumes = {TEXT_PLAIN_VALUE, APPLICATION_JSON_VALUE}, method = POST, restrictTo = AccessLevel.Admin)
+                public void setSpecificPreference(@ApiParam(value = "The preference to be set.", required = true) @PathVariable final String preference,
+                @ApiParam(value = "The value to be set for the property.", required = true) @RequestBody final String value) throws InvalidPreferenceName {
+                    log.debug("User '{}' set the value of the JupyterHub plugin preference {} to: {}", getSessionUser().getUsername(), preference, value);
+                    jupyterHubPreferences.set(value, preference);
+                }
 
-}
+                private boolean isAuthorized(final UserI authenticatedUser)  {
+                    return Roles.isSiteAdmin(authenticatedUser) || Roles.checkRole(authenticatedUser, RoleUtils.JUPYTERHUB_ROLE_NAME);
+                }
+
+            }

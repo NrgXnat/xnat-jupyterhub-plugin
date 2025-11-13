@@ -12,6 +12,7 @@ import org.nrg.xft.security.UserI;
 import org.nrg.xnat.initialization.tasks.AbstractInitializingTask;
 import org.nrg.xnat.initialization.tasks.InitializingTaskException;
 import org.nrg.xnat.services.XnatAppInfo;
+import org.nrg.xnatx.plugins.jupyterhub.utils.RoleUtils;
 import org.nrg.xnatx.plugins.jupyterhub.utils.SystemHelper;
 import org.nrg.xnatx.plugins.jupyterhub.utils.XFTManagerHelper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -119,7 +120,7 @@ public class JupyterHubUserInitializer extends AbstractInitializingTask {
         }
 
         try {
-            boolean added = roleHolder.addRole(Users.getAdminUser(), jupyterhubUser, "JupyterHub");
+            boolean added = roleHolder.addRole(Users.getAdminUser(), jupyterhubUser, RoleUtils.JUPYTERHUB_ROLE_NAME);
 
             if (!added) {
                 log.error(errorMessage);
