@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -63,7 +64,8 @@ public class JupyterHubPreferencesApi extends AbstractXapiRestController {
                 Map<String, Object> allPreferences = jupyterHubPreferences.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
                 if (!isAuthorized(user)) {
-                    allPreferences.remove(JupyterHubPreferences.JUPYTERHUB_TOKEN);
+                    List<String> keysToRetain = Arrays.asList(JupyterHubPreferences.ALL_USERS_JUPYTER);
+                    allPreferences.keySet().retainAll(keysToRetain);
                 }
                 return allPreferences;
             }
