@@ -5,7 +5,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.nrg.framework.annotations.XapiRestController;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
 import org.nrg.xapi.exceptions.InsufficientPrivilegesException;
-import org.nrg.xapi.exceptions.NotAuthenticatedException;
 import org.nrg.xapi.exceptions.NotFoundException;
 import org.nrg.xapi.rest.AbstractXapiRestController;
 import org.nrg.xapi.rest.XapiRequestMapping;
@@ -61,11 +60,12 @@ public class JupyterHubPreferencesApi extends AbstractXapiRestController {
                 final String username = user.getUsername();
 
                 log.debug("User {} requested the JupyterHub preferences", username);
+                Map<String, Object> allPreferences = jupyterHubPreferences.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
                 if (!isAuthorized(user)) {
-                    throw new InsufficientPrivilegesException(user.getUsername());
+                    allPreferences.remove(JupyterHubPreferences.JUPYTERHUB_TOKEN);
                 }
-                return jupyterHubPreferences.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+                return allPreferences;
             }
 
             @ApiOperation(value = "Sets a map of JupyterHub plugin preferences.")
@@ -110,7 +110,7 @@ public class JupyterHubPreferencesApi extends AbstractXapiRestController {
                     @ApiResponse(code = 500, message = "Unexpected error")
             })
             @XapiRequestMapping(value = "/{preference}", produces = APPLICATION_JSON_VALUE, method = GET, restrictTo = AccessLevel.Authenticated)
-            public Map<String, Object> getSpecifiedPreference(@ApiParam(value = "The JupyterHub plugin preference to retrieve.", required = true) @PathVariable final String preference) throws NotFoundException, NotAuthenticatedException {
+            public Map<String, Object> getSpecifiedPreference(@ApiParam(value = "The JupyterHub plugin preference to retrieve.", required = true) @PathVariable final String preference) throws NotFoundException, InsufficientPrivilegesException {
                 if (!jupyterHubPreferences.containsKey(preference)) {
                     throw new NotFoundException("No JupyterHub plugin preference named " + preference);
                 }
@@ -143,7 +143,7 @@ public class JupyterHubPreferencesApi extends AbstractXapiRestController {
                         if (isAuthorized(authenticatedUser)) {
                             value = jupyterHubPreferences.get(preference);
                         } else {
-                            throw new NotAuthenticatedException("You do not have sufficient permissions.");
+                            throw new InsufficientPrivilegesException("You do not have sufficient permissions.");
                         }
                         break;
                     }
