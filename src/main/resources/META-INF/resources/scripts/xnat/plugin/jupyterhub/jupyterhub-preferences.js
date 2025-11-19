@@ -42,9 +42,20 @@ XNAT.plugin.jupyterhub.preferences = getObject(XNAT.plugin.jupyterhub.preference
     XNAT.plugin.jupyterhub.preferences.get = async function(preference) {
         console.debug(`jupyterhub-preferences.js: XNAT.plugin.jupyterhub.preferences.get`);
 
-        let preferences = await XNAT.plugin.jupyterhub.preferences.getAll();
-        return preferences[preference];
+        let url = XNAT.url.restUrl(`/xapi/jupyterhub/preferences/${preference}`);
+        const response = await XNAT.plugin.jupyterhub.utils.fetchWithTimeout(url, {
+            method: 'GET',
+            headers: {'Content-Type': 'application/json'},
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error getting preference ${preference}: ${response.status}`);
+        }
+
+        const result = await response.json();
+        return result[preference];
     }
+
 
     XNAT.plugin.jupyterhub.preferences.set = async function(preference, value) {
         console.debug(`jupyterhub-preferences.js: XNAT.plugin.jupyterhub.preferences.set`);

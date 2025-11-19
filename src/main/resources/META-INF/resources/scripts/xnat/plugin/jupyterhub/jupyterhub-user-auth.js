@@ -45,8 +45,8 @@ XNAT.plugin.jupyterhub.users.authorization.roles = getObject(XNAT.plugin.jupyter
             return true;
         }
 
-        let preferences = await XNAT.plugin.jupyterhub.preferences.getAll();
-        return preferences['allUsersCanStartJupyter'];
+        let preferenceAllUsersCanStartJupyter = await XNAT.plugin.jupyterhub.preferences.get('allUsersCanStartJupyter');
+        return preferenceAllUsersCanStartJupyter;
     }
 
     XNAT.plugin.jupyterhub.users.authorization.getAuthorized = async function () {
