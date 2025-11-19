@@ -35,6 +35,7 @@ public class JupyterHubPreferences extends AbstractPreferenceBean {
     public static final String MAX_SERVER_LIFETIME_PREF_ID = "maxServerLifetime";
     public static final String MAX_NAMED_SERVERS_PREF_ID = "maxNamedServers";
     public static final String SHARED_PROJECT_STRING = "jupyter-notebooks";
+    public static final String JUPYTERHUB_TOKEN = "jupyterHubToken";
 
 
     @Autowired

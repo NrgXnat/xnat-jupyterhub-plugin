@@ -27,6 +27,7 @@ import org.nrg.xnatx.plugins.jupyterhub.models.XnatUserOptions;
 import org.nrg.xnatx.plugins.jupyterhub.preferences.JupyterHubPreferences;
 import org.nrg.xnatx.plugins.jupyterhub.services.JupyterHubService;
 import org.nrg.xnatx.plugins.jupyterhub.services.UserOptionsService;
+import org.nrg.xnatx.plugins.jupyterhub.utils.RoleUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -51,8 +52,6 @@ public class JupyterHubApi extends AbstractXapiRestController {
     private final EventTrackingDataHibernateService eventTrackingDataHibernateService;
     private final JupyterHubPreferences jupyterHubPreferences;
     private final RoleHolder roleHolder;
-
-    public static final String JUPYTER_ROLE = "Jupyter";
 
     @Autowired
     public JupyterHubApi(final UserManagementServiceI userManagementService,
@@ -290,7 +289,7 @@ public class JupyterHubApi extends AbstractXapiRestController {
      */
     protected void checkJupyterAuthorization(UserI user) throws InsufficientPrivilegesException {
         final boolean allUsersCanStartJupyter = jupyterHubPreferences.getAllUsersCanStartJupyter();
-        final boolean userHasJupyterRole = roleHolder.checkRole(user, JUPYTER_ROLE);
+        final boolean userHasJupyterRole = roleHolder.checkRole(user, RoleUtils.JUPYTER_ROLE_NAME);
 
         // If all users can't start jupyter and the user doesn't have the jupyter role, then they are not authorized
         if (!allUsersCanStartJupyter && !userHasJupyterRole) {
