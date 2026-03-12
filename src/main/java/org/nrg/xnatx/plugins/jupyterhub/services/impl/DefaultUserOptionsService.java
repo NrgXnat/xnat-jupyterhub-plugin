@@ -21,8 +21,11 @@ import org.nrg.xft.security.UserI;
 import org.nrg.xnat.compute.models.*;
 import org.nrg.xnat.compute.services.JobTemplateService;
 import org.nrg.xnat.exceptions.InvalidArchiveStructure;
+import org.nrg.framework.services.NrgEventServiceI;
 import org.nrg.xnat.utils.FileUtils;
 import org.nrg.xnatx.plugins.jupyterhub.entities.UserOptionsEntity;
+import org.nrg.xnatx.plugins.jupyterhub.events.JupyterServerEvent;
+import org.nrg.xnatx.plugins.jupyterhub.events.JupyterServerEventI;
 import org.nrg.xnatx.plugins.jupyterhub.models.XnatUserOptions;
 import org.nrg.xnatx.plugins.jupyterhub.models.docker.Mount;
 import org.nrg.xnatx.plugins.jupyterhub.models.docker.*;
@@ -43,6 +46,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.SQLException;
 import java.util.*;
+import java.util.function.IntConsumer;
 import java.util.stream.Collectors;
 
 @Service
@@ -58,6 +62,7 @@ public class DefaultUserOptionsService implements UserOptionsService {
     private final PermissionsHelper permissionsHelper;
     private final JobTemplateService jobTemplateService;
     private final DashboardJobTemplateService dashboardJobTemplateService;
+    private final NrgEventServiceI eventService;
 
     @Autowired
     public DefaultUserOptionsService(final JupyterHubPreferences jupyterHubPreferences,
@@ -68,7 +73,8 @@ public class DefaultUserOptionsService implements UserOptionsService {
                                      final UserOptionsEntityService userOptionsEntityService,
                                      final PermissionsHelper permissionsHelper,
                                      @Qualifier("defaultJobTemplateService") final JobTemplateService jobTemplateService,
-                                     final DashboardJobTemplateService dashboardJobTemplateService) {
+                                     final DashboardJobTemplateService dashboardJobTemplateService,
+                                     final NrgEventServiceI eventService) {
         this.jupyterHubPreferences = jupyterHubPreferences;
         this.userWorkspaceService = userWorkspaceService;
         this.searchHelperService = searchHelperService;
@@ -78,6 +84,7 @@ public class DefaultUserOptionsService implements UserOptionsService {
         this.permissionsHelper = permissionsHelper;
         this.jobTemplateService = jobTemplateService;
         this.dashboardJobTemplateService = dashboardJobTemplateService;
+        this.eventService = eventService;
     }
 
     public Map<String, String> getProjectPaths(final UserI user, final List<String> projectIds) throws BaseXnatExperimentdata.UnknownPrimaryProjectException, DBPoolException, SQLException, InvalidArchiveStructure, IOException {
@@ -115,8 +122,24 @@ public class DefaultUserOptionsService implements UserOptionsService {
                                 projectPaths.put("/data/projects/" + projectId + "/subjects", subjectResourceDirectory.toString());
                             }
                         } else {
+                            final int fileCount = allSharedPaths.size();
+                            final boolean useHardLink = "hard_link".equals(XDAT.getSiteConfigPreferences().getFileOperationUsedForJobsWithSharedData());
+                            final String mode = useHardLink ? "linked" : "copied";
+                            eventService.triggerEvent(JupyterServerEvent.progress(eventTrackingId, user.getID(),
+                                    JupyterServerEventI.Operation.Start, 25,
+                                    String.format("Preparing data for project %s (contains shared data) — %,d files to be %s. This may take a moment.",
+                                            projectId, fileCount, mode)));
                             Path sharedLinksDirectory = Paths.get(JupyterHubPreferences.SHARED_PROJECT_STRING, eventTrackingId);
-                            projectPaths.put("/data/projects/" + projectId, String.valueOf(FileUtils.createDirectoryForSharedData(allSharedPaths, sharedLinksDirectory)));
+                            final long startTime = System.nanoTime();
+                            IntConsumer progressCallback = processed -> {
+                                long elapsedSec = (System.nanoTime() - startTime) / 1_000_000_000;
+                                eventService.triggerEvent(JupyterServerEvent.progress(eventTrackingId, user.getID(),
+                                        JupyterServerEventI.Operation.Start, 25,
+                                        String.format("%,d / %,d files %s (%ds elapsed)",
+                                                processed, fileCount, mode, elapsedSec)));
+                            };
+                            projectPaths.put("/data/projects/" + projectId, String.valueOf(
+                                    FileUtils.createDirectoryForSharedData(allSharedPaths, sharedLinksDirectory, progressCallback)));
                         }
                 } else {
                     //here we're working with stored searches and the like
