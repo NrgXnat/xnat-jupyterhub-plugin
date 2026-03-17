@@ -430,12 +430,23 @@ public class DefaultJupyterHubService implements JupyterHubService {
                                                                       JupyterServerEventI.Operation.Stop, 50,
                                                                       "Sending stop request to JupyterHub."));
 
+                // Stop the pod first, then clean up shared data in the background
                 Optional<Server> serverForFolderDeletion = jupyterHubClient.getServer(user.getUsername(), servername);
+                jupyterHubClient.stopServer(user.getUsername(), servername);
+
                 if (serverForFolderDeletion.isPresent()) {
                     Server deletionServer = serverForFolderDeletion.get();
-                    FileUtils.removeCombinedFolder(Paths.get(JupyterHubPreferences.SHARED_PROJECT_STRING, deletionServer.getUser_options().get("eventTrackingId")));
+                    String serverEventTrackingId = deletionServer.getUser_options().get("eventTrackingId");
+                    if (serverEventTrackingId != null) {
+                        CompletableFuture.runAsync(() -> {
+                            try {
+                                FileUtils.removeCombinedFolder(Paths.get(JupyterHubPreferences.SHARED_PROJECT_STRING, serverEventTrackingId));
+                            } catch (IOException e) {
+                                log.error("Failed to clean up shared data directory for event {}", serverEventTrackingId, e);
+                            }
+                        });
+                    }
                 }
-                jupyterHubClient.stopServer(user.getUsername(), servername);
 
                 int time = 0;
                 while (time < inMilliSec(jupyterHubPreferences.getStopTimeout())) {
@@ -460,7 +471,7 @@ public class DefaultJupyterHubService implements JupyterHubService {
                 eventService.triggerEvent(JupyterServerEvent.failed(eventTrackingId, user.getID(),
                                                                     JupyterServerEventI.Operation.Stop,
                                                                     "Failed to stop Jupyter Server."));
-            } catch (RuntimeException | InterruptedException | IOException e) {
+            } catch (Exception e) {
                 eventService.triggerEvent(JupyterServerEvent.failed(eventTrackingId, user.getID(),
                                                                     JupyterServerEventI.Operation.Stop,
                                                                     "Failed to stop Jupyter Server."));

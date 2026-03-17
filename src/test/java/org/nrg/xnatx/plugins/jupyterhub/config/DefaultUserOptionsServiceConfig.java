@@ -10,6 +10,7 @@ import org.nrg.xnatx.plugins.jupyterhub.services.UserOptionsEntityService;
 import org.nrg.xnatx.plugins.jupyterhub.services.UserWorkspaceService;
 import org.nrg.xnatx.plugins.jupyterhub.services.impl.DefaultUserOptionsService;
 import org.nrg.xnatx.plugins.jupyterhub.utils.PermissionsHelper;
+import org.nrg.framework.services.NrgEventServiceI;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
@@ -27,7 +28,8 @@ public class DefaultUserOptionsServiceConfig {
                                                                final UserOptionsEntityService mockUserOptionsEntityService,
                                                                final PermissionsHelper mockPermissionsHelper,
                                                                final JobTemplateService mockJobTemplateService,
-                                                               final DashboardJobTemplateService mockDashboardJobTemplateService) {
+                                                               final DashboardJobTemplateService mockDashboardJobTemplateService,
+                                                               final NrgEventServiceI mockNrgEventService) {
         return new DefaultUserOptionsService(mockJupyterHubPreferences,
                                              mockUserWorkspaceService,
                                              mockSearchHelperService,
@@ -36,7 +38,8 @@ public class DefaultUserOptionsServiceConfig {
                                              mockUserOptionsEntityService,
                                              mockPermissionsHelper,
                                              mockJobTemplateService,
-                                             mockDashboardJobTemplateService);
+                                             mockDashboardJobTemplateService,
+                                             mockNrgEventService);
     }
 
 }
