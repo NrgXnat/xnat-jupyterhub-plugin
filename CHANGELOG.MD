@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- [JHP-127]: Fix issue with serialization/deserialization of timezones in JupyterHubApiTests.
+
+### Changed
+
+- [JHP-127]: Run tests in CI by switching from `gradlew jar` to `gradlew build`. Added test summary and test artifact
+             upload to the build action.
+
 ## [1.3.4] - 2026-03-20
 
 ### Changed
@@ -130,4 +141,5 @@ No changes to the plugin jar, only the Docker images and Helm chart have been up
 [JHP-115]: https://radiologics.atlassian.net/jira/software/c/projects/JHP/issues/JHP-115
 [JHP-116]: https://radiologics.atlassian.net/jira/software/c/projects/JHP/issues/JHP-116
 [JHP-123]: https://radiologics.atlassian.net/jira/software/c/projects/JHP/issues/JHP-123
+[JHP-127]: https://radiologics.atlassian.net/jira/software/c/projects/JHP/issues/JHP-127
 [XNAT-8655]: https://radiologics.atlassian.net/browse/XNAT-8655
