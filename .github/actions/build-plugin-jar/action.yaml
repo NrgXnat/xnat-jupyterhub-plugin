@@ -4,11 +4,11 @@ inputs:
   java-version:
     description: 'The version of Java to set up'
     required: true
-    default: '8'
+    default: '21'
   gradle-version:
     description: 'The version of Gradle to set up'
     required: true
-    default: '6.7'
+    default: '9.4.1'
 outputs:
   jar-path:
     description: 'The path to the built JAR file'

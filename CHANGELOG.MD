@@ -13,6 +13,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- [XNAT-8763]: Upgrade the build to Java 21, Gradle 9.4.1, and the XNAT 1.10.1-SNAPSHOT monorepo BOM. Test fixes for
+               the BOM-driven dependency bumps (H2 2.x, Jackson, log4j). CI builds now use the Java/Gradle defaults
+               from the `build-plugin-jar` action.
 - [JHP-127]: Run tests in CI by switching from `gradlew jar` to `gradlew build`. Added test summary and test artifact
              upload to the build action.
 
