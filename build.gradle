@@ -1,16 +1,28 @@
 /*
  * xnat-jupyterhub-plugin: build.gradle
  */
+buildscript {
+    ext {
+        vXnat = "1.10.1-SNAPSHOT"
+    }
+}
+
 plugins {
     id "java"
-    id "org.nrg.xnat.build.xnat-data-builder" version "1.9.0"
-    id "io.freefair.lombok" version "6.0.0-m2"
+    id "org.nrg.xnat.build.xnat-data-builder" version "${vXnat}"
+    id "io.franzbecker.gradle-lombok" version "5.0.0"
     id "jacoco"
+    id "io.spring.dependency-management" version "1.1.7"
 }
 
 group "org.nrg.xnatx.plugins"
 version "1.3.5-SNAPSHOT"
 description "JupyterHub Plugin for XNAT"
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
+}
 
 repositories {
     mavenLocal()
@@ -20,25 +32,40 @@ repositories {
     maven { url "https://www.dcm4che.org/maven2" }
 }
 
+dependencyManagement {
+    imports {
+        mavenBom "org.nrg:parent:${vXnat}"
+    }
+}
+
+lombok {
+    version = "1.18.34"
+    sha256 = "1ea5ad6c6afcff902d75072b2aaa6695585aebee9f12127e15c0036ba95d2918"
+}
+
 configurations {
+    implementAndInclude
     implementation.extendsFrom(xnatProvided)
-    implementation.canBeResolved(true)
+    implementation.extendsFrom(implementAndInclude)
     testImplementation.exclude group: 'org.slf4j', module: 'log4j-over-slf4j'
 }
 
 dependencies {
-    xnatProvided platform("org.nrg:parent:1.9.3.3")
+    xnatProvided platform("org.nrg:parent:${vXnat}")
     xnatProvided "org.nrg:framework"
-    xnatProvided "org.nrg.xnat:xnat-data-models"
     xnatProvided "org.nrg.xnat:web"
     xnatProvided "org.nrg.xdat:core"
     xnatProvided "io.springfox:springfox-swagger2"
     xnatProvided "io.springfox:springfox-swagger-ui"
+    // Provided by the XNAT webapp at runtime; xnat-web 1.10.x no longer
+    // exposes these on the compile classpath
+    xnatProvided "javax.servlet:javax.servlet-api"
+    xnatProvided "org.aspectj:aspectjweaver"
+    xnatProvided "commons-lang:commons-lang"
 }
 
 dependencies {
-    implementation 'org.projectlombok:lombok:1.18.24'
-    implementation('io.projectreactor:reactor-core') {
+    implementAndInclude('io.projectreactor:reactor-core') {
         version {
             strictly "2.0.8.RELEASE"
         }
@@ -55,6 +82,9 @@ dependencies {
     testImplementation "org.springframework:spring-orm"
     testImplementation "org.apache.commons:commons-dbcp2"
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
+    // xdat static initializers still reference log4j 1.x, which the XNAT
+    // webapp provides at runtime but the 1.10.x BOM no longer brings in
+    testRuntimeOnly 'log4j:log4j:1.2.17'
 }
 
 test {
@@ -69,14 +99,12 @@ def github_repo = System.getenv().GITHUB_REPOSITORY ?: "Unknown"
 def github_sha = System.getenv().GITHUB_SHA ?: "Unknown"
 def github_ref = System.getenv().GITHUB_REF ?: "Unknown"
 
-ext.gitManifest = manifest {
-    attributes "Application-Name": "PIXI-PLUGIN",
-            "Build-Date": buildDate,
-            "GITHUB-ACTOR": github_actor,
-            "GITHUB-REPO": github_repo,
-            "GITHUB-SHA": github_sha,
-            "GITHUB-REF": github_ref
-}
+ext.gitManifest = ["Application-Name": "PIXI-PLUGIN",
+                   "Build-Date"      : buildDate,
+                   "GITHUB-ACTOR"    : github_actor,
+                   "GITHUB-REPO"     : github_repo,
+                   "GITHUB-SHA"      : github_sha,
+                   "GITHUB-REF"      : github_ref]
 
 jacocoTestReport {
     dependsOn test
@@ -107,11 +135,11 @@ sourceSets {
 }
 
 jar {
-    manifest = project.manifest {
-        from gitManifest
+    manifest {
+        attributes(gitManifest)
     }
     from {
-        (configurations.implementation - configurations.xnatProvided).collect {
+        (configurations.implementAndInclude - configurations.xnatProvided).collect {
             it.isDirectory() ? it : zipTree(it)
         }
     }

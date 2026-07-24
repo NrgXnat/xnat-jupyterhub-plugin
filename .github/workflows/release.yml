@@ -19,9 +19,6 @@ jobs:
 
       - name: Build JAR
         uses: ./.github/actions/build-plugin-jar
-        with:
-          java-version: '8'
-          gradle-version: '6.7'
 
       - name: Publish Release
         uses: softprops/action-gh-release@v1

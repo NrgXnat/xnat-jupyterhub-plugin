@@ -18,9 +18,6 @@ jobs:
 
       - name: Build Plugin JAR
         uses: ./.github/actions/build-plugin-jar
-        with:
-          java-version: '8'
-          gradle-version: '6.7'
 
       - name: Upload JAR
         uses: actions/upload-artifact@v4

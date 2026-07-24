@@ -31,8 +31,9 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
-import java.time.ZoneOffset;
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 
 import static org.junit.Assert.assertEquals;
@@ -170,8 +171,8 @@ public class JupyterHubApiTest {
                 .name("")
                 .ready(true)
                 .url("/jupyterhub/users/" + NON_ADMIN_USERNAME + "/server")
-                .started(ZonedDateTime.now().withZoneSameInstant(ZoneOffset.UTC))
-                .last_activity(ZonedDateTime.now().withZoneSameInstant(ZoneOffset.UTC))
+                .started(ZonedDateTime.now().withZoneSameInstant(ZoneId.of("UTC")).truncatedTo(ChronoUnit.MICROS))
+                .last_activity(ZonedDateTime.now().withZoneSameInstant(ZoneId.of("UTC")).truncatedTo(ChronoUnit.MICROS))
                 //.user_options(userOptions)
                 .build();
 
@@ -180,8 +181,8 @@ public class JupyterHubApiTest {
                 .name(servername)
                 .ready(true)
                 .url("/jupyterhub/users/" + NON_ADMIN_USERNAME + "/server/test-server")
-                .started(ZonedDateTime.now().withZoneSameInstant(ZoneOffset.UTC))
-                .last_activity(ZonedDateTime.now().withZoneSameInstant(ZoneOffset.UTC))
+                .started(ZonedDateTime.now().withZoneSameInstant(ZoneId.of("UTC")).truncatedTo(ChronoUnit.MICROS))
+                .last_activity(ZonedDateTime.now().withZoneSameInstant(ZoneId.of("UTC")).truncatedTo(ChronoUnit.MICROS))
                 //.user_options(userOptions)
                 .build();
 
@@ -192,7 +193,7 @@ public class JupyterHubApiTest {
                 .roles(Collections.emptyList())
                 .groups(Collections.emptyList())
                 .server("/jupyterhub/users/" + ADMIN_USERNAME + "/server")
-                .last_activity(ZonedDateTime.now().withZoneSameInstant(ZoneOffset.UTC))
+                .last_activity(ZonedDateTime.now().withZoneSameInstant(ZoneId.of("UTC")).truncatedTo(ChronoUnit.MICROS))
                 .servers(Collections.singletonMap(servername, dummyNamedServer))
                 .build();
 
@@ -202,7 +203,7 @@ public class JupyterHubApiTest {
                 .roles(Collections.emptyList())
                 .groups(Collections.emptyList())
                 .server("/jupyterhub/users/" + NON_ADMIN_USERNAME + "/server")
-                .last_activity(ZonedDateTime.now().withZoneSameInstant(ZoneOffset.UTC))
+                .last_activity(ZonedDateTime.now().withZoneSameInstant(ZoneId.of("UTC")).truncatedTo(ChronoUnit.MICROS))
                 .servers(Collections.singletonMap(servername, dummyNamedServer))
                 .build();
 
