@@ -1,14 +1,14 @@
 package org.nrg.xnatx.plugins.jupyterhub.services.impl;
 
 import lombok.extern.slf4j.Slf4j;
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotNull;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntityService;
 import org.nrg.xnatx.plugins.jupyterhub.entities.UserOptionsEntity;
 import org.nrg.xnatx.plugins.jupyterhub.repositories.UserOptionsDao;
 import org.nrg.xnatx.plugins.jupyterhub.services.UserOptionsEntityService;
 import org.springframework.stereotype.Service;
 
-import javax.transaction.Transactional;
+import jakarta.transaction.Transactional;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;

@@ -12,7 +12,7 @@ import org.nrg.xnat.compute.models.HardwareConfig;
 import org.nrg.xnatx.plugins.jupyterhub.models.DashboardConfig;
 import org.nrg.xnatx.plugins.jupyterhub.models.DashboardScope;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;

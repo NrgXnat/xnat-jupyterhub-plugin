@@ -7,7 +7,7 @@ import org.nrg.xnatx.plugins.jupyterhub.repositories.DashboardFrameworkEntityDao
 import org.nrg.xnatx.plugins.jupyterhub.services.DashboardFrameworkEntityService;
 import org.springframework.stereotype.Service;
 
-import javax.transaction.Transactional;
+import jakarta.transaction.Transactional;
 import java.util.Optional;
 
 @Service

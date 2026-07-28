@@ -8,7 +8,7 @@ import org.nrg.xft.security.UserI;
 import org.nrg.xnatx.plugins.jupyterhub.preferences.JupyterHubPreferences;
 import org.springframework.stereotype.Component;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 
 @Component
 public class JupyterUserAuthorization extends UserXapiAuthorization {

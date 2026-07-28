@@ -3,7 +3,7 @@
  */
 buildscript {
     ext {
-        vXnat = "1.10.1-SNAPSHOT"
+        vXnat = "1.11.0-SNAPSHOT"   // jakarta / Tomcat 10 line
     }
 }
 
@@ -20,12 +20,26 @@ version "1.3.5-SNAPSHOT"
 description "JupyterHub Plugin for XNAT"
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_21
-    targetCompatibility = JavaVersion.VERSION_21
+    // Pin the toolchain to 21: the Gradle daemon may run a newer JDK that Lombok can't process, and old
+    // jars can trip JDK 22+'s strict zip64 CEN validation. Match core.
+    toolchain { languageVersion = JavaLanguageVersion.of(21) }
+}
+
+compileJava {
+    options.fork = true   // a cross-JDK toolchain must fork
+}
+
+// Spring 6 (Spring MVC) no longer discovers method parameter names from bytecode; the xapi
+// @RestController handlers here (@RequestParam/@PathVariable without explicit names) resolve only when
+// compiled with -parameters. Core sets this in its buildSrc convention; this standalone build must too.
+tasks.withType(JavaCompile).configureEach {
+    options.compilerArgs << '-parameters'
 }
 
 repositories {
-    mavenLocal()
+    // Scope mavenLocal to org.nrg.* so a locally-published SNAPSHOT of core is consumed without shadowing
+    // partial third-party artifacts (e.g. ehcache-*-jakarta classifiers). See migration guide.
+    mavenLocal { content { includeGroupByRegex 'org\\.nrg.*' } }
     maven { url "https://nrgxnat.jfrog.io/nrgxnat/libs-release" }
     maven { url "https://nrgxnat.jfrog.io/nrgxnat/libs-snapshot" }
     mavenCentral()
@@ -55,11 +69,12 @@ dependencies {
     xnatProvided "org.nrg:framework"
     xnatProvided "org.nrg.xnat:web"
     xnatProvided "org.nrg.xdat:core"
-    xnatProvided "io.springfox:springfox-swagger2"
-    xnatProvided "io.springfox:springfox-swagger-ui"
-    // Provided by the XNAT webapp at runtime; xnat-web 1.10.x no longer
-    // exposes these on the compile classpath
-    xnatProvided "javax.servlet:javax.servlet-api"
+    // springfox is dead on Spring 6. The source only uses io.swagger.annotations.* (@Api/@ApiModel/
+    // @ApiOperation/@ApiResponse(s) etc.); provide those directly. Runtime OpenAPI/UI is served by core's
+    // springdoc, so springfox-swagger-ui is dropped. See migration guide.
+    xnatProvided "io.swagger:swagger-annotations:1.5.20"
+    // Provided by the XNAT webapp at runtime; xnat-web no longer exposes these on the compile classpath
+    xnatProvided "jakarta.servlet:jakarta.servlet-api"
     xnatProvided "org.aspectj:aspectjweaver"
     xnatProvided "commons-lang:commons-lang"
 }

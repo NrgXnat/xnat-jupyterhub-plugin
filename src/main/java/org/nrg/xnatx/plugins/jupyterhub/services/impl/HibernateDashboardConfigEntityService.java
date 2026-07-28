@@ -7,7 +7,7 @@ import org.nrg.xnatx.plugins.jupyterhub.repositories.DashboardConfigDao;
 import org.nrg.xnatx.plugins.jupyterhub.services.DashboardConfigEntityService;
 import org.springframework.stereotype.Service;
 
-import javax.transaction.Transactional;
+import jakarta.transaction.Transactional;
 
 @Service
 @Slf4j
